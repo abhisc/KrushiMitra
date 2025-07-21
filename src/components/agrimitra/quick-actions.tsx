@@ -332,11 +332,11 @@ function WeatherTipsDialogContent({ setOpen }: { setOpen: (open: boolean) => voi
         try {
             const response = await getWeatherAndIrrigationTips(data);
             setResult(response);
-        } catch (error) {
+        } catch (error: any) {
              toast({
                 variant: 'destructive',
-                title: 'AI Error',
-                description: 'Failed to get weather tips from AI model.',
+                title: 'Error',
+                description: error.message || 'Failed to get weather tips.',
             });
         } finally {
             setLoading(false);
@@ -364,11 +364,25 @@ function WeatherTipsDialogContent({ setOpen }: { setOpen: (open: boolean) => voi
                 </DialogFooter>
             </form>
             {result && (
-                <div className="mt-4 space-y-4 rounded-lg border bg-secondary/50 p-4">
-                    <h3 className="font-bold">Weather & Irrigation Tips</h3>
-                    <p><strong>Forecast:</strong> {result.weatherForecast}</p>
-                    <p><strong>Irrigation Tips:</strong> {result.irrigationTips}</p>
+              <div className="mt-4 space-y-4 rounded-lg border bg-secondary/50 p-4 max-h-[300px] overflow-y-auto">
+                <h3 className="font-bold">Weather & Irrigation Tips</h3>
+                <p><strong>Forecast:</strong> {result.weatherForecast}</p>
+                <p><strong>Irrigation Tips:</strong> {result.irrigationTips}</p>
+                <div className="space-y-2">
+                  <h4 className="font-semibold">Unsuitable Crops for Current Weather</h4>
+                  {result.unsuitableCrops.length > 0 ? (
+                    <ul className="list-disc pl-5">
+                      {result.unsuitableCrops.map((crop, index) => <li key={index}>{crop}</li>)}
+                    </ul>
+                  ) : (
+                    <p>All crops are suitable for the current weather.</p>
+                  )}
                 </div>
+                <div className="space-y-2">
+                  <h4 className="font-semibold">Remedial Actions</h4>
+                  <p>{result.remedialActions}</p>
+                </div>
+              </div>
             )}
         </>
     );

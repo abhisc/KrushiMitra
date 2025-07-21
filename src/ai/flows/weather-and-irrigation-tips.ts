@@ -35,6 +35,8 @@ const WeatherAndIrrigationTipsOutputSchema = z.object({
     .describe(
       'Irrigation tips tailored to the specified crop type and weather conditions.'
     ),
+  unsuitableCrops: z.array(z.string()).describe('A list of crops that are not suitable for the current weather conditions.'),
+  remedialActions: z.string().describe('Actions to take if unsuitable crops have already been planted.'),
 });
 export type WeatherAndIrrigationTipsOutput = z.infer<
   typeof WeatherAndIrrigationTipsOutputSchema
@@ -62,6 +64,11 @@ const getCurrentWeather = ai.defineTool(
   },
   async ({location}) => {
     console.log(`Fetching weather for ${location}... (mocked)`);
+    // Basic validation for location
+    if (location.toLowerCase().trim() === 'haha' || location.length < 3) {
+      throw new Error('Invalid location entered. Please enter a proper location.');
+    }
+
     // In a real application, you would call a weather API here.
     // For this example, we'll return mocked data.
     if (location.toLowerCase().includes('bangalore')) {
@@ -72,7 +79,7 @@ const getCurrentWeather = ai.defineTool(
         wind_speed: 15,
       };
     }
-    // Default mock data
+    // Default mock data for any other valid location
     return {
       temperature: 32,
       condition: 'Sunny and clear',
@@ -85,14 +92,25 @@ const getCurrentWeather = ai.defineTool(
 
 const weatherAndIrrigationTipsPrompt = ai.definePrompt({
   name: 'weatherAndIrrigationTipsPrompt',
-  input: {schema: WeatherAndIrrigationTipsInputSchema},
+  input: {schema: z.object({
+    location: z.string(),
+    cropType: z.string(),
+    weather: z.any(),
+  })},
   output: {schema: WeatherAndIrrigationTipsOutputSchema},
   tools: [getCurrentWeather],
-  prompt: `You are an AI assistant providing weather forecasts and irrigation tips to farmers.
+  prompt: `You are an AI assistant providing weather forecasts and irrigation tips to farmers in India.
 
-  First, use the getCurrentWeather tool to get the real-time weather forecast for the following location: {{{location}}}
+  Based on the real-time weather data provided, provide a weather summary and irrigation tips tailored to the following crop type: {{{cropType}}} at {{{location}}}.
 
-  Then, based on that real-time weather data, provide a weather summary and irrigation tips tailored to the following crop type: {{{cropType}}}
+  Real-time weather data:
+  - Temperature: {{{weather.temperature}}}°C
+  - Condition: {{{weather.condition}}}
+  - Humidity: {{{weather.humidity}}}%
+  - Wind Speed: {{{weather.wind_speed}}} km/h
+  
+  Also, suggest what types of vegetables and fruits should NOT be grown in these weather conditions.
+  Finally, provide suggestions on what a farmer can do if they have already planted such vegetables or fruits.
   
   Format the response in a way that is easy to understand for farmers.
   `,
@@ -104,8 +122,9 @@ const weatherAndIrrigationTipsFlow = ai.defineFlow(
     inputSchema: WeatherAndIrrigationTipsInputSchema,
     outputSchema: WeatherAndIrrigationTipsOutputSchema,
   },
-  async input => {
-    const {output} = await weatherAndIrrigationTipsPrompt(input);
+  async (input) => {
+    const weather = await getCurrentWeather(input);
+    const {output} = await weatherAndIrrigationTipsPrompt({ ...input, weather });
     return output!;
   }
 );
