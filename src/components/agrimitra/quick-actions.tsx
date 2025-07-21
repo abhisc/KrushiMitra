@@ -364,10 +364,19 @@ function WeatherTipsDialogContent({ setOpen }: { setOpen: (open: boolean) => voi
                 </DialogFooter>
             </form>
             {result && (
-                <div className="mt-4 space-y-4 rounded-lg border bg-secondary/50 p-4">
+                <div className="mt-4 space-y-2 rounded-lg border bg-secondary/50 p-4 max-h-[300px] overflow-y-auto">
                     <h3 className="font-bold">Weather & Irrigation Tips</h3>
-                    <p><strong>Forecast:</strong> {result.weatherForecast}</p>
-                    <p><strong>Irrigation Tips:</strong> {result.irrigationTips}</p>
+                    <p className="pb-2"><strong>Forecast:</strong> {result.weatherForecast}</p>
+                    <p className="pb-2"><strong>Irrigation Tips:</strong> {result.irrigationTips}</p>
+                    <div className="pb-2">
+                        <h4 className="font-semibold">Crops to Avoid:</h4>
+                        <ul className="list-disc pl-5">
+                            {result.notRecommendedCrops.map((crop, index) => (
+                                <li key={index}>{crop}</li>
+                            ))}
+                        </ul>
+                    </div>
+                    <p><strong>Remedial Actions:</strong> {result.remedialActions}</p>
                 </div>
             )}
         </>

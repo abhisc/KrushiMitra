@@ -1,6 +1,6 @@
 'use server';
 /**
- * @fileOverview Provides weather forecasts and irrigation tips tailored to the user's location and crop type.
+ * @fileOverview Provides weather forecasts and irrigation tips tailored to the user's location and crop type, including advice on which crops to avoid.
  *
  * - getWeatherAndIrrigationTips - A function that retrieves weather forecasts and irrigation tips.
  * - WeatherAndIrrigationTipsInput - The input type for the getWeatherAndIrrigationTips function.
@@ -35,6 +35,8 @@ const WeatherAndIrrigationTipsOutputSchema = z.object({
     .describe(
       'Irrigation tips tailored to the specified crop type and weather conditions.'
     ),
+  notRecommendedCrops: z.array(z.string()).describe('A list of vegetables and fruits that are not recommended to be grown in the current weather conditions.'),
+  remedialActions: z.string().describe('Suggestions for what to do if a farmer has already planted the not recommended crops.'),
 });
 export type WeatherAndIrrigationTipsOutput = z.infer<
   typeof WeatherAndIrrigationTipsOutputSchema
@@ -91,12 +93,16 @@ const weatherAndIrrigationTipsPrompt = ai.definePrompt({
     weather: z.string(),
   })},
   output: {schema: WeatherAndIrrigationTipsOutputSchema},
-  prompt: `You are an AI assistant providing weather forecasts and irrigation tips to farmers.
+  prompt: `You are an AI assistant providing weather forecasts and irrigation tips to farmers in India.
 
   The current weather for {{{location}}} is:
   {{{weather}}}
 
-  Based on that real-time weather data, provide a concise weather summary and actionable irrigation tips tailored to the following crop type: {{{cropType}}}
+  Based on that real-time weather data, provide the following:
+  1. A concise weather summary.
+  2. Actionable irrigation tips tailored to the following crop type: {{{cropType}}}.
+  3. A list of common Indian vegetables and fruits that should NOT be planted in these weather conditions.
+  4. Suggestions for what a farmer can do if they have already planted such crops.
   
   Format the response in a way that is easy for farmers to understand.
   `,
