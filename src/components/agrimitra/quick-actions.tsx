@@ -332,11 +332,11 @@ function WeatherTipsDialogContent({ setOpen }: { setOpen: (open: boolean) => voi
         try {
             const response = await getWeatherAndIrrigationTips(data);
             setResult(response);
-        } catch (error) {
+        } catch (error: any) {
              toast({
                 variant: 'destructive',
-                title: 'AI Error',
-                description: 'Failed to get weather tips from AI model.',
+                title: 'Error',
+                description: error.message || 'Failed to get weather tips from AI model.',
             });
         } finally {
             setLoading(false);

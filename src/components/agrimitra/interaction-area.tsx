@@ -36,13 +36,13 @@ export default function InteractionArea({ isFocused, onFocusChange }: Interactio
         isFocused ? 'flex-grow flex flex-col' : ''
       )}
     >
-      <div className="relative flex flex-col gap-2">
+      <div className="relative flex items-center gap-2"> {/* Modified this div */}
         <Textarea
           placeholder="Ask your question..."
-          className="min-h-[60px] rounded-full py-4 px-6 pr-24 text-lg resize-none shadow-lg focus-visible:ring-primary focus-visible:ring-2 focus-visible:ring-offset-0"
+          className="min-h-[60px] rounded-full py-4 px-6 pr-16 text-lg resize-none shadow-lg focus-visible:ring-primary focus-visible:ring-2 focus-visible:ring-offset-0 flex-1" // Added flex-1 and adjusted padding
           onFocus={() => onFocusChange(true)}
         />
-        <div className="absolute right-4 top-1/2 -translate-y-1/2 flex items-center gap-2">
+        <div className="absolute right-4 flex items-center"> {/* Modified this div */}
           <Button type="submit" size="icon" className="rounded-full bg-accent hover:bg-accent/90">
             <Send className="h-5 w-5" />
           </Button>

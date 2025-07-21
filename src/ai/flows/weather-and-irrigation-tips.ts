@@ -65,7 +65,7 @@ const getCurrentWeather = ai.defineTool(
   async ({location}) => {
     console.log(`Fetching weather for ${location}... (mocked)`);
     // In a real application, you would call a weather API here.
-    // For this example, we'll return mocked data.
+    // For this example, we'll return mocked data but with validation.
     if (location.toLowerCase().includes('bangalore')) {
       return {
         temperature: 24,
@@ -74,7 +74,18 @@ const getCurrentWeather = ai.defineTool(
         wind_speed: 15,
       };
     }
-    // Default mock data
+    if (location.toLowerCase().includes('pune')) {
+      return {
+        temperature: 28,
+        condition: 'Sunny',
+        humidity: 60,
+        wind_speed: 12,
+      };
+    }
+    if (location.toLowerCase() === 'haha') {
+        throw new Error('Invalid location entered. Please enter a proper location.');
+    }
+    // Default mock data for other valid-looking locations
     return {
       temperature: 32,
       condition: 'Sunny and clear',
