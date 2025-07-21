@@ -20,12 +20,15 @@ import { Input } from '@/components/ui/input';
 import { Switch } from '@/components/ui/switch';
 import { Slider } from '@/components/ui/slider';
 import { Separator } from '@/components/ui/separator';
+import { useTheme } from 'next-themes';
 
 type RightSidebarProps = {
   children: React.ReactNode;
 };
 
 export default function RightSidebar({ children }: RightSidebarProps) {
+  const { setTheme, theme } = useTheme();
+
   return (
     <Sheet>
       <SheetTrigger asChild>{children}</SheetTrigger>
@@ -37,6 +40,25 @@ export default function RightSidebar({ children }: RightSidebarProps) {
           </SheetDescription>
         </SheetHeader>
         <div className="py-4 space-y-6">
+          <div className="space-y-4">
+            <h3 className="font-semibold text-muted-foreground">Appearance</h3>
+            <div className="grid w-full items-center gap-2">
+              <Label htmlFor="theme">Theme</Label>
+              <Select value={theme} onValueChange={setTheme}>
+                <SelectTrigger id="theme">
+                  <SelectValue placeholder="Select theme" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="light">Light</SelectItem>
+                  <SelectItem value="dark">Dark</SelectItem>
+                  <SelectItem value="system">System</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+          </div>
+
+          <Separator />
+
           <div className="space-y-4">
             <h3 className="font-semibold text-muted-foreground">General</h3>
             <div className="grid w-full items-center gap-2">
