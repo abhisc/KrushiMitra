@@ -85,16 +85,20 @@ const getCurrentWeather = ai.defineTool(
 
 const weatherAndIrrigationTipsPrompt = ai.definePrompt({
   name: 'weatherAndIrrigationTipsPrompt',
-  input: {schema: WeatherAndIrrigationTipsInputSchema},
+  input: {schema: z.object({
+    location: z.string(),
+    cropType: z.string(),
+    weather: z.string(),
+  })},
   output: {schema: WeatherAndIrrigationTipsOutputSchema},
-  tools: [getCurrentWeather],
   prompt: `You are an AI assistant providing weather forecasts and irrigation tips to farmers.
 
-  First, use the getCurrentWeather tool to get the real-time weather forecast for the following location: {{{location}}}
+  The current weather for {{{location}}} is:
+  {{{weather}}}
 
-  Then, based on that real-time weather data, provide a weather summary and irrigation tips tailored to the following crop type: {{{cropType}}}
+  Based on that real-time weather data, provide a concise weather summary and actionable irrigation tips tailored to the following crop type: {{{cropType}}}
   
-  Format the response in a way that is easy to understand for farmers.
+  Format the response in a way that is easy for farmers to understand.
   `,
 });
 
@@ -104,8 +108,16 @@ const weatherAndIrrigationTipsFlow = ai.defineFlow(
     inputSchema: WeatherAndIrrigationTipsInputSchema,
     outputSchema: WeatherAndIrrigationTipsOutputSchema,
   },
-  async input => {
-    const {output} = await weatherAndIrrigationTipsPrompt(input);
+  async (input) => {
+    // First, call the tool to get the current weather.
+    const weatherData = await getCurrentWeather({ location: input.location });
+
+    // Then, pass the tool's output to the prompt.
+    const { output } = await weatherAndIrrigationTipsPrompt({
+      ...input,
+      weather: JSON.stringify(weatherData), // Convert weather object to string for the prompt
+    });
+
     return output!;
   }
 );
