@@ -9,6 +9,7 @@ import QuickActions from '@/components/agrimitra/quick-actions';
 
 export default function Home() {
   const [isChatFocused, setIsChatFocused] = useState(false);
+  const [interactionMode, setInteractionMode] = useState('chat');
 
   return (
     // Wrap with SidebarProvider to manage sidebar state
@@ -23,8 +24,9 @@ export default function Home() {
             <InteractionArea
               isFocused={isChatFocused}
               onFocusChange={setIsChatFocused}
+              interactionMode={interactionMode}
             />
-            {!isChatFocused && <QuickActions />}
+            {!isChatFocused && <QuickActions onFocusChange={setIsChatFocused} setInteractionMode={setInteractionMode} />}
           </div>
         </main>
       </SidebarInset>

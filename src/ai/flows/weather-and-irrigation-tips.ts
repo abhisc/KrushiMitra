@@ -27,6 +27,7 @@ export type WeatherAndIrrigationTipsInput = z.infer<
 >;
 
 const WeatherAndIrrigationTipsOutputSchema = z.object({
+
   weatherForecast: z
     .string()
     .describe('The weather forecast for the specified location.'),
@@ -124,8 +125,13 @@ const weatherAndIrrigationTipsPrompt = ai.definePrompt({
   Also, suggest what types of vegetables and fruits should NOT be grown in these weather conditions.
   Finally, provide suggestions on what a farmer can do if they have already planted such vegetables or fruits.
 
-  
-  Format the response in a way that is easy for farmers to understand.
+
+  Also, provide irrigation tips tailored to the following crop type: {{{cropType}}}
+  Consider the weather forecast when providing the irrigation tips.
+  Format the response in a way that is easy to understand for farmers.
+  Include any recommended remedial actions based on the weather and crop conditions.
+  Also, mention any crops that are unsuitable for the current weather conditions.
+
   `,
 });
 

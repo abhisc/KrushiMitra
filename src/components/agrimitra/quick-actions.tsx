@@ -46,7 +46,7 @@ const features = [
     title: 'Diagnose Crop Disease',
     description: 'Upload image or describe symptoms',
     icon: <Leaf className="h-8 w-8 text-primary" />,
-    dialog: 'disease',
+    action: 'focus-chat',
   },
   {
     title: 'Real-Time Market Analysis',
@@ -228,7 +228,9 @@ function MarketAnalysisDialogContent({ setOpen }: { setOpen: (open: boolean) => 
                     <p><strong>Trend:</strong> {result.trend}</p>
                     <p><strong>Analysis:</strong> {result.analysis}</p>
                 </div>
-            )}
+            )
+
+            }
         </>
     );
 }
@@ -313,7 +315,7 @@ function SchemeInfoDialogContent({ setOpen }: { setOpen: (open: boolean) => void
 }
 
 const WeatherSchema = z.object({
-    location: z.string().min(1, 'Location is required.'),
+    location: z.string().min(3, 'Please enter a valid location.'),
     cropType: z.string().min(1, 'Crop type is required.'),
 });
 type WeatherFormValues = z.infer<typeof WeatherSchema>;
@@ -365,23 +367,19 @@ function WeatherTipsDialogContent({ setOpen }: { setOpen: (open: boolean) => voi
             </form>
             {result && (
 
-              <div className="mt-4 space-y-4 rounded-lg border bg-secondary/50 p-4 max-h-[300px] overflow-y-auto">
-                <h3 className="font-bold">Weather & Irrigation Tips</h3>
-                <p><strong>Forecast:</strong> {result.weatherForecast}</p>
-                <p><strong>Irrigation Tips:</strong> {result.irrigationTips}</p>
-                <div className="space-y-2">
-                  <h4 className="font-semibold">Unsuitable Crops for Current Weather</h4>
-                  {result.unsuitableCrops.length > 0 ? (
-                    <ul className="list-disc pl-5">
-                      {result.unsuitableCrops.map((crop, index) => <li key={index}>{crop}</li>)}
-                    </ul>
-                  ) : (
-                    <p>All crops are suitable for the current weather.</p>
-                  )}
-                </div>
-                <div className="space-y-2">
-                  <h4 className="font-semibold">Remedial Actions</h4>
-                  <p>{result.remedialActions}</p>
+                <div className="mt-4 space-y-4 rounded-lg border bg-secondary/50 p-4 max-h-[300px] overflow-y-auto">
+                    <h3 className="font-bold">Weather & Irrigation Tips</h3>
+                    <p><strong>Forecast:</strong> {result.weatherForecast}</p>
+                    <p><strong>Irrigation Tips:</strong> {result.irrigationTips}</p>
+                    <div className="mt-2">
+                        <h4 className="font-semibold">Crops to Avoid:</h4>
+                        <p>{result.unsuitableCrops}</p>
+                    </div>
+                    <div className="mt-2">
+                        <h4 className="font-semibold">Remedial Actions:</h4>
+                        <p>{result.remedialActions}</p>
+                    </div>
+
                 </div>
               </div>
             )}
@@ -390,44 +388,74 @@ function WeatherTipsDialogContent({ setOpen }: { setOpen: (open: boolean) => voi
 }
 
 const Dialogs: Record<string, React.FC<{ setOpen: (open: boolean) => void }>> = {
-  disease: DiagnoseDialogContent,
   market: MarketAnalysisDialogContent,
   scheme: SchemeInfoDialogContent,
   weather: WeatherTipsDialogContent,
 };
 
-export default function QuickActions() {
+export default function QuickActions({ onFocusChange, setInteractionMode }: { onFocusChange: (isFocused: boolean) => void, setInteractionMode: (mode: string) => void }) {
   const [openDialog, setOpenDialog] = useState<string | null>(null);
   const CurrentDialog = openDialog ? Dialogs[openDialog] : null;
+
+  const handleFeatureClick = (feature: (typeof features)[0]) => {
+    if (feature.action === 'focus-chat') {
+      setInteractionMode('diagnose');
+      onFocusChange(true);
+    } else if (feature.dialog) {
+      setInteractionMode('chat'); // Assuming other dialogs are general chat or don't involve image upload in the main chat area
+      setOpenDialog(feature.dialog);
+    }
+  };
 
   return (
     <div className="space-y-8">
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
         {features.map((feature) => (
-          <Dialog
-            key={feature.title}
-            open={openDialog === feature.dialog}
-            onOpenChange={(isOpen) => setOpenDialog(isOpen ? feature.dialog : null)}
-          >
-            <DialogTrigger asChild>
-              <Card className="hover:bg-primary/10 cursor-pointer transition-colors duration-300 transform hover:scale-[1.02]">
-                <CardHeader className="flex flex-row items-center gap-4">
-                  {feature.icon}
-                  <div className="grid gap-1">
-                    <CardTitle className="font-headline">{feature.title}</CardTitle>
-                    <p className="text-sm text-muted-foreground">{feature.description}</p>
-                  </div>
-                </CardHeader>
-              </Card>
-            </DialogTrigger>
-            <DialogContent className="sm:max-w-[425px]">
-              <DialogHeader>
-                <DialogTitle>{feature.title}</DialogTitle>
-                <DialogDescription>{feature.description}</DialogDescription>
-              </DialogHeader>
-              {CurrentDialog && <CurrentDialog setOpen={(isOpen) => setOpenDialog(isOpen ? feature.dialog : null)} />}
-            </DialogContent>
-          </Dialog>
+          feature.action === 'focus-chat' ? (
+            <Card
+              key={feature.title}
+              className="hover:bg-primary/10 cursor-pointer transition-colors duration-300 transform hover:scale-[1.02]"
+              onClick={() => handleFeatureClick(feature)}
+            >
+              <CardHeader className="flex flex-row items-center gap-4">
+                {feature.icon}
+                <div className="grid gap-1">
+                  <CardTitle className="font-headline">{feature.title}</CardTitle>
+                  <p className="text-sm text-muted-foreground">{feature.description}</p>
+                </div>
+              </CardHeader>
+            </Card>
+          ) : (
+            <Dialog
+              key={feature.title}
+              open={openDialog === feature.dialog}
+              onOpenChange={(isOpen) => {
+                setOpenDialog(isOpen ? feature.dialog || null : null);
+                if (!isOpen) {
+                  setInteractionMode('chat'); // Revert to chat mode when dialog is closed
+                }
+              }}
+            >
+              <DialogTrigger asChild>
+                <Card className="hover:bg-primary/10 cursor-pointer transition-colors duration-300 transform hover:scale-[1.02]">
+                  <CardHeader className="flex flex-row items-center gap-4">
+                    {feature.icon}
+                    <div className="grid gap-1">
+                      <CardTitle className="font-headline">{feature.title}</CardTitle>
+                      <p className="text-sm text-muted-foreground">{feature.description}</p>
+                    </div>
+                  </CardHeader>
+                </Card>
+              </DialogTrigger>
+              <DialogContent className="sm:max-w-[425px]">
+                <DialogHeader>
+                  <DialogTitle>{feature.title}</DialogTitle>
+                  <DialogDescription>{feature.description}</DialogDescription>
+                </DialogHeader>
+                {CurrentDialog && <CurrentDialog setOpen={(isOpen) => setOpenDialog(isOpen ? feature.dialog || null : null)} />}
+              </DialogContent>
+            </Dialog>
+          )
         ))}
       </div>
       <div className="flex flex-wrap items-center justify-center gap-2">
