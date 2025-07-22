@@ -7,6 +7,7 @@ import {
   SidebarMenu,
   SidebarMenuItem,
   SidebarMenuButton,
+  SidebarTrigger, // Import SidebarTrigger
 } from '@/components/ui/sidebar';
 import { MessageSquare, Wheat } from 'lucide-react';
 
@@ -17,9 +18,11 @@ const pastChats = [
   { id: 4, 'title': 'PM Kisan scheme details', icon: <MessageSquare /> },
 ];
 
+// Add a prop to control the sidebar's open state
 export default function LeftSidebar() {
   return (
-    <Sidebar collapsible="icon">
+    // Set collapsible to "offcanvas" and control open state
+    <Sidebar collapsible="offcanvas" side="left">
       <SidebarHeader className="items-center justify-center text-center">
         <Wheat className="w-8 h-8 text-primary" />
         <h2 className="font-bold text-xl font-headline group-data-[collapsible=icon]:hidden">

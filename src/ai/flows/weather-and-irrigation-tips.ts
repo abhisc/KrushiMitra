@@ -1,6 +1,6 @@
 'use server';
 /**
- * @fileOverview Provides weather forecasts and irrigation tips tailored to the user's location and crop type.
+ * @fileOverview Provides weather forecasts and irrigation tips tailored to the user's location and crop type, including advice on which crops to avoid.
  *
  * - getWeatherAndIrrigationTips - A function that retrieves weather forecasts and irrigation tips.
  * - WeatherAndIrrigationTipsInput - The input type for the getWeatherAndIrrigationTips function.
@@ -35,8 +35,12 @@ const WeatherAndIrrigationTipsOutputSchema = z.object({
     .describe(
       'Irrigation tips tailored to the specified crop type and weather conditions.'
     ),
+
+  notRecommendedCrops: z.array(z.string()).describe('A list of vegetables and fruits that are not recommended to be grown in the current weather conditions.'),
+  remedialActions: z.string().describe('Suggestions for what to do if a farmer has already planted the not recommended crops.'),
   unsuitableCrops: z.array(z.string()).describe('A list of crops that are not suitable for the current weather conditions.'),
   remedialActions: z.string().describe('Actions to take if unsuitable crops have already been planted.'),
+
 });
 export type WeatherAndIrrigationTipsOutput = z.infer<
   typeof WeatherAndIrrigationTipsOutputSchema
@@ -70,7 +74,7 @@ const getCurrentWeather = ai.defineTool(
     }
 
     // In a real application, you would call a weather API here.
-    // For this example, we'll return mocked data.
+    // For this example, we'll return mocked data but with validation.
     if (location.toLowerCase().includes('bangalore')) {
       return {
         temperature: 24,
@@ -79,13 +83,20 @@ const getCurrentWeather = ai.defineTool(
         wind_speed: 15,
       };
     }
-    // Default mock data for any other valid location
-    return {
-      temperature: 32,
-      condition: 'Sunny and clear',
-      humidity: 45,
-      wind_speed: 10,
-    };
+
+    if (location.toLowerCase().includes('pune')) {
+      return {
+        temperature: 28,
+        condition: 'Sunny',
+        humidity: 60,
+        wind_speed: 12,
+      };
+    }
+    if (location.toLowerCase() === 'haha') {
+        throw new Error('Invalid location entered. Please enter a proper location.');
+    }
+    // Default mock data for other valid-looking locations
+
   }
 );
 
@@ -95,6 +106,7 @@ const weatherAndIrrigationTipsPrompt = ai.definePrompt({
   input: {schema: z.object({
     location: z.string(),
     cropType: z.string(),
+
     weather: z.any(),
   })},
   output: {schema: WeatherAndIrrigationTipsOutputSchema},
@@ -111,8 +123,9 @@ const weatherAndIrrigationTipsPrompt = ai.definePrompt({
   
   Also, suggest what types of vegetables and fruits should NOT be grown in these weather conditions.
   Finally, provide suggestions on what a farmer can do if they have already planted such vegetables or fruits.
+
   
-  Format the response in a way that is easy to understand for farmers.
+  Format the response in a way that is easy for farmers to understand.
   `,
 });
 
@@ -123,8 +136,19 @@ const weatherAndIrrigationTipsFlow = ai.defineFlow(
     outputSchema: WeatherAndIrrigationTipsOutputSchema,
   },
   async (input) => {
+
+    // First, call the tool to get the current weather.
+    const weatherData = await getCurrentWeather({ location: input.location });
+
+    // Then, pass the tool's output to the prompt.
+    const { output } = await weatherAndIrrigationTipsPrompt({
+      ...input,
+      weather: JSON.stringify(weatherData), // Convert weather object to string for the prompt
+    });
+
     const weather = await getCurrentWeather(input);
     const {output} = await weatherAndIrrigationTipsPrompt({ ...input, weather });
+
     return output!;
   }
 );

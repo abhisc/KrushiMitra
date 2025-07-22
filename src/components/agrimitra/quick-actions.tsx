@@ -364,6 +364,7 @@ function WeatherTipsDialogContent({ setOpen }: { setOpen: (open: boolean) => voi
                 </DialogFooter>
             </form>
             {result && (
+
               <div className="mt-4 space-y-4 rounded-lg border bg-secondary/50 p-4 max-h-[300px] overflow-y-auto">
                 <h3 className="font-bold">Weather & Irrigation Tips</h3>
                 <p><strong>Forecast:</strong> {result.weatherForecast}</p>
