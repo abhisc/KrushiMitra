@@ -228,7 +228,9 @@ function MarketAnalysisDialogContent({ setOpen }: { setOpen: (open: boolean) => 
                     <p><strong>Trend:</strong> {result.trend}</p>
                     <p><strong>Analysis:</strong> {result.analysis}</p>
                 </div>
-            )}
+            )
+
+            }
         </>
     );
 }
@@ -388,14 +390,16 @@ const Dialogs: Record<string, React.FC<{ setOpen: (open: boolean) => void }>> = 
   weather: WeatherTipsDialogContent,
 };
 
-export default function QuickActions({ onFocusChange }: { onFocusChange: (isFocused: boolean) => void }) {
+export default function QuickActions({ onFocusChange, setInteractionMode }: { onFocusChange: (isFocused: boolean) => void, setInteractionMode: (mode: string) => void }) {
   const [openDialog, setOpenDialog] = useState<string | null>(null);
   const CurrentDialog = openDialog ? Dialogs[openDialog] : null;
 
   const handleFeatureClick = (feature: (typeof features)[0]) => {
     if (feature.action === 'focus-chat') {
+      setInteractionMode('diagnose');
       onFocusChange(true);
     } else if (feature.dialog) {
+      setInteractionMode('chat'); // Assuming other dialogs are general chat or don't involve image upload in the main chat area
       setOpenDialog(feature.dialog);
     }
   };
@@ -422,7 +426,12 @@ export default function QuickActions({ onFocusChange }: { onFocusChange: (isFocu
             <Dialog
               key={feature.title}
               open={openDialog === feature.dialog}
-              onOpenChange={(isOpen) => setOpenDialog(isOpen ? feature.dialog : null)}
+              onOpenChange={(isOpen) => {
+                setOpenDialog(isOpen ? feature.dialog : null);
+                if (!isOpen) {
+                  setInteractionMode('chat'); // Revert to chat mode when dialog is closed
+                }
+              }}
             >
               <DialogTrigger asChild>
                 <Card className="hover:bg-primary/10 cursor-pointer transition-colors duration-300 transform hover:scale-[1.02]">

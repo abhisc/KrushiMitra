@@ -1,7 +1,7 @@
 'use client';
 
-import { useState, useEffect } from 'react';
-import { Mic, Send } from 'lucide-react';
+import { useState, useEffect, ChangeEvent, DragEvent } from 'react';
+import { Mic, Send, Image as ImageIcon } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
 import { cn } from '@/lib/utils';
@@ -17,12 +17,15 @@ const HINTS = [
 type InteractionAreaProps = {
   isFocused: boolean;
   onFocusChange: (isFocused: boolean) => void;
+  interactionMode: string; // 'chat' or 'diagnose'
 };
 
-export default function InteractionArea({ isFocused, onFocusChange }: InteractionAreaProps) {
+export default function InteractionArea({ isFocused, onFocusChange, interactionMode }: InteractionAreaProps) {
   const [hintIndex, setHintIndex] = useState(0);
   const [text, setText] = useState('');
+  const [selectedImage, setSelectedImage] = useState<File | null>(null);
   const [aiResponse, setAIResponse] = useState('');
+  const [isDragging, setIsDragging] = useState(false);
 
   useEffect(() => {
     const intervalId = setInterval(() => {
@@ -32,10 +35,68 @@ export default function InteractionArea({ isFocused, onFocusChange }: Interactio
     return () => clearInterval(intervalId);
   }, []);
 
-  const askAI = () => {
-    if (!text) setAIResponse('No text to ask!');
+  useEffect(() => {
+    // Clear selected image when interaction mode changes to 'chat'
+    if (interactionMode === 'chat') {
+      setSelectedImage(null);
+    }
+  }, [interactionMode]);
 
-    askAnything({ text }).then((res) => {
+  const handleImageSelect = (event: ChangeEvent<HTMLInputElement>) => {
+    if (interactionMode === 'diagnose' && event.target.files && event.target.files[0]) {
+      setSelectedImage(event.target.files[0]);
+    } else {
+      setSelectedImage(null);
+    }
+  };
+
+  const handleDragOver = (event: DragEvent<HTMLDivElement>) => {
+    if (interactionMode === 'diagnose') {
+      event.preventDefault();
+      setIsDragging(true);
+    }
+  };
+
+  const handleDragLeave = (event: DragEvent<HTMLDivElement>) => {
+    if (interactionMode === 'diagnose') {
+      event.preventDefault();
+      setIsDragging(false);
+    }
+  };
+
+  const handleDrop = (event: DragEvent<HTMLDivElement>) => {
+    if (interactionMode === 'diagnose') {
+      event.preventDefault();
+      setIsDragging(false);
+
+      if (event.dataTransfer.files && event.dataTransfer.files[0]) {
+        setSelectedImage(event.dataTransfer.files[0]);
+      }
+    }
+  };
+
+  const askAI = async () => {
+    if (!text && !selectedImage) {
+      setAIResponse('Please enter text or upload an image to ask a question!');
+      return;
+    }
+
+    let photoDataUri: string | undefined;
+    if (selectedImage) {
+      try {
+        photoDataUri = await new Promise<string>((resolve, reject) => {
+          const reader = new FileReader();
+          reader.onload = (e) => resolve(e.target?.result as string);
+          reader.onerror = (e) => reject(e);
+          reader.readAsDataURL(selectedImage);
+        });
+      } catch (error) {
+        setAIResponse('Error reading image file.');
+        return;
+      }
+    }
+
+    askAnything({ text, photoDataUri }).then((res) => {
       setAIResponse(res.data?.response||'No response, please contact help!');
     })
   }
@@ -46,21 +107,45 @@ export default function InteractionArea({ isFocused, onFocusChange }: Interactio
         'relative w-full transition-all duration-500 ease-in-out',
         isFocused ? 'flex-grow flex flex-col' : ''
       )}
+      onDragOver={handleDragOver}
+      onDragLeave={handleDragLeave}
+      onDrop={handleDrop}
     >
+       {isDragging && interactionMode === 'diagnose' && (
+        <div className="absolute inset-0 flex items-center justify-center bg-primary/10 backdrop-blur-sm z-10 rounded-lg border-2 border-dashed border-primary">
+          <p className="text-primary text-lg font-semibold">Drop image here</p>
+        </div>
+      )}
       <div className="relative flex flex-col gap-2">
         <Textarea
           placeholder="Ask your question..."
-          className="min-h-[60px] rounded-full py-4 px-6 pr-24 text-lg resize-none shadow-lg focus-visible:ring-primary focus-visible:ring-2 focus-visible:ring-offset-0"
+          className={cn(
+            'min-h-[60px] rounded-full py-4 px-6 text-lg resize-none shadow-lg focus-visible:ring-primary focus-visible:ring-2 focus-visible:ring-offset-0',
+             interactionMode === 'diagnose' ? 'pr-32' : 'pr-24'
+          )}
           onFocus={() => onFocusChange(true)}
           onChange={(e) => setText(e.target.value)}
           value={text}
         />
+        {interactionMode === 'diagnose' && (
+        <div className="absolute right-16 top-1/2 -translate-y-1/2 flex items-center gap-2">
+           <label htmlFor="image-upload" className="cursor-pointer rounded-full bg-secondary p-2 hover:bg-secondary/80">
+            <ImageIcon className="h-5 w-5 text-primary" />
+            <input id="image-upload" type="file" accept="image/*" className="sr-only" onChange={handleImageSelect} />
+          </label>
+        </div>
+         )}
         <div className="absolute right-4 top-1/2 -translate-y-1/2 flex items-center gap-2">
-          <Button onClick={() => askAI()} size="icon" className="rounded-full bg-accent hover:bg-accent/90">
+          <Button onClick={askAI} size="icon" className="rounded-full bg-accent hover:bg-accent/90">
             <Send className="h-5 w-5" />
           </Button>
         </div>
       </div>
+      {selectedImage && (
+        <div className="mt-2 text-sm text-muted-foreground flex items-center justify-center">
+          Selected image: {selectedImage.name}
+        </div>
+      )}
       <div className="mt-4 flex flex-col items-center justify-center gap-2">
         <Button
           variant="outline"
