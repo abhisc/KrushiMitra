@@ -5,6 +5,7 @@ import { Mic, Send } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
 import { cn } from '@/lib/utils';
+import { askAnything } from '@/ai/flows/ask-anything';
 
 const HINTS = [
   'Tap to Speak (English)',
@@ -20,6 +21,8 @@ type InteractionAreaProps = {
 
 export default function InteractionArea({ isFocused, onFocusChange }: InteractionAreaProps) {
   const [hintIndex, setHintIndex] = useState(0);
+  const [text, setText] = useState('');
+  const [aiResponse, setAIResponse] = useState('');
 
   useEffect(() => {
     const intervalId = setInterval(() => {
@@ -28,6 +31,14 @@ export default function InteractionArea({ isFocused, onFocusChange }: Interactio
 
     return () => clearInterval(intervalId);
   }, []);
+
+  const askAI = () => {
+    if (!text) setAIResponse('No text to ask!');
+
+    askAnything({ text }).then((res) => {
+      setAIResponse(res.data?.response||'No response, please contact help!');
+    })
+  }
 
   return (
     <div
@@ -41,9 +52,11 @@ export default function InteractionArea({ isFocused, onFocusChange }: Interactio
           placeholder="Ask your question..."
           className="min-h-[60px] rounded-full py-4 px-6 pr-24 text-lg resize-none shadow-lg focus-visible:ring-primary focus-visible:ring-2 focus-visible:ring-offset-0"
           onFocus={() => onFocusChange(true)}
+          onChange={(e) => setText(e.target.value)}
+          value={text}
         />
         <div className="absolute right-4 top-1/2 -translate-y-1/2 flex items-center gap-2">
-          <Button type="submit" size="icon" className="rounded-full bg-accent hover:bg-accent/90">
+          <Button onClick={() => askAI()} size="icon" className="rounded-full bg-accent hover:bg-accent/90">
             <Send className="h-5 w-5" />
           </Button>
         </div>
@@ -58,6 +71,7 @@ export default function InteractionArea({ isFocused, onFocusChange }: Interactio
         </Button>
         <p className="text-sm text-muted-foreground font-headline h-5">{HINTS[hintIndex]}</p>
       </div>
+      <div className='p-2 mt-2 flex flex-col items-center justify-center border border-1 border-dashed rounded-sm'>{aiResponse || ''}</div>
     </div>
   );
 }
