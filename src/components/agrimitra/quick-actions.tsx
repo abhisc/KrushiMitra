@@ -336,7 +336,7 @@ function WeatherTipsDialogContent({ setOpen }: { setOpen: (open: boolean) => voi
              toast({
                 variant: 'destructive',
                 title: 'Error',
-                description: error.message || 'Failed to get weather tips from AI model.',
+                description: error.message || 'Failed to get weather tips.',
             });
         } finally {
             setLoading(false);
@@ -364,20 +364,26 @@ function WeatherTipsDialogContent({ setOpen }: { setOpen: (open: boolean) => voi
                 </DialogFooter>
             </form>
             {result && (
-                <div className="mt-4 space-y-2 rounded-lg border bg-secondary/50 p-4 max-h-[300px] overflow-y-auto">
-                    <h3 className="font-bold">Weather & Irrigation Tips</h3>
-                    <p className="pb-2"><strong>Forecast:</strong> {result.weatherForecast}</p>
-                    <p className="pb-2"><strong>Irrigation Tips:</strong> {result.irrigationTips}</p>
-                    <div className="pb-2">
-                        <h4 className="font-semibold">Crops to Avoid:</h4>
-                        <ul className="list-disc pl-5">
-                            {result.notRecommendedCrops.map((crop, index) => (
-                                <li key={index}>{crop}</li>
-                            ))}
-                        </ul>
-                    </div>
-                    <p><strong>Remedial Actions:</strong> {result.remedialActions}</p>
+
+              <div className="mt-4 space-y-4 rounded-lg border bg-secondary/50 p-4 max-h-[300px] overflow-y-auto">
+                <h3 className="font-bold">Weather & Irrigation Tips</h3>
+                <p><strong>Forecast:</strong> {result.weatherForecast}</p>
+                <p><strong>Irrigation Tips:</strong> {result.irrigationTips}</p>
+                <div className="space-y-2">
+                  <h4 className="font-semibold">Unsuitable Crops for Current Weather</h4>
+                  {result.unsuitableCrops.length > 0 ? (
+                    <ul className="list-disc pl-5">
+                      {result.unsuitableCrops.map((crop, index) => <li key={index}>{crop}</li>)}
+                    </ul>
+                  ) : (
+                    <p>All crops are suitable for the current weather.</p>
+                  )}
                 </div>
+                <div className="space-y-2">
+                  <h4 className="font-semibold">Remedial Actions</h4>
+                  <p>{result.remedialActions}</p>
+                </div>
+              </div>
             )}
         </>
     );
