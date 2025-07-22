@@ -46,7 +46,7 @@ const features = [
     title: 'Diagnose Crop Disease',
     description: 'Upload image or describe symptoms',
     icon: <Leaf className="h-8 w-8 text-primary" />,
-    dialog: 'disease',
+    action: 'focus-chat',
   },
   {
     title: 'Real-Time Market Analysis',
@@ -313,7 +313,7 @@ function SchemeInfoDialogContent({ setOpen }: { setOpen: (open: boolean) => void
 }
 
 const WeatherSchema = z.object({
-    location: z.string().min(1, 'Location is required.'),
+    location: z.string().min(3, 'Please enter a valid location.'),
     cropType: z.string().min(1, 'Crop type is required.'),
 });
 type WeatherFormValues = z.infer<typeof WeatherSchema>;
@@ -332,11 +332,11 @@ function WeatherTipsDialogContent({ setOpen }: { setOpen: (open: boolean) => voi
         try {
             const response = await getWeatherAndIrrigationTips(data);
             setResult(response);
-        } catch (error) {
+        } catch (error: any) {
              toast({
                 variant: 'destructive',
-                title: 'AI Error',
-                description: 'Failed to get weather tips from AI model.',
+                title: 'Error',
+                description: error.message || 'Failed to get weather tips.',
             });
         } finally {
             setLoading(false);
@@ -364,10 +364,18 @@ function WeatherTipsDialogContent({ setOpen }: { setOpen: (open: boolean) => voi
                 </DialogFooter>
             </form>
             {result && (
-                <div className="mt-4 space-y-4 rounded-lg border bg-secondary/50 p-4">
+                <div className="mt-4 space-y-4 rounded-lg border bg-secondary/50 p-4 max-h-[300px] overflow-y-auto">
                     <h3 className="font-bold">Weather & Irrigation Tips</h3>
                     <p><strong>Forecast:</strong> {result.weatherForecast}</p>
                     <p><strong>Irrigation Tips:</strong> {result.irrigationTips}</p>
+                    <div className="mt-2">
+                        <h4 className="font-semibold">Crops to Avoid:</h4>
+                        <p>{result.unsuitableCrops}</p>
+                    </div>
+                    <div className="mt-2">
+                        <h4 className="font-semibold">Remedial Actions:</h4>
+                        <p>{result.remedialActions}</p>
+                    </div>
                 </div>
             )}
         </>
@@ -375,44 +383,67 @@ function WeatherTipsDialogContent({ setOpen }: { setOpen: (open: boolean) => voi
 }
 
 const Dialogs: Record<string, React.FC<{ setOpen: (open: boolean) => void }>> = {
-  disease: DiagnoseDialogContent,
   market: MarketAnalysisDialogContent,
   scheme: SchemeInfoDialogContent,
   weather: WeatherTipsDialogContent,
 };
 
-export default function QuickActions() {
+export default function QuickActions({ onFocusChange }: { onFocusChange: (isFocused: boolean) => void }) {
   const [openDialog, setOpenDialog] = useState<string | null>(null);
   const CurrentDialog = openDialog ? Dialogs[openDialog] : null;
+
+  const handleFeatureClick = (feature: (typeof features)[0]) => {
+    if (feature.action === 'focus-chat') {
+      onFocusChange(true);
+    } else if (feature.dialog) {
+      setOpenDialog(feature.dialog);
+    }
+  };
 
   return (
     <div className="space-y-8">
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
         {features.map((feature) => (
-          <Dialog
-            key={feature.title}
-            open={openDialog === feature.dialog}
-            onOpenChange={(isOpen) => setOpenDialog(isOpen ? feature.dialog : null)}
-          >
-            <DialogTrigger asChild>
-              <Card className="hover:bg-primary/10 cursor-pointer transition-colors duration-300 transform hover:scale-[1.02]">
-                <CardHeader className="flex flex-row items-center gap-4">
-                  {feature.icon}
-                  <div className="grid gap-1">
-                    <CardTitle className="font-headline">{feature.title}</CardTitle>
-                    <p className="text-sm text-muted-foreground">{feature.description}</p>
-                  </div>
-                </CardHeader>
-              </Card>
-            </DialogTrigger>
-            <DialogContent className="sm:max-w-[425px]">
-              <DialogHeader>
-                <DialogTitle>{feature.title}</DialogTitle>
-                <DialogDescription>{feature.description}</DialogDescription>
-              </DialogHeader>
-              {CurrentDialog && <CurrentDialog setOpen={(isOpen) => setOpenDialog(isOpen ? feature.dialog : null)} />}
-            </DialogContent>
-          </Dialog>
+          feature.action === 'focus-chat' ? (
+            <Card
+              key={feature.title}
+              className="hover:bg-primary/10 cursor-pointer transition-colors duration-300 transform hover:scale-[1.02]"
+              onClick={() => handleFeatureClick(feature)}
+            >
+              <CardHeader className="flex flex-row items-center gap-4">
+                {feature.icon}
+                <div className="grid gap-1">
+                  <CardTitle className="font-headline">{feature.title}</CardTitle>
+                  <p className="text-sm text-muted-foreground">{feature.description}</p>
+                </div>
+              </CardHeader>
+            </Card>
+          ) : (
+            <Dialog
+              key={feature.title}
+              open={openDialog === feature.dialog}
+              onOpenChange={(isOpen) => setOpenDialog(isOpen ? feature.dialog : null)}
+            >
+              <DialogTrigger asChild>
+                <Card className="hover:bg-primary/10 cursor-pointer transition-colors duration-300 transform hover:scale-[1.02]">
+                  <CardHeader className="flex flex-row items-center gap-4">
+                    {feature.icon}
+                    <div className="grid gap-1">
+                      <CardTitle className="font-headline">{feature.title}</CardTitle>
+                      <p className="text-sm text-muted-foreground">{feature.description}</p>
+                    </div>
+                  </CardHeader>
+                </Card>
+              </DialogTrigger>
+              <DialogContent className="sm:max-w-[425px]">
+                <DialogHeader>
+                  <DialogTitle>{feature.title}</DialogTitle>
+                  <DialogDescription>{feature.description}</DialogDescription>
+                </DialogHeader>
+                {CurrentDialog && <CurrentDialog setOpen={(isOpen) => setOpenDialog(isOpen ? feature.dialog : null)} />}
+              </DialogContent>
+            </Dialog>
+          )
         ))}
       </div>
       <div className="flex flex-wrap items-center justify-center gap-2">

@@ -21,7 +21,7 @@ export default function Home() {
               isFocused={isChatFocused}
               onFocusChange={setIsChatFocused}
             />
-            {!isChatFocused && <QuickActions />}
+            {!isChatFocused && <QuickActions onFocusChange={setIsChatFocused} />}
           </div>
         </main>
       </SidebarInset>
