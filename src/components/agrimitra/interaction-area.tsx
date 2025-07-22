@@ -6,10 +6,12 @@ import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
 import { cn } from '@/lib/utils';
 import { askAnything } from '@/ai/flows/ask-anything';
+import { diagnoseCropDiseaseFromChat } from '@/ai/flows/diagnose-crop-disease-from-chat';
 
 const HINTS = [
   'Tap to Speak (English)',
   'ಬಾಷೆ ಕೇಳಲು ಟ್ಯಾಪ್ ಮಾಡಿ (Kannada)',
+  'बोलने के लिए ಟ್ಯಾಪ್ ಮಾಡಿ (Kannada)',
   'बोलने के लिए टैप करें (Hindi)',
   'వినడానికి ట్యాప్ చేయండి (Telugu)',
 ];
@@ -20,12 +22,21 @@ type InteractionAreaProps = {
   interactionMode: string; // 'chat' or 'diagnose'
 };
 
+// Declare the webkitSpeechRecognition interface
+declare global {
+  interface Window {
+    webkitSpeechRecognition: any;
+  }
+}
+
 export default function InteractionArea({ isFocused, onFocusChange, interactionMode }: InteractionAreaProps) {
   const [hintIndex, setHintIndex] = useState(0);
   const [text, setText] = useState('');
   const [selectedImage, setSelectedImage] = useState<File | null>(null);
   const [aiResponse, setAIResponse] = useState('');
   const [isDragging, setIsDragging] = useState(false);
+  const [isRecording, setIsRecording] = useState(false);
+  const [speechRecognition, setSpeechRecognition] = useState<any>(null);
 
   useEffect(() => {
     const intervalId = setInterval(() => {
@@ -36,11 +47,74 @@ export default function InteractionArea({ isFocused, onFocusChange, interactionM
   }, []);
 
   useEffect(() => {
-    // Clear selected image when interaction mode changes to 'chat'
+    // Clear selected image and text when interaction mode changes to 'chat'
     if (interactionMode === 'chat') {
       setSelectedImage(null);
+      setText('');
+      setAIResponse('');
+      setIsRecording(false);
+       if (speechRecognition) {
+        speechRecognition.stop();
+      }
     }
-  }, [interactionMode]);
+  }, [interactionMode, speechRecognition]);
+
+   useEffect(() => {
+    if ('webkitSpeechRecognition' in window || 'SpeechRecognition' in window) {
+      const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+      const recognition = new SpeechRecognition();
+
+      recognition.continuous = false; // Stop after a single phrase
+      recognition.interimResults = true; // Get results while speaking
+      recognition.lang = 'en-US'; // Default language
+
+      recognition.onstart = () => {
+        setIsRecording(true);
+        setText('Listening...');
+      };
+
+      recognition.onresult = (event: any) => {
+        let interimTranscript = '';
+        let finalTranscript = '';
+
+        for (let i = event.resultIndex; i < event.results.length; ++i) {
+          if (event.results[i].isFinal) {
+            finalTranscript += event.results[i][0].transcript;
+          } else {
+            interimTranscript += event.results[i][0].transcript;
+          }
+        }
+
+        setText(finalTranscript || interimTranscript);
+      };
+
+      recognition.onerror = (event: any) => {
+        console.error('Speech recognition error:', event.error);
+        setIsRecording(false);
+        setText('Error listening.');
+        setAIResponse('Speech input failed. Please type your question.');
+      };
+
+      recognition.onend = () => {
+        setIsRecording(false);
+        if (text && interactionMode === 'diagnose') {
+             askAI();
+        }
+      };
+
+      setSpeechRecognition(recognition);
+    } else {
+      console.warn('Web Speech API not supported in this browser.');
+    }
+
+    // Clean up speech recognition instance on component unmount
+    return () => {
+      if (speechRecognition) {
+        speechRecognition.stop();
+      }
+    };
+  }, []); // Empty dependency array ensures this effect runs only once on mount
+
 
   const handleImageSelect = (event: ChangeEvent<HTMLInputElement>) => {
     if (interactionMode === 'diagnose' && event.target.files && event.target.files[0]) {
@@ -75,12 +149,25 @@ export default function InteractionArea({ isFocused, onFocusChange, interactionM
     }
   };
 
+  const handleMicClick = () => {
+    if (interactionMode === 'diagnose' && speechRecognition) {
+      if (isRecording) {
+        speechRecognition.stop();
+      } else {
+        speechRecognition.start();
+      }
+    } else if (interactionMode !== 'diagnose') {
+        setAIResponse('Microphone input is only available for Crop Disease Diagnosis.');
+    }
+  };
+
   const askAI = async () => {
     if (!text && !selectedImage) {
       setAIResponse('Please enter text or upload an image to ask a question!');
       return;
     }
 
+    setAIResponse('Processing...');
     let photoDataUri: string | undefined;
     if (selectedImage) {
       try {
@@ -96,10 +183,20 @@ export default function InteractionArea({ isFocused, onFocusChange, interactionM
       }
     }
 
-    askAnything({ text, photoDataUri }).then((res) => {
-      setAIResponse(res.data?.response||'No response, please contact help!');
-    })
-  }
+    if (interactionMode === 'diagnose') {
+      // Call the dedicated diagnosis flow
+      diagnoseCropDiseaseFromChat({ textDescription: text, photoDataUri }).then((res) => {
+        setAIResponse(res.diagnosisResult || 'Could not diagnose, please try again.');
+      });
+    } else {
+      // Call the general askAnything flow
+      askAnything({ text, photoDataUri }).then((res) => {
+        setAIResponse(res.data?.response||'No response, please contact help!');
+      })
+    }
+     setText('');
+     setSelectedImage(null);
+  };
 
   return (
     <div
@@ -118,7 +215,7 @@ export default function InteractionArea({ isFocused, onFocusChange, interactionM
       )}
       <div className="relative flex flex-col gap-2">
         <Textarea
-          placeholder="Ask your question..."
+          placeholder={isRecording ? 'Speak now...' : 'Ask your question...'}
           className={cn(
             'min-h-[60px] rounded-full py-4 px-6 text-lg resize-none shadow-lg focus-visible:ring-primary focus-visible:ring-2 focus-visible:ring-offset-0',
              interactionMode === 'diagnose' ? 'pr-32' : 'pr-24'
@@ -126,6 +223,7 @@ export default function InteractionArea({ isFocused, onFocusChange, interactionM
           onFocus={() => onFocusChange(true)}
           onChange={(e) => setText(e.target.value)}
           value={text}
+          disabled={isRecording} // Disable typing while recording
         />
         {interactionMode === 'diagnose' && (
         <div className="absolute right-16 top-1/2 -translate-y-1/2 flex items-center gap-2">
@@ -149,10 +247,14 @@ export default function InteractionArea({ isFocused, onFocusChange, interactionM
       <div className="mt-4 flex flex-col items-center justify-center gap-2">
         <Button
           variant="outline"
-          className="rounded-full h-16 w-16 p-0 border-2 border-primary/50 shadow-md hover:bg-primary/10"
-          onClick={() => onFocusChange(true)}
+          className={cn(
+            "rounded-full h-16 w-16 p-0 border-2 border-primary/50 shadow-md",
+            isRecording && interactionMode === 'diagnose' ? "animate-pulse border-destructive" : "hover:bg-primary/10"
+          )}
+          onClick={handleMicClick}
+          disabled={interactionMode !== 'diagnose'} // Disable mic in chat mode
         >
-          <Mic className="h-8 w-8 text-primary" />
+          <Mic className={cn("h-8 w-8", isRecording && interactionMode === 'diagnose' ? "text-destructive" : "text-primary")} />
         </Button>
         <p className="text-sm text-muted-foreground font-headline h-5">{HINTS[hintIndex]}</p>
       </div>

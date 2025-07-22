@@ -19,6 +19,8 @@ export type WeatherAndIrrigationTipsInput = z.infer<typeof WeatherAndIrrigationT
 const WeatherAndIrrigationTipsOutputSchema = z.object({
   weatherForecast: z.string().describe('The weather forecast for the specified location.'),
   irrigationTips: z.string().describe('Irrigation tips tailored to the specified crop type and weather conditions.'),
+  remedialActions: z.string().optional().describe('Recommended remedial actions based on weather and crop conditions.'),
+  unsuitableCrops: z.string().optional().describe('Crops that are unsuitable for the current weather conditions.'),
 });
 export type WeatherAndIrrigationTipsOutput = z.infer<typeof WeatherAndIrrigationTipsOutputSchema>;
 
@@ -37,7 +39,9 @@ const weatherAndIrrigationTipsPrompt = ai.definePrompt({
   Also, provide irrigation tips tailored to the following crop type: {{{cropType}}}
   Consider the weather forecast when providing the irrigation tips.
   Format the response in a way that is easy to understand for farmers.
-  `, 
+  Include any recommended remedial actions based on the weather and crop conditions.
+  Also, mention any crops that are unsuitable for the current weather conditions.
+  `,
 });
 
 const weatherAndIrrigationTipsFlow = ai.defineFlow(

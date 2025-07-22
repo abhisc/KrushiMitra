@@ -427,7 +427,7 @@ export default function QuickActions({ onFocusChange, setInteractionMode }: { on
               key={feature.title}
               open={openDialog === feature.dialog}
               onOpenChange={(isOpen) => {
-                setOpenDialog(isOpen ? feature.dialog : null);
+                setOpenDialog(isOpen ? feature.dialog || null : null);
                 if (!isOpen) {
                   setInteractionMode('chat'); // Revert to chat mode when dialog is closed
                 }
@@ -449,7 +449,7 @@ export default function QuickActions({ onFocusChange, setInteractionMode }: { on
                   <DialogTitle>{feature.title}</DialogTitle>
                   <DialogDescription>{feature.description}</DialogDescription>
                 </DialogHeader>
-                {CurrentDialog && <CurrentDialog setOpen={(isOpen) => setOpenDialog(isOpen ? feature.dialog : null)} />}
+                {CurrentDialog && <CurrentDialog setOpen={(isOpen) => setOpenDialog(isOpen ? feature.dialog || null : null)} />}
               </DialogContent>
             </Dialog>
           )
