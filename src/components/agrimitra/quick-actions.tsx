@@ -391,6 +391,8 @@ const Dialogs: Record<string, React.FC<{ setOpen: (open: boolean) => void }>> = 
   weather: WeatherTipsDialogContent,
 };
 
+export { MarketAnalysisDialogContent, SchemeInfoDialogContent, WeatherTipsDialogContent };
+
 export default function QuickActions({ onFocusChange, setInteractionMode }: { onFocusChange: (isFocused: boolean) => void, setInteractionMode: (mode: string) => void }) {
   const [openDialog, setOpenDialog] = useState<string | null>(null);
   const CurrentDialog = openDialog ? Dialogs[openDialog] : null;

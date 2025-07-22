@@ -9,16 +9,9 @@ import {
   SidebarMenuButton,
   SidebarTrigger, // Import SidebarTrigger
 } from '@/components/ui/sidebar';
-import { MessageSquare, Wheat } from 'lucide-react';
+import Link from 'next/link';
+import { Home, Leaf, LineChart, Landmark, Droplets, History, Wheat } from 'lucide-react';
 
-const pastChats = [
-  { id: 1, title: 'Tomato price in Delhi', icon: <MessageSquare /> },
-  { id: 2, 'title': 'Paddy disease symptoms', icon: <MessageSquare /> },
-  { id: 3, 'title': 'Weather for next week', icon: <MessageSquare /> },
-  { id: 4, 'title': 'PM Kisan scheme details', icon: <MessageSquare /> },
-];
-
-// Add a prop to control the sidebar's open state
 export default function LeftSidebar() {
   return (
     // Set collapsible to "offcanvas" and control open state
@@ -31,14 +24,54 @@ export default function LeftSidebar() {
       </SidebarHeader>
       <SidebarContent>
         <SidebarMenu>
-          {pastChats.map((chat) => (
-            <SidebarMenuItem key={chat.id}>
-              <SidebarMenuButton tooltip={chat.title} isActive={false}>
-                {chat.icon}
-                <span>{chat.title}</span>
+          <SidebarMenuItem>
+            <Link href="/">
+              <SidebarMenuButton tooltip="Home" isActive={false}>
+                <Home className="w-5 h-5" />
+                <span>Home</span>
               </SidebarMenuButton>
-            </SidebarMenuItem>
-          ))}
+            </Link>
+          </SidebarMenuItem>
+          <SidebarMenuItem>
+            <Link href="/diagnose">
+              <SidebarMenuButton tooltip="Diagnose Crop Disease" isActive={false}>
+                <Leaf className="w-5 h-5" />
+                <span>Diagnose</span>
+              </SidebarMenuButton>
+            </Link>
+          </SidebarMenuItem>
+          <SidebarMenuItem>
+            <Link href="/market">
+              <SidebarMenuButton tooltip="Market Analysis" isActive={false}>
+                <LineChart className="w-5 h-5" />
+                <span>Market</span>
+              </SidebarMenuButton>
+            </Link>
+          </SidebarMenuItem>
+          <SidebarMenuItem>
+            <Link href="/schemes">
+              <SidebarMenuButton tooltip="Government Schemes" isActive={false}>
+                <Landmark className="w-5 h-5" />
+                <span>Schemes</span>
+              </SidebarMenuButton>
+            </Link>
+          </SidebarMenuItem>
+          <SidebarMenuItem>
+            <Link href="/weather">
+              <SidebarMenuButton tooltip="Weather & Irrigation" isActive={false}>
+                <Droplets className="w-5 h-5" />
+                <span>Weather</span>
+              </SidebarMenuButton>
+            </Link>
+          </SidebarMenuItem>
+          <SidebarMenuItem>
+            <Link href="/history">
+              <SidebarMenuButton tooltip="History" isActive={false}>
+                <History className="w-5 h-5" />
+                <span>History</span>
+              </SidebarMenuButton>
+            </Link>
+          </SidebarMenuItem>
         </SidebarMenu>
       </SidebarContent>
     </Sidebar>
