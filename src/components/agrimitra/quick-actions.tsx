@@ -379,9 +379,7 @@ function WeatherTipsDialogContent({ setOpen }: { setOpen: (open: boolean) => voi
                         <h4 className="font-semibold">Remedial Actions:</h4>
                         <p>{result.remedialActions}</p>
                     </div>
-
                 </div>
-              </div>
             )}
         </>
     );

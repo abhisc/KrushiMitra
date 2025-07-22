@@ -40,7 +40,7 @@ const WeatherAndIrrigationTipsOutputSchema = z.object({
   notRecommendedCrops: z.array(z.string()).describe('A list of vegetables and fruits that are not recommended to be grown in the current weather conditions.'),
   remedialActions: z.string().describe('Suggestions for what to do if a farmer has already planted the not recommended crops.'),
   unsuitableCrops: z.array(z.string()).describe('A list of crops that are not suitable for the current weather conditions.'),
-  remedialActions: z.string().describe('Actions to take if unsuitable crops have already been planted.'),
+  //remedialActions: z.string().describe('Actions to take if unsuitable crops have already been planted.'),
 
 });
 export type WeatherAndIrrigationTipsOutput = z.infer<
@@ -67,15 +67,13 @@ const getCurrentWeather = ai.defineTool(
       wind_speed: z.number().describe('The wind speed in km/h.'),
     }),
   },
-  async ({location}) => {
+  async ({ location }) => {
     console.log(`Fetching weather for ${location}... (mocked)`);
-    // Basic validation for location
+
     if (location.toLowerCase().trim() === 'haha' || location.length < 3) {
       throw new Error('Invalid location entered. Please enter a proper location.');
     }
 
-    // In a real application, you would call a weather API here.
-    // For this example, we'll return mocked data but with validation.
     if (location.toLowerCase().includes('bangalore')) {
       return {
         temperature: 24,
@@ -93,13 +91,17 @@ const getCurrentWeather = ai.defineTool(
         wind_speed: 12,
       };
     }
-    if (location.toLowerCase() === 'haha') {
-        throw new Error('Invalid location entered. Please enter a proper location.');
-    }
-    // Default mock data for other valid-looking locations
 
+    // Default return
+    return {
+      temperature: 26,
+      condition: 'Clear sky',
+      humidity: 50,
+      wind_speed: 10,
+    };
   }
 );
+
 
 
 const weatherAndIrrigationTipsPrompt = ai.definePrompt({
@@ -151,9 +153,6 @@ const weatherAndIrrigationTipsFlow = ai.defineFlow(
       ...input,
       weather: JSON.stringify(weatherData), // Convert weather object to string for the prompt
     });
-
-    const weather = await getCurrentWeather(input);
-    const {output} = await weatherAndIrrigationTipsPrompt({ ...input, weather });
 
     return output!;
   }
