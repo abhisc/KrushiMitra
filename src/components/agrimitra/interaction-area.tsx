@@ -208,6 +208,7 @@ export default function InteractionArea({ isFocused, onFocusChange, interactionM
       onDragLeave={handleDragLeave}
       onDrop={handleDrop}
     >
+
        {isDragging && interactionMode === 'diagnose' && (
         <div className="absolute inset-0 flex items-center justify-center bg-primary/10 backdrop-blur-sm z-10 rounded-lg border-2 border-dashed border-primary">
           <p className="text-primary text-lg font-semibold">Drop image here</p>
@@ -220,11 +221,13 @@ export default function InteractionArea({ isFocused, onFocusChange, interactionM
             'min-h-[60px] rounded-full py-4 px-6 text-lg resize-none shadow-lg focus-visible:ring-primary focus-visible:ring-2 focus-visible:ring-offset-0',
              interactionMode === 'diagnose' ? 'pr-32' : 'pr-24'
           )}
+
           onFocus={() => onFocusChange(true)}
           onChange={(e) => setText(e.target.value)}
           value={text}
           disabled={isRecording} // Disable typing while recording
         />
+
         {interactionMode === 'diagnose' && (
         <div className="absolute right-16 top-1/2 -translate-y-1/2 flex items-center gap-2">
            <label htmlFor="image-upload" className="cursor-pointer rounded-full bg-secondary p-2 hover:bg-secondary/80">
@@ -235,6 +238,7 @@ export default function InteractionArea({ isFocused, onFocusChange, interactionM
          )}
         <div className="absolute right-4 top-1/2 -translate-y-1/2 flex items-center gap-2">
           <Button onClick={askAI} size="icon" className="rounded-full bg-accent hover:bg-accent/90">
+
             <Send className="h-5 w-5" />
           </Button>
         </div>
