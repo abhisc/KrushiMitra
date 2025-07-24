@@ -42,7 +42,7 @@ export default function WeatherPage() {
     try {
       const input: WeatherAndIrrigationTipsInput = {
         location: location.trim(),
-        crop: crop.trim() || undefined,
+        cropType: crop.trim() || undefined,
       };
 
       const weatherTips = await getWeatherAndIrrigationTips(input);
@@ -153,22 +153,32 @@ export default function WeatherPage() {
                 </CardHeader>
                 <CardContent className="space-y-4">
                   <div>
-                    <h3 className="font-semibold text-lg">Current Weather</h3>
-                    <p className="text-gray-700">{result.currentWeather}</p>
-                  </div>
-                  <div>
-                    <h3 className="font-semibold text-lg">Temperature</h3>
-                    <p className="text-2xl font-bold text-blue-600">
-                      {result.temperature}°C
-                    </p>
-                  </div>
-                  <div>
-                    <h3 className="font-semibold text-lg">Humidity</h3>
-                    <p className="text-lg text-gray-700">{result.humidity}%</p>
-                  </div>
-                  <div>
                     <h3 className="font-semibold text-lg">Forecast</h3>
-                    <p className="text-gray-700">{result.forecast}</p>
+                    <p className="text-gray-700">{result.weatherForecast}</p>
+                  </div>
+                  <div>
+                    <h3 className="font-semibold text-lg">Unsuitable Crops</h3>
+                    <ul className="list-disc list-inside text-gray-700">
+                      {result.unsuitableCrops && result.unsuitableCrops.length > 0 ? (
+                        result.unsuitableCrops.map((crop: string, idx: number) => (
+                          <li key={idx}>{crop}</li>
+                        ))
+                      ) : (
+                        <li>None</li>
+                      )}
+                    </ul>
+                  </div>
+                  <div>
+                    <h3 className="font-semibold text-lg">Not Recommended Crops</h3>
+                    <ul className="list-disc list-inside text-gray-700">
+                      {result.notRecommendedCrops && result.notRecommendedCrops.length > 0 ? (
+                        result.notRecommendedCrops.map((crop: string, idx: number) => (
+                          <li key={idx}>{crop}</li>
+                        ))
+                      ) : (
+                        <li>None</li>
+                      )}
+                    </ul>
                   </div>
                 </CardContent>
               </Card>
@@ -182,16 +192,12 @@ export default function WeatherPage() {
                 </CardHeader>
                 <CardContent className="space-y-4">
                   <div>
-                    <h3 className="font-semibold text-lg">Water Requirements</h3>
-                    <p className="text-gray-700">{result.waterRequirements}</p>
+                    <h3 className="font-semibold text-lg">Irrigation Tips</h3>
+                    <p className="text-gray-700">{result.irrigationTips}</p>
                   </div>
                   <div>
-                    <h3 className="font-semibold text-lg">Irrigation Schedule</h3>
-                    <p className="text-gray-700">{result.irrigationSchedule}</p>
-                  </div>
-                  <div>
-                    <h3 className="font-semibold text-lg">Recommendations</h3>
-                    <p className="text-gray-700">{result.recommendations}</p>
+                    <h3 className="font-semibold text-lg">Remedial Actions</h3>
+                    <p className="text-gray-700">{result.remedialActions}</p>
                   </div>
                 </CardContent>
               </Card>

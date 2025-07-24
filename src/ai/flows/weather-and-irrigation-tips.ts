@@ -144,15 +144,18 @@ const weatherAndIrrigationTipsFlow = ai.defineFlow(
     outputSchema: WeatherAndIrrigationTipsOutputSchema,
   },
   async (input) => {
-
+    console.log('weatherAndIrrigationTipsFlow input:', input);
     // First, call the tool to get the current weather.
     const weatherData = await getCurrentWeather({ location: input.location });
+    console.log('Fetched weatherData:', weatherData);
 
     // Then, pass the tool's output to the prompt.
-    const { output } = await weatherAndIrrigationTipsPrompt({
+    const promptInput = {
       ...input,
-      weather: JSON.stringify(weatherData), // Convert weather object to string for the prompt
-    });
+      weather: weatherData,
+    };
+    console.log('Prompt input to weatherAndIrrigationTipsPrompt:', promptInput);
+    const { output } = await weatherAndIrrigationTipsPrompt(promptInput);
 
     return output!;
   }
