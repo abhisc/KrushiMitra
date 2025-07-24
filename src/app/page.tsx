@@ -14,6 +14,7 @@ import {
 	Mic,
 } from "lucide-react";
 import { useState } from "react";
+import { storeRecentInput } from "@/utils/localStorage";
 
 export default function Home() {
 	const quickPrompts = [
@@ -32,9 +33,12 @@ export default function Home() {
 	const handleUserSend = async () => {
 		if (!userInput.trim()) return;
 
+		// Store the user input in localStorage
+		storeRecentInput(userInput.trim());
+
 		setLoading(true);
 		try {
-			const resp = await AskAnything({ text: userInput });
+			const resp = await AskAnything({ text: userInput.trim() });
 			setAiResponse(resp);
 		} catch (error) {
 			console.error("Error getting AI response:", error);
@@ -53,7 +57,11 @@ export default function Home() {
 	};
 
 	return (
-		<AppLayout title="KrushiMitra" subtitle="AI-Powered Agricultural Assistant">
+		<AppLayout
+			handleHistoryChatClick={(text) => setUserInput(text)}
+			title="KrushiMitra"
+			subtitle="AI-Powered Agricultural Assistant"
+		>
 			<div className="p-6">
 				<div className="max-w-4xl mx-auto space-y-8">
 					{/* Welcome Section */}

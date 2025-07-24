@@ -25,12 +25,15 @@ import {
 import Link from "next/link";
 import { useRouter, usePathname } from "next/navigation";
 import RightSidebar from "./right-sidebar";
+import { getRecentInputs } from "@/utils/localStorage";
+import { toast } from "@/hooks/use-toast";
 
 interface AppLayoutProps {
 	children: React.ReactNode;
 	showBackButton?: boolean;
 	title?: string;
 	subtitle?: string;
+	handleHistoryChatClick?: (text: string) => void;
 }
 
 export default function AppLayout({
@@ -38,6 +41,7 @@ export default function AppLayout({
 	showBackButton = false,
 	title,
 	subtitle,
+	handleHistoryChatClick,
 }: AppLayoutProps) {
 	// React state for selected language
 	const [selectedLanguage, setSelectedLanguage] = useState("EN");
@@ -108,6 +112,8 @@ export default function AppLayout({
 		<div className="max-h-screen bg-gray-50 flex">
 			{/* Left Sidebar */}
 			<div
+				onMouseEnter={() => setSidebarOpen(true)}
+				onMouseLeave={() => setSidebarOpen(false)}
 				className={`${sidebarOpen ? "w-64" : "w-16"} bg-white border-r border-gray-200 transition-all duration-300 flex flex-col`}
 			>
 				{/* Logo and App Name */}
@@ -136,7 +142,7 @@ export default function AppLayout({
 								<Link
 									key={index}
 									href={link.href}
-									className={`w-full flex items-center px-3 py-2 rounded-lg text-sm font-medium transition-colors ${
+									className={`w-full flex items-center ${sidebarOpen ? "px-3 py-2" : "p-1.5"} rounded-lg text-sm font-medium transition-colors ${
 										link.active
 											? "bg-green-100 text-green-700 border border-green-200"
 											: "text-gray-600 hover:bg-gray-100"
@@ -156,9 +162,21 @@ export default function AppLayout({
 								Recent Chats
 							</h3>
 							<div className="space-y-2">
-								{pastChats.map((chat, index) => (
+								{getRecentInputs().map((chat, index) => (
 									<button
 										key={index}
+										onClick={() => {
+											if (handleHistoryChatClick) {
+												handleHistoryChatClick(chat);
+											} else {
+												toast({
+													title: "Action unavailable",
+													description:
+														"Cannot handle chat history click at this time.",
+													variant: "destructive",
+												});
+											}
+										}}
 										className="w-full text-left px-3 py-2 text-sm text-gray-600 hover:bg-gray-50 rounded-lg transition-colors line-clamp-2"
 									>
 										<MessageCircle className="w-4 h-4 inline mr-2 text-gray-400" />
