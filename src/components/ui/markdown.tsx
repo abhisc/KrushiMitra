@@ -21,7 +21,7 @@ export const MarkdownComponent = ({
 							<Markdown
 								children={text}
 								components={{
-									p: ({ children }) => <p className="py-2">{children}</p>,
+									p: ({ children }) => <span className="py-2">{children}</span>,
 									li: ({ children }) => (
 										<li className="list-disc text-sm pb-2">{children}</li>
 									),
