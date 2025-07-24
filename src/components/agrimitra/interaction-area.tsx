@@ -5,8 +5,8 @@ import { Mic, Send, Image as ImageIcon } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
 import { cn } from '@/lib/utils';
-import { askAnything } from '@/ai/flows/ask-anything';
-import { diagnoseCropDiseaseFromChat } from '@/ai/flows/diagnose-crop-disease-from-chat';
+// import { askAnything } from '@/ai/flows/ask-anything';
+// import { diagnoseCropDiseaseFromChat } from '@/ai/flows/diagnose-crop-disease-from-chat';
 
 const HINTS = [
   'Tap to Speak (English)',

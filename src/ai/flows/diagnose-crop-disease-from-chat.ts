@@ -8,7 +8,7 @@
  */
 
 import {ai} from '@/ai/genkit';
-import {z} from 'genkit';
+import {z} from 'zod';
 
 const DiagnoseCropDiseaseFromChatInputSchema = z.object({
   textDescription: z.string().optional().describe('The description of the crop symptoms from the user (can be from voice or typing).'),

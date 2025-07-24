@@ -8,7 +8,7 @@
  */
 
 import {ai} from '@/ai/genkit';
-import {z} from 'genkit';
+import {z} from 'zod';
 
 const MarketAnalysisInputSchema = z.object({
   crop: z.string().describe('The crop to get market analysis for.'),

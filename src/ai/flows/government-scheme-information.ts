@@ -9,7 +9,7 @@
  */
 
 import {ai} from '@/ai/genkit';
-import {z} from 'genkit';
+import {z} from 'zod';
 
 const GovernmentSchemeInfoInputSchema = z.object({
   cropType: z.string().describe('The type of crop the farmer is growing.'),
