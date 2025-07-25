@@ -33,7 +33,7 @@ import {
 	getGovernmentSchemeInfo,
 	GovernmentSchemeInfoInput,
 	GovernmentSchemeInfoOutput,
-} from "@/ai/flows/government-scheme-information";
+} from "@/ai/tools/government-scheme-information";
 import {
 	getWeatherAndIrrigationTips,
 	WeatherAndIrrigationTipsInput,
