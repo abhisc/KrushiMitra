@@ -13,8 +13,12 @@ import {
 	Send,
 	Mic,
 } from "lucide-react";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { storeRecentInput } from "@/utils/localStorage";
+import { useAuth } from "@/contexts/auth-context";
+import AdditionalInfoCard from "@/components/additional-info-card";
+import AdditionalInfoForm from "@/components/additional-info-form";
+import { useAdditionalInfo } from "@/hooks/use-additional-info";
 
 export default function Home() {
 	const quickPrompts = [
@@ -29,6 +33,24 @@ export default function Home() {
 	const [aiResponse, setAiResponse] = useState<{ response?: string }>({});
 	const [loading, setLoading] = useState(false);
 	const { toast } = useToast();
+	const { user, userProfile, loadUserProfile } = useAuth();
+	const [showAdditionalInfoForm, setShowAdditionalInfoForm] = useState(false);
+	const { showCard: showAdditionalInfoCard, dismissCard: dismissAdditionalInfoCard, resetCard } = useAdditionalInfo();
+
+	useEffect(() => {
+		// Check if user has additional info and show card if needed
+		if (user && userProfile) {
+			const hasAdditionalInfo = userProfile.age || userProfile.gender || userProfile.location?.city || 
+									userProfile.isStudent || userProfile.minority || userProfile.disability || 
+									userProfile.caste || userProfile.residence;
+			
+			if (!hasAdditionalInfo) {
+				resetCard(); // Reset card state to show it
+			}
+		} else if (user) {
+			resetCard(); // Reset card state to show it
+		}
+	}, [user, userProfile, resetCard]);
 
 	const handleUserSend = async () => {
 		if (!userInput.trim()) return;
@@ -56,6 +78,24 @@ export default function Home() {
 		}
 	};
 
+	const handleFillAdditionalInfo = () => {
+		setShowAdditionalInfoForm(true);
+		dismissAdditionalInfoCard();
+	};
+
+	const handleDismissAdditionalInfo = () => {
+		dismissAdditionalInfoCard();
+	};
+
+	const handleAdditionalInfoSuccess = async () => {
+		setShowAdditionalInfoForm(false);
+		await loadUserProfile();
+		toast({
+			title: "Success",
+			description: "Additional information saved successfully!",
+		});
+	};
+
 	return (
 		<AppLayout
 			handleHistoryChatClick={(text) => setUserInput(text)}
@@ -64,6 +104,14 @@ export default function Home() {
 		>
 			<div className="p-6">
 				<div className="max-w-4xl mx-auto space-y-8">
+					{/* Additional Info Form Modal */}
+					{showAdditionalInfoForm && (
+						<AdditionalInfoForm
+							onClose={() => setShowAdditionalInfoForm(false)}
+							onSuccess={handleAdditionalInfoSuccess}
+						/>
+					)}
+
 					{/* Welcome Section */}
 					<div className="text-center mb-8">
 						<div className="w-16 h-16 bg-green-600 rounded-2xl mx-auto mb-4 flex items-center justify-center">
@@ -231,6 +279,16 @@ export default function Home() {
 					</div>
 				</div>
 			</div>
+
+			{/* Additional Info Card - Floating in bottom right */}
+			{user && showAdditionalInfoCard && (
+				<div className="fixed bottom-6 right-6 z-50">
+					<AdditionalInfoCard
+						onFillNow={handleFillAdditionalInfo}
+						onDismiss={handleDismissAdditionalInfo}
+					/>
+				</div>
+			)}
 		</AppLayout>
 	);
 }

@@ -1,9 +1,8 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useAuth } from '@/contexts/auth-context';
 import { useRouter } from 'next/navigation';
-import { useEffect } from 'react';
 import AppLayout from '@/components/agrimitra/app-layout';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -11,15 +10,18 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { useToast } from '@/hooks/use-toast';
-import { Loader2, User as UserIcon, Mail, Shield, Calendar, Edit, Save, X, LogOut } from 'lucide-react';
+import { Loader2, User as UserIcon, Mail, Shield, Calendar, Edit, Save, X, LogOut, MapPin, Info } from 'lucide-react';
+import { UserService } from '@/lib/user-service';
+import AdditionalInfoForm from '@/components/additional-info-form';
 
 export default function ProfilePage() {
-  const { user, updateUserProfile, logout } = useAuth();
+  const { user, userProfile, updateUserProfile, logout, loadUserProfile } = useAuth();
   const { toast } = useToast();
   const router = useRouter();
   const [isEditing, setIsEditing] = useState(false);
   const [displayName, setDisplayName] = useState('');
   const [isLoading, setIsLoading] = useState(false);
+  const [showAdditionalInfoForm, setShowAdditionalInfoForm] = useState(false);
 
   useEffect(() => {
     if (!user) {
@@ -27,7 +29,9 @@ export default function ProfilePage() {
       return;
     }
     setDisplayName(user.displayName || '');
-  }, [user, router]);
+    
+    // Profile page doesn't need to check for additional info card
+  }, [user, userProfile, router]);
 
   const handleUpdateProfile = async () => {
     if (!displayName.trim()) {
@@ -71,6 +75,19 @@ export default function ProfilePage() {
     }
   };
 
+  const handleFillAdditionalInfo = () => {
+    setShowAdditionalInfoForm(true);
+  };
+
+  const handleAdditionalInfoSuccess = async () => {
+    setShowAdditionalInfoForm(false);
+    await loadUserProfile();
+    toast({
+      title: "Success",
+      description: "Additional information saved successfully!",
+    });
+  };
+
   const getInitials = (displayName: string | null) => {
     if (!displayName) return 'U';
     return displayName
@@ -99,13 +116,21 @@ export default function ProfilePage() {
   return (
     <AppLayout title="Profile" subtitle="Manage your account">
       <div className="p-6 space-y-6">
+        {/* Additional Info Form Modal */}
+        {showAdditionalInfoForm && (
+          <AdditionalInfoForm
+            onClose={() => setShowAdditionalInfoForm(false)}
+            onSuccess={handleAdditionalInfoSuccess}
+          />
+        )}
+
         {/* Profile Header */}
         <Card>
           <CardHeader>
-                         <CardTitle className="flex items-center gap-2">
-               <UserIcon className="w-5 h-5" />
-               Profile Information
-             </CardTitle>
+            <CardTitle className="flex items-center gap-2">
+              <UserIcon className="w-5 h-5" />
+              Profile Information
+            </CardTitle>
             <CardDescription>
               View and manage your account details
             </CardDescription>
@@ -206,6 +231,101 @@ export default function ProfilePage() {
             </div>
           </CardContent>
         </Card>
+
+        {/* Additional Information */}
+        {userProfile && (
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <Info className="w-5 h-5" />
+                Additional Information
+              </CardTitle>
+              <CardDescription>
+                Personal details for personalized recommendations
+              </CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                {userProfile.age && (
+                  <div className="space-y-2">
+                    <Label className="text-sm font-medium text-muted-foreground">Age</Label>
+                    <p className="text-sm">{userProfile.age} years</p>
+                  </div>
+                )}
+                
+                {userProfile.gender && (
+                  <div className="space-y-2">
+                    <Label className="text-sm font-medium text-muted-foreground">Gender</Label>
+                    <p className="text-sm">{userProfile.gender}</p>
+                  </div>
+                )}
+                
+                {userProfile.location?.city && (
+                  <div className="space-y-2">
+                    <Label className="text-sm font-medium text-muted-foreground">City</Label>
+                    <p className="text-sm flex items-center gap-1">
+                      <MapPin className="w-3 h-3" />
+                      {userProfile.location.city}
+                    </p>
+                  </div>
+                )}
+                
+                {userProfile.location?.state && (
+                  <div className="space-y-2">
+                    <Label className="text-sm font-medium text-muted-foreground">State</Label>
+                    <p className="text-sm">{userProfile.location.state}</p>
+                  </div>
+                )}
+                
+                {userProfile.isStudent && (
+                  <div className="space-y-2">
+                    <Label className="text-sm font-medium text-muted-foreground">Student Status</Label>
+                    <p className="text-sm">{userProfile.isStudent}</p>
+                  </div>
+                )}
+                
+                {userProfile.minority && (
+                  <div className="space-y-2">
+                    <Label className="text-sm font-medium text-muted-foreground">Minority Community</Label>
+                    <p className="text-sm">{userProfile.minority}</p>
+                  </div>
+                )}
+                
+                {userProfile.disability && (
+                  <div className="space-y-2">
+                    <Label className="text-sm font-medium text-muted-foreground">Disability</Label>
+                    <p className="text-sm">{userProfile.disability}</p>
+                  </div>
+                )}
+                
+                {userProfile.caste && (
+                  <div className="space-y-2">
+                    <Label className="text-sm font-medium text-muted-foreground">Caste Category</Label>
+                    <p className="text-sm">{userProfile.caste}</p>
+                  </div>
+                )}
+                
+                {userProfile.residence && (
+                  <div className="space-y-2">
+                    <Label className="text-sm font-medium text-muted-foreground">Residence Type</Label>
+                    <p className="text-sm">{userProfile.residence}</p>
+                  </div>
+                )}
+              </div>
+              
+              <div className="pt-4">
+                <Button
+                  variant="outline"
+                  onClick={handleFillAdditionalInfo}
+                  className="w-full"
+                >
+                  <Edit className="w-4 h-4 mr-2" />
+                  Update Additional Information
+                </Button>
+              </div>
+            </CardContent>
+          </Card>
+        )}
 
         {/* Actions */}
         <Card>
