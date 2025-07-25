@@ -21,27 +21,28 @@ const WeatherAndIrrigationTipsInputSchema = z.object({
     .describe(
       'The type of crop for which to tailor the irrigation tips.'
     ),
+  placeName: z.string().optional(),
 });
 export type WeatherAndIrrigationTipsInput = z.infer<
   typeof WeatherAndIrrigationTipsInputSchema
 >;
 
 const WeatherAndIrrigationTipsOutputSchema = z.object({
-
-  weatherForecast: z
-    .string()
-    .describe('The weather forecast for the specified location.'),
-  irrigationTips: z
-    .string()
-    .describe(
-      'Irrigation tips tailored to the specified crop type and weather conditions.'
-    ),
-
+  weatherForecast: z.string().describe('The weather forecast for the specified location.'),
+  irrigationTips: z.string().describe('Irrigation tips tailored to the specified crop type and weather conditions.'),
   notRecommendedCrops: z.array(z.string()).describe('A list of vegetables and fruits that are not recommended to be grown in the current weather conditions.'),
   remedialActions: z.string().describe('Suggestions for what to do if a farmer has already planted the not recommended crops.'),
   unsuitableCrops: z.array(z.string()).describe('A list of crops that are not suitable for the current weather conditions.'),
-  //remedialActions: z.string().describe('Actions to take if unsuitable crops have already been planted.'),
-
+  recommendedCrops: z.array(z.string()).describe('A list of crops that are best suited for the current weather conditions.'),
+  recommendedCropsWithReasons: z.array(z.object({ name: z.string(), reason: z.string() })).describe('Recommended crops with reasons.'),
+  notRecommendedCropsWithReasons: z.array(z.object({ name: z.string(), reason: z.string() })).describe('Not recommended crops with reasons.'),
+  temperature: z.number().optional(),
+  humidity: z.number().optional(),
+  wind_speed: z.number().optional(),
+  condition: z.string().optional(),
+  precipitation: z.number().optional(),
+  sunrise: z.string().optional(),
+  sunset: z.string().optional(),
 });
 export type WeatherAndIrrigationTipsOutput = z.infer<
   typeof WeatherAndIrrigationTipsOutputSchema
@@ -52,6 +53,8 @@ export async function getWeatherAndIrrigationTips(
 ): Promise<WeatherAndIrrigationTipsOutput> {
   return weatherAndIrrigationTipsFlow(input);
 }
+
+const WEATHERAPI_KEY = 'f99d1c63ef1746c4b95110957252407'; // User's actual WeatherAPI key
 
 const getCurrentWeather = ai.defineTool(
   {
@@ -65,40 +68,26 @@ const getCurrentWeather = ai.defineTool(
       condition: z.string().describe('A brief description of the weather conditions (e.g., "Clear sky", "Light rain").'),
       humidity: z.number().describe('The humidity percentage.'),
       wind_speed: z.number().describe('The wind speed in km/h.'),
+      precipitation: z.number().describe('The precipitation in mm.'),
     }),
   },
   async ({ location }) => {
-    console.log(`Fetching weather for ${location}... (mocked)`);
-
-    if (location.toLowerCase().trim() === 'haha' || location.length < 3) {
-      throw new Error('Invalid location entered. Please enter a proper location.');
-    }
-
-    if (location.toLowerCase().includes('bangalore')) {
+    // Fetch real weather from WeatherAPI
+    const url = `https://api.weatherapi.com/v1/current.json?key=${WEATHERAPI_KEY}&q=${encodeURIComponent(location)}`;
+    const res = await fetch(url);
+    const data = await res.json();
+    console.log('WeatherAPI response for', location, ':', JSON.stringify(data));
+    if (data && data.current) {
       return {
-        temperature: 24,
-        condition: 'Partly cloudy with a chance of afternoon showers',
-        humidity: 75,
-        wind_speed: 15,
+        temperature: data.current.temp_c,
+        condition: data.current.condition.text,
+        humidity: data.current.humidity,
+        wind_speed: data.current.wind_kph,
+        precipitation: data.current.precip_mm || 0,
       };
+    } else {
+      throw new Error('Could not fetch weather data for the given location.');
     }
-
-    if (location.toLowerCase().includes('pune')) {
-      return {
-        temperature: 28,
-        condition: 'Sunny',
-        humidity: 60,
-        wind_speed: 12,
-      };
-    }
-
-    // Default return
-    return {
-      temperature: 26,
-      condition: 'Clear sky',
-      humidity: 50,
-      wind_speed: 10,
-    };
   }
 );
 
@@ -109,30 +98,37 @@ const weatherAndIrrigationTipsPrompt = ai.definePrompt({
   input: {schema: z.object({
     location: z.string(),
     cropType: z.string(),
-
+    placeName: z.string().optional(),
     weather: z.any(),
   })},
   output: {schema: WeatherAndIrrigationTipsOutputSchema},
   tools: [getCurrentWeather],
   prompt: `You are an AI assistant providing weather forecasts and irrigation tips to farmers in India.
 
-  Based on the real-time weather data provided, provide a weather summary and irrigation tips tailored to the following crop type: {{{cropType}}} at {{{location}}}.
-
+  The user is at {{placeName}} (lat,lon: {{location}}).
   Real-time weather data:
-  - Temperature: {{{weather.temperature}}}°C
-  - Condition: {{{weather.condition}}}
-  - Humidity: {{{weather.humidity}}}%
-  - Wind Speed: {{{weather.wind_speed}}} km/h
-  
+  - Temperature: {{weather.temperature}}°C
+  - Condition: {{weather.condition}}
+  - Humidity: {{weather.humidity}}%
+  - Wind Speed: {{weather.wind_speed}} km/h
+
+  1. In the 'weatherForecast' field, provide ONLY a weather summary for {{placeName}}.
+  2. In the 'irrigationTips' field, provide ONLY actionable irrigation advice for farmers in {{placeName}} growing {{cropType}}, based on the above weather. 
+     The advice MUST be specific to the selected crop ({{cropType}}). Mention the crop in the advice. DO NOT repeat or paraphrase the weather summary here. DO NOT start with 'The weather in...' or mention temperature/humidity unless it is directly relevant to the advice.
+     Example: 'For tomatoes, increase irrigation frequency due to high temperature.' or 'For rice, delay watering if rain is expected.'
+  3. In the 'remedialActions' field, provide advice for farmers who have already planted not recommended crops.
+
+  IMPORTANT: The 'irrigationTips' field MUST NOT repeat or paraphrase the weather summary. It MUST contain only actionable, practical irrigation advice for farmers in {{placeName}} growing {{cropType}}, based on the weather above.
+
+  Return your response as a JSON object with these fields: weatherForecast, irrigationTips, remedialActions, recommendedCrops, notRecommendedCrops, recommendedCropsWithReasons, notRecommendedCropsWithReasons.
+
   Also, suggest what types of vegetables and fruits should NOT be grown in these weather conditions.
-  Finally, provide suggestions on what a farmer can do if they have already planted such vegetables or fruits.
-
-
-  Also, provide irrigation tips tailored to the following crop type: {{{cropType}}}
-  Consider the weather forecast when providing the irrigation tips.
-  Format the response in a way that is easy to understand for farmers.
   Include any recommended remedial actions based on the weather and crop conditions.
   Also, mention any crops that are unsuitable for the current weather conditions.
+
+  Additionally, based on the current weather and season, list the best crops to grow now (as an array of crop names). Always provide at least 1-3 recommended crops, even if you have to make a best guess based on the region and season.
+
+  For each recommended and not recommended crop, provide a short reason explaining why it is (or is not) suitable for the current weather and season. Return these as arrays of objects with 'name' and 'reason' fields: 'recommendedCropsWithReasons' and 'notRecommendedCropsWithReasons'.
 
   `,
 });
@@ -156,6 +152,36 @@ const weatherAndIrrigationTipsFlow = ai.defineFlow(
     };
     console.log('Prompt input to weatherAndIrrigationTipsPrompt:', promptInput);
     const { output } = await weatherAndIrrigationTipsPrompt(promptInput);
+
+    if (!output) {
+      throw new Error('Prompt did not return any output');
+    }
+    // Add weather fields to output for frontend display
+    output.temperature = weatherData.temperature;
+    output.humidity = weatherData.humidity;
+    output.wind_speed = weatherData.wind_speed;
+    output.condition = weatherData.condition;
+    output.precipitation = weatherData.precipitation || 0;
+    // output.sunrise = weatherData.sunrise || undefined;
+    // output.sunset = weatherData.sunset || undefined;
+
+    // Fallback: If recommendedCrops is empty, provide defaults
+    if (!output.recommendedCrops || output.recommendedCrops.length === 0) {
+      output.recommendedCrops = ['Rice', 'Maize', 'Wheat'];
+    }
+    if (!output.recommendedCropsWithReasons || output.recommendedCropsWithReasons.length === 0) {
+      output.recommendedCropsWithReasons = [
+        { name: 'Rice', reason: 'Grows well in warm, humid conditions and abundant water.' },
+        { name: 'Maize', reason: 'Tolerates a range of weather and is suitable for the current season.' },
+        { name: 'Wheat', reason: 'Can be sown in moderate temperatures and is a staple crop.' },
+      ];
+    }
+    if (!output.notRecommendedCropsWithReasons || output.notRecommendedCropsWithReasons.length === 0) {
+      output.notRecommendedCropsWithReasons = [
+        { name: 'Strawberry', reason: 'Sensitive to high temperatures and humidity.' },
+        { name: 'Spinach', reason: 'Prefers cooler weather and may bolt in heat.' },
+      ];
+    }
 
     return output!;
   }
