@@ -176,7 +176,7 @@ export default function ProfilePage() {
 
 	return (
 		<AppLayout title="Profile" subtitle="Manage your account">
-			<div className="p-6 space-y-6">
+			<div className="p-6 space-y-4 max-w-4xl mx-auto">
 				{/* Additional Info Form Modal */}
 				{showAdditionalInfoForm && (
 					<AdditionalInfoForm
@@ -186,17 +186,8 @@ export default function ProfilePage() {
 				)}
 
 				{/* Profile Header */}
-				<Card>
-					<CardHeader>
-						<CardTitle className="flex items-center gap-2">
-							<UserIcon className="w-5 h-5" />
-							Profile Information
-						</CardTitle>
-						<CardDescription>
-							View and manage your account details
-						</CardDescription>
-					</CardHeader>
-					<CardContent className="space-y-6">
+				<Card className="flex justify-between items-center">
+					<CardContent className="space-y-4 p-6">
 						{/* Avatar and Basic Info */}
 						<div className="flex items-center gap-4">
 							<Avatar className="h-16 w-16">
@@ -315,21 +306,23 @@ export default function ProfilePage() {
 				{/* Additional Information */}
 				<Card>
 					<CardHeader>
-						<CardTitle className="flex items-center gap-2">
-							<Info className="w-5 h-5" />
-							Additional Information
-							{isLoadingProfile && <Loader2 className="w-4 h-4 animate-spin" />}
-						</CardTitle>
-						<CardDescription>
-							Personal details for personalized recommendations
-						</CardDescription>
-					</CardHeader>
-					<CardContent className="space-y-4">
-						{/* Debug: Manual refresh button */}
-						<div className="flex justify-end">
+						<div className="flex justify-between items-center">
+							<div>
+								<CardTitle className="flex items-center gap-2">
+									<Info className="w-5 h-5" />
+									Additional Information
+									{isLoadingProfile && (
+										<Loader2 className="w-4 h-4 animate-spin" />
+									)}
+								</CardTitle>
+								<CardDescription>
+									Personal details for personalized recommendations
+								</CardDescription>
+							</div>
+
 							<Button
 								size="sm"
-								variant="ghost"
+								variant="default"
 								onClick={refreshUserProfile}
 								disabled={isLoadingProfile}
 							>
@@ -340,7 +333,8 @@ export default function ProfilePage() {
 								)}
 							</Button>
 						</div>
-
+					</CardHeader>
+					<CardContent className="space-y-4">
 						{hasAdditionalInfo ? (
 							<div className="grid grid-cols-1 md:grid-cols-2 gap-4">
 								{userProfile?.age && (
@@ -441,7 +435,7 @@ export default function ProfilePage() {
 
 						<div className="pt-4">
 							<Button
-								variant="outline"
+								variant="secondary"
 								onClick={handleFillAdditionalInfo}
 								className="w-full"
 							>
@@ -467,11 +461,11 @@ export default function ProfilePage() {
 						<CardTitle>Account Actions</CardTitle>
 					</CardHeader>
 					<CardContent>
-						<div className="space-y-3">
+						<div className="space-y-3 flex flex-col items-center">
 							<Button
-								variant="outline"
+								variant="destructive"
 								onClick={handleLogout}
-								className="w-full"
+								className="w-[20vw]"
 							>
 								<LogOut className="w-4 h-4 mr-2" />
 								Sign Out
