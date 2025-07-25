@@ -61,20 +61,7 @@ export default function RightSidebar({ children }: RightSidebarProps) {
 
           <div className="space-y-4">
             <h3 className="font-semibold text-muted-foreground">General</h3>
-            <div className="grid w-full items-center gap-2">
-              <Label htmlFor="language">Language</Label>
-              <Select defaultValue="en">
-                <SelectTrigger id="language">
-                  <SelectValue placeholder="Select language" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="en">English</SelectItem>
-                  <SelectItem value="hi">हिन्दी (Hindi)</SelectItem>
-                  <SelectItem value="kn">ಕನ್ನಡ (Kannada)</SelectItem>
-                  <SelectItem value="te">తెలుగు (Telugu)</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
+
              <div className="grid w-full items-center gap-2">
               <Label htmlFor="crop">Default Crop Preference</Label>
               <Input id="crop" placeholder="e.g., Wheat" />

@@ -7,6 +7,11 @@ const nextConfig: NextConfig = {
   eslint: {
     ignoreDuringBuilds: true,
   },
+  i18n: {
+    defaultLocale: 'en',
+    locales: ['en', 'hi', 'kn', 'ta'],
+    localeDetection: true,
+  },
   images: {
     remotePatterns: [
       {

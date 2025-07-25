@@ -27,6 +27,8 @@ import { useRouter, usePathname } from "next/navigation";
 import RightSidebar from "./right-sidebar";
 import { getRecentInputs } from "@/utils/localStorage";
 import { toast } from "@/hooks/use-toast";
+import { UserMenu } from "@/components/auth/user-menu";
+import { SignInButton } from "@/components/auth/sign-in-button";
 
 interface AppLayoutProps {
 	children: React.ReactNode;
@@ -92,6 +94,12 @@ export default function AppLayout({
 			label: "History",
 			href: "/history",
 			active: pathname === "/history",
+		},
+		{
+			icon: User,
+			label: "Profile",
+			href: "/profile",
+			active: pathname === "/profile",
 		},
 	];
 
@@ -204,6 +212,15 @@ export default function AppLayout({
 						)}
 					</button>
 				</div>
+
+				{/* Sign In Button */}
+				<div className="p-4 border-t border-gray-200">
+					<SignInButton 
+						variant="outline" 
+						size="sm" 
+						className="w-full"
+					/>
+				</div>
 			</div>
 
 			{/* Right side: Main content area */}
@@ -252,6 +269,9 @@ export default function AppLayout({
 							</select>
 							<ChevronDown className="absolute right-2 top-1/2 transform -translate-y-1/2 w-4 h-4 text-gray-400 pointer-events-none" />
 						</div>
+
+						{/* User Menu */}
+						<UserMenu />
 
 						{/* Settings Button */}
 						<RightSidebar>
