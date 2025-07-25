@@ -96,6 +96,12 @@ export default function AppLayout({
 			active: pathname === "/history",
 		},
 		{
+			icon: BookOpen,
+			label: "Farm Journal",
+			href: "/app-journal",
+			active: pathname === "/app-journal",
+		},
+		{
 			icon: UserIcon,
 			label: "Profile",
 			href: "/profile",

@@ -12,6 +12,7 @@ import {
 	Bot,
 	Send,
 	Mic,
+	BookOpen,
 } from "lucide-react";
 import { useState } from "react";
 import { storeRecentInput } from "@/utils/localStorage";
@@ -159,6 +160,13 @@ export default function Home() {
 							Crop Management
 						</h3>
 						<div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+							{/* Farm Journal Entry Point */}
+							<a href="/app-journal" className="bg-white border border-green-300 rounded-xl p-6 text-left hover:shadow-lg transition-all duration-200 hover:border-green-500 flex flex-col">
+								<BookOpen className="w-8 h-8 text-green-700 mb-4" />
+								<h4 className="text-lg font-semibold text-gray-900 mb-2">My Farm Journal</h4>
+								<p className="text-sm text-gray-600">Log daily activities, track inputs, and view your farm's history and insights.</p>
+							</a>
+							{/* Existing tools */}
 							{[
 								{
 									icon: Activity,
