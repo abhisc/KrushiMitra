@@ -4,6 +4,10 @@ import { ai } from "@/ai/genkit";
 import { z } from "zod";
 import { fetchMarketDataTool } from "./real-time-market-analysis";
 import { fetchDistrictsTool } from "../tools/GovtApisTools";
+import {
+	getCurrentWeather,
+	getWeatherForecast,
+} from "./weather-and-irrigation-tips";
 
 const AskAnythingInputSchema = z.object({
 	text: z.string(),
@@ -31,7 +35,12 @@ const prompt = ai.definePrompt({
 	name: "askAnythingPrompt",
 	input: { schema: AskAnythingInputSchema },
 	output: { schema: AskAnythingOutputSchema },
-	tools: [fetchMarketDataTool, fetchDistrictsTool],
+	tools: [
+		fetchMarketDataTool,
+		fetchDistrictsTool,
+		getCurrentWeather,
+		getWeatherForecast,
+	],
 	prompt: `**Prompt: AI Assistant for Indian Farmers**
 
 You are an AI assistant supporting Indian farmers with practical farming solutions and market insights.
@@ -39,6 +48,7 @@ You are an AI assistant supporting Indian farmers with practical farming solutio
 ### Instructions:
 1. **Tool Usage**:
    - Use the **fetchDistricts** tool to ensure accurate district name spellings for any mentioned location.
+	 - For queries about weather, use the **getCurrentWeather** tool to provide accurate weather forecasts.
    - For queries about current market trends, use the **fetchMarketData** tool to retrieve real-time market data.
    - Apply the **marketAnalysisTool** to generate detailed market analysis when market trends are requested.
 
@@ -57,8 +67,7 @@ You are an AI assistant supporting Indian farmers with practical farming solutio
    - **Overview**: Summarize the query context, location, and crops (if applicable).
    - **Solution/Analysis**: Provide the solution or market analysis with clear, concise details.
    - **Recommendations**: Offer practical advice based on the solution or analysis.
-   - End with “**Good luck with your farming!**”
-
+	 - End with “**Good luck with your farming!** if and when needed.”
 4. **Photo Handling**:
    - If a photo is provided via {{{photoDataUri}}}, analyze it (e.g., for crop health, pest issues) and integrate findings into the solution.
 
