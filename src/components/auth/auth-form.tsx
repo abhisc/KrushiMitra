@@ -12,7 +12,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Separator } from '@/components/ui/separator';
 import { useToast } from '@/hooks/use-toast';
 import { useAuth } from '@/contexts/auth-context';
-import { Loader2, Mail, Lock, User, Eye, EyeOff, Chrome, UserX } from 'lucide-react';
+import { Loader2, Mail, Lock, User as UserIcon, Eye, EyeOff, Chrome, UserX } from 'lucide-react';
 
 const signInSchema = z.object({
   email: z.string().email('Please enter a valid email'),
@@ -203,7 +203,7 @@ export function AuthForm({ onSuccess }: AuthFormProps) {
               <div className="space-y-2">
                 <Label htmlFor="signup-name">Full Name</Label>
                 <div className="relative">
-                  <User className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
+                  <UserIcon className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
                   <Input
                     id="signup-name"
                     type="text"

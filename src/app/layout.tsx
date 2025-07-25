@@ -1,4 +1,4 @@
-import type {Metadata} from 'next';
+import type {Metadata, Viewport} from 'next';
 import './globals.css';
 import { Toaster } from "@/components/ui/toaster"
 import { ThemeProvider } from '@/components/theme-provider';
@@ -11,8 +11,6 @@ export const metadata: Metadata = {
   manifest: '/manifest.json',
   keywords: 'agriculture, farming, crop disease, market analysis, weather, government schemes, AI assistant',
   authors: [{ name: 'Agrimitra Team' }],
-  viewport: 'width=device-width, initial-scale=1, maximum-scale=1',
-  themeColor: '#16a34a',
   appleWebApp: {
     capable: true,
     statusBarStyle: 'default',
@@ -45,6 +43,13 @@ export const metadata: Metadata = {
       'max-snippet': -1,
     },
   },
+};
+
+export const viewport: Viewport = {
+  width: 'device-width',
+  initialScale: 1,
+  maximumScale: 1,
+  themeColor: '#16a34a',
 };
 
 export default function RootLayout({

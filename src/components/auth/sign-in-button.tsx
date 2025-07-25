@@ -4,7 +4,7 @@ import React from 'react';
 import { Button } from '@/components/ui/button';
 import { useAuth } from '@/contexts/auth-context';
 import { useRouter } from 'next/navigation';
-import { LogIn, User } from 'lucide-react';
+import { LogIn, User as UserIcon } from 'lucide-react';
 
 interface SignInButtonProps {
   variant?: 'default' | 'outline' | 'ghost';

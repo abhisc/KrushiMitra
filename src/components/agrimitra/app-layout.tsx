@@ -21,6 +21,7 @@ import {
 	ChevronDown,
 	Bot,
 	ArrowLeft,
+	User as UserIcon,
 } from "lucide-react";
 import Link from "next/link";
 import { useRouter, usePathname } from "next/navigation";
@@ -96,7 +97,7 @@ export default function AppLayout({
 			active: pathname === "/history",
 		},
 		{
-			icon: User,
+			icon: UserIcon,
 			label: "Profile",
 			href: "/profile",
 			active: pathname === "/profile",

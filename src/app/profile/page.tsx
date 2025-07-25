@@ -11,7 +11,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { useToast } from '@/hooks/use-toast';
-import { Loader2, User, Mail, Shield, Calendar, Edit, Save, X, LogOut } from 'lucide-react';
+import { Loader2, User as UserIcon, Mail, Shield, Calendar, Edit, Save, X, LogOut } from 'lucide-react';
 
 export default function ProfilePage() {
   const { user, updateUserProfile, logout } = useAuth();
@@ -102,10 +102,10 @@ export default function ProfilePage() {
         {/* Profile Header */}
         <Card>
           <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              <User className="w-5 h-5" />
-              Profile Information
-            </CardTitle>
+                         <CardTitle className="flex items-center gap-2">
+               <UserIcon className="w-5 h-5" />
+               Profile Information
+             </CardTitle>
             <CardDescription>
               View and manage your account details
             </CardDescription>

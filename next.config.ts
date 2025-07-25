@@ -7,11 +7,7 @@ const nextConfig: NextConfig = {
   eslint: {
     ignoreDuringBuilds: true,
   },
-  i18n: {
-    defaultLocale: 'en',
-    locales: ['en', 'hi', 'kn', 'ta'],
-    localeDetection: true,
-  },
+  // i18n configuration removed - using App Router internationalization instead
   images: {
     remotePatterns: [
       {

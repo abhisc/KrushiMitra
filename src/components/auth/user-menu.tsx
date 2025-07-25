@@ -14,7 +14,7 @@ import {
 import { useAuth } from '@/contexts/auth-context';
 import { useToast } from '@/hooks/use-toast';
 import { useRouter } from 'next/navigation';
-import { User, LogOut, Settings, UserCircle } from 'lucide-react';
+import { User as UserIcon, LogOut, Settings, UserCircle } from 'lucide-react';
 
 export function UserMenu() {
   const { user, logout } = useAuth();
