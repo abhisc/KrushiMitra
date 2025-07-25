@@ -117,7 +117,7 @@ export default function AppLayout({
 	};
 
 	return (
-		<div className="max-h-screen bg-gray-50 flex">
+		<div className="h-screen bg-gray-50 flex">
 			{/* Left Sidebar */}
 			<div
 				onMouseEnter={() => setSidebarOpen(true)}
