@@ -29,7 +29,6 @@ import RightSidebar from "./right-sidebar";
 import { getRecentInputs } from "@/utils/localStorage";
 import { toast } from "@/hooks/use-toast";
 import { UserMenu } from "@/components/auth/user-menu";
-import { SignInButton } from "@/components/auth/sign-in-button";
 
 interface AppLayoutProps {
 	children: React.ReactNode;
@@ -212,15 +211,6 @@ export default function AppLayout({
 							<span className="ml-2">{isAdvanced ? "Advanced" : "Basic"}</span>
 						)}
 					</button>
-				</div>
-
-				{/* Sign In Button */}
-				<div className="p-4 border-t border-gray-200">
-					<SignInButton 
-						variant="outline" 
-						size="sm" 
-						className="w-full"
-					/>
 				</div>
 			</div>
 

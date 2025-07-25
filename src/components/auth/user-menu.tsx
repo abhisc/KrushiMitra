@@ -14,7 +14,7 @@ import {
 import { useAuth } from '@/contexts/auth-context';
 import { useToast } from '@/hooks/use-toast';
 import { useRouter } from 'next/navigation';
-import { User as UserIcon, LogOut, Settings, UserCircle } from 'lucide-react';
+import { User as UserIcon, LogOut, Settings, UserCircle, LogIn, Shield } from 'lucide-react';
 
 export function UserMenu() {
   const { user, logout } = useAuth();
@@ -37,6 +37,10 @@ export function UserMenu() {
     }
   };
 
+  const handleSignIn = () => {
+    router.push('/auth');
+  };
+
   const getInitials = (displayName: string | null) => {
     if (!displayName) return 'U';
     return displayName
@@ -53,7 +57,20 @@ export function UserMenu() {
     return 'User';
   };
 
-  if (!user) return null;
+  // Show sign-in button when user is not logged in
+  if (!user) {
+    return (
+      <Button
+        variant="outline"
+        size="sm"
+        onClick={handleSignIn}
+        className="flex items-center gap-2"
+      >
+        <LogIn className="h-4 w-4" />
+        Sign In
+      </Button>
+    );
+  }
 
   return (
     <DropdownMenu>
