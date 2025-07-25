@@ -18,8 +18,9 @@ import { Popover, PopoverTrigger, PopoverContent } from '@/components/ui/popover
 
 export default function DiagnosePage() {
   const [chat, setChat] = useState<ChatMessage[]>([
-    { sender: 'ai', text: 'Hi! Upload a crop photo (drag & drop or click) or describe symptoms to get a diagnosis.' }
+    { sender: 'ai', text: '👋 Hi! Please upload a crop photo (drag & drop or click) or describe your crop symptoms in detail to get a diagnosis.' }
   ]);
+  const [aiTyping, setAiTyping] = useState(false);
   const [input, setInput] = useState('');
   const [selectedImage, setSelectedImage] = useState<File | null>(null);
   const [isLoading, setIsLoading] = useState(false);
@@ -96,6 +97,7 @@ export default function DiagnosePage() {
   const handleSend = async () => {
     if (!input.trim() && !selectedImage) return;
     setIsLoading(true);
+    setAiTyping(true);
     let imageUrl: string | undefined;
     let fileToSend = selectedImage;
     // For preview, create a local URL
@@ -109,17 +111,10 @@ export default function DiagnosePage() {
     setInput('');
     setSelectedImage(null);
     try {
-      // Send as FormData (simulate backend endpoint)
-      const formData = new FormData();
-      formData.append('textDescription', input);
-      if (fileToSend) formData.append('photo', fileToSend);
-      // Replace below with your actual API call
-      // Example: const res = await fetch('/api/diagnose', { method: 'POST', body: formData });
-      // const data = await res.json();
-      // For now, fallback to diagnoseCropDiseaseFromChat (simulate file support)
+      // Simulate AI thinking delay for realism
+      await new Promise((resolve) => setTimeout(resolve, 800));
       let res;
       if (fileToSend) {
-        // If backend supports file, send formData; else, fallback to base64
         const reader = new FileReader();
         const base64 = await new Promise<string>((resolve, reject) => {
           reader.onload = (e) => resolve(e.target?.result as string);
@@ -130,9 +125,19 @@ export default function DiagnosePage() {
       } else {
         res = await diagnoseCropDiseaseFromChat({ textDescription: input });
       }
+      // If the user's input is short or vague, prompt for more details
+      const needsMoreDetails = !fileToSend && (!input || input.trim().split(' ').length < 5);
+      let aiText = res.diagnosisResult || 'Could not diagnose, please try again.';
+      if (needsMoreDetails) {
+        aiText =
+          "🤖 I need a bit more information to help you. Could you describe the crop symptoms in more detail? For example: color, spots, wilting, or upload a photo if possible.";
+      } else if (aiText && aiText.length < 40) {
+        aiText +=
+          "\n\nIf you have more details or a photo, please share them for a more accurate diagnosis.";
+      }
       setChat((prev) => [
         ...prev,
-        { sender: 'ai', text: res.diagnosisResult || 'Could not diagnose, please try again.' }
+        { sender: 'ai', text: aiText }
       ]);
     } catch (e) {
       setChat((prev) => [
@@ -141,6 +146,7 @@ export default function DiagnosePage() {
       ]);
     }
     setIsLoading(false);
+    setAiTyping(false);
   };
 
   return (
@@ -157,22 +163,22 @@ export default function DiagnosePage() {
             <span className="text-primary text-lg font-semibold">Drop image here</span>
           </div>
         )}
-        <div className="flex-1 overflow-y-auto p-4 space-y-4 bg-gradient-to-b from-gray-50 to-white" style={{ minHeight: 0 }}>
+        <div className="flex-1 overflow-y-auto p-4 space-y-6 bg-gradient-to-b from-gray-50 to-white" style={{ minHeight: 0 }}>
           {chat.map((msg, idx) => (
             <div
               key={idx}
               className={cn(
-                'flex items-end gap-2',
+                'flex items-end gap-3',
                 msg.sender === 'user' ? 'justify-end' : 'justify-start')
             }>
               {msg.sender === 'ai' && (
-                <div className="flex-shrink-0 w-8 h-8 rounded-full bg-primary/10 flex items-center justify-center border border-primary/20">
-                  <Bot className="w-5 h-5 text-primary" aria-label="AI" />
+                <div className="flex-shrink-0 w-9 h-9 rounded-full bg-primary/10 flex items-center justify-center border border-primary/20">
+                  <Bot className="w-6 h-6 text-primary" aria-label="AI" />
                 </div>
               )}
               <div
                 className={cn(
-                  'relative max-w-xs px-4 py-2 rounded-2xl shadow-sm transition-all',
+                  'relative max-w-md px-5 py-3 rounded-2xl shadow-md transition-all text-base leading-relaxed',
                   msg.sender === 'user'
                     ? 'bg-primary text-white rounded-br-md ml-2'
                     : 'bg-white text-gray-900 border border-gray-200 rounded-bl-md mr-2')
@@ -184,19 +190,29 @@ export default function DiagnosePage() {
                   <img
                     src={msg.image}
                     alt="User upload"
-                    className="mb-2 max-w-[120px] rounded-lg border border-gray-200 shadow"
+                    className="mb-2 max-w-[180px] rounded-lg border border-gray-200 shadow"
                     style={{ objectFit: 'cover' }}
                   />
                 )}
                 <span className="whitespace-pre-line break-words">{msg.text}</span>
               </div>
               {msg.sender === 'user' && (
-                <div className="flex-shrink-0 w-8 h-8 rounded-full bg-primary flex items-center justify-center border-2 border-primary/30">
-                  <User className="w-5 h-5 text-white" aria-label="You" />
+                <div className="flex-shrink-0 w-9 h-9 rounded-full bg-primary flex items-center justify-center border-2 border-primary/30">
+                  <User className="w-6 h-6 text-white" aria-label="You" />
                 </div>
               )}
             </div>
           ))}
+          {aiTyping && (
+            <div className="flex items-end gap-3 justify-start">
+              <div className="flex-shrink-0 w-9 h-9 rounded-full bg-primary/10 flex items-center justify-center border border-primary/20">
+                <Bot className="w-6 h-6 text-primary animate-bounce" aria-label="AI" />
+              </div>
+              <div className="max-w-md px-5 py-3 rounded-2xl shadow-md bg-white text-gray-900 border border-gray-200 rounded-bl-md mr-2">
+                <span className="italic text-gray-400">AI is typing…</span>
+              </div>
+            </div>
+          )}
           <div ref={chatEndRef} />
         </div>
         <div className="p-4 border-t flex items-center gap-2 bg-white/80 backdrop-blur-md">
