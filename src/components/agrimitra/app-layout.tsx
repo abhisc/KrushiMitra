@@ -98,8 +98,8 @@ export default function AppLayout({
 		{
 			icon: BookOpen,
 			label: "Farm Journal",
-			href: "/app-journal",
-			active: pathname === "/app-journal",
+			href: "/journal",
+			active: pathname === "/journal",
 		},
 		{
 			icon: UserIcon,
