@@ -13,9 +13,11 @@ import {
   updateProfile
 } from 'firebase/auth';
 import { auth, googleProvider } from '@/lib/firebase';
+import { UserService, UserProfile } from '@/lib/user-service';
 
 interface AuthContextType {
   user: User | null;
+  userProfile: UserProfile | null;
   loading: boolean;
   signIn: (email: string, password: string) => Promise<void>;
   signUp: (email: string, password: string, displayName?: string) => Promise<void>;
@@ -24,6 +26,7 @@ interface AuthContextType {
   logout: () => Promise<void>;
   resetPassword: (email: string) => Promise<void>;
   updateUserProfile: (displayName: string) => Promise<void>;
+  loadUserProfile: () => Promise<void>;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -42,16 +45,52 @@ interface AuthProviderProps {
 
 export function AuthProvider({ children }: AuthProviderProps) {
   const [user, setUser] = useState<User | null>(null);
+  const [userProfile, setUserProfile] = useState<UserProfile | null>(null);
   const [loading, setLoading] = useState(true);
+  
+  // Create UserService instance
+  const userService = new UserService();
 
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, (user) => {
       setUser(user);
       setLoading(false);
+      
+      if (user) {
+        loadUserProfile();
+      } else {
+        setUserProfile(null);
+      }
     });
 
     return unsubscribe;
   }, []);
+
+  const loadUserProfile = async () => {
+    if (!user) return;
+    
+    try {
+      const profile = await userService.ensureUserProfile({
+        uid: user.uid,
+        displayName: user.displayName || (user.isAnonymous ? 'Anonymous User' : 'User'),
+        email: user.email || undefined,
+        photoURL: user.photoURL || undefined,
+      });
+      
+      setUserProfile(profile);
+    } catch (error) {
+      console.error('Error loading user profile:', error);
+      // Set a basic profile even if there's an error
+      setUserProfile({
+        uid: user.uid,
+        displayName: user.displayName || (user.isAnonymous ? 'Anonymous User' : 'User'),
+        email: user.email || undefined,
+        photoURL: user.photoURL || undefined,
+        createdAt: new Date(),
+        updatedAt: new Date(),
+      });
+    }
+  };
 
   const signIn = async (email: string, password: string) => {
     try {
@@ -67,6 +106,16 @@ export function AuthProvider({ children }: AuthProviderProps) {
       if (displayName && result.user) {
         await updateProfile(result.user, { displayName });
       }
+      
+      // Create user profile in Firestore
+      if (result.user) {
+        await userService.createUserProfile({
+          uid: result.user.uid,
+          displayName: displayName || result.user.displayName || 'User',
+          email: result.user.email || undefined,
+          photoURL: result.user.photoURL || undefined,
+        });
+      }
     } catch (error) {
       throw error;
     }
@@ -74,7 +123,20 @@ export function AuthProvider({ children }: AuthProviderProps) {
 
   const signInWithGoogle = async () => {
     try {
-      await signInWithPopup(auth, googleProvider);
+      const result = await signInWithPopup(auth, googleProvider);
+      
+      // Create user profile in Firestore if it doesn't exist
+      if (result.user) {
+        const existingProfile = await userService.getUserProfile(result.user.uid);
+        if (!existingProfile) {
+          await userService.createUserProfile({
+            uid: result.user.uid,
+            displayName: result.user.displayName || 'User',
+            email: result.user.email || undefined,
+            photoURL: result.user.photoURL || undefined,
+          });
+        }
+      }
     } catch (error) {
       throw error;
     }
@@ -82,7 +144,17 @@ export function AuthProvider({ children }: AuthProviderProps) {
 
   const signInAnonymouslyUser = async () => {
     try {
-      await signInAnonymously(auth);
+      const result = await signInAnonymously(auth);
+      
+      // Create user profile in Firestore
+      if (result.user) {
+        await userService.createUserProfile({
+          uid: result.user.uid,
+          displayName: 'Anonymous User',
+          email: undefined,
+          photoURL: undefined,
+        });
+      }
     } catch (error) {
       throw error;
     }
@@ -108,6 +180,7 @@ export function AuthProvider({ children }: AuthProviderProps) {
     try {
       if (user) {
         await updateProfile(user, { displayName });
+        await loadUserProfile(); // Reload profile data
       }
     } catch (error) {
       throw error;
@@ -116,6 +189,7 @@ export function AuthProvider({ children }: AuthProviderProps) {
 
   const value = {
     user,
+    userProfile,
     loading,
     signIn,
     signUp,
@@ -124,6 +198,7 @@ export function AuthProvider({ children }: AuthProviderProps) {
     logout,
     resetPassword,
     updateUserProfile,
+    loadUserProfile,
   };
 
   return (
