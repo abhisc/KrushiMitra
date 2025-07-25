@@ -11,91 +11,7 @@ import { getWeatherAndIrrigationTips, WeatherAndIrrigationTipsInput } from '@/ai
 import { Loader2, Cloud, Droplets, Sun } from 'lucide-react';
 import AppLayout from '@/components/agrimitra/app-layout';
 
-// SunPathArc component
-function SunPathArc({ latitude, longitude, locationName }: { latitude: number, longitude: number, locationName: string }) {
-  const [sunData, setSunData] = useState<{ sunrise: string, sunset: string }>({ sunrise: '', sunset: '' });
-  const [now, setNow] = useState<Date>(new Date());
-  const [showTooltip, setShowTooltip] = useState(false);
-
-  useEffect(() => {
-    if (!latitude || !longitude) return;
-    fetch(`https://api.sunrisesunset.io/json?lat=${latitude}&lng=${longitude}`)
-      .then(res => res.json())
-      .then(data => {
-        if (data && data.results) setSunData({ sunrise: data.results.sunrise, sunset: data.results.sunset });
-      });
-    const interval = setInterval(() => setNow(new Date()), 1000 * 30); // update every 30s
-    return () => clearInterval(interval);
-  }, [latitude, longitude]);
-
-  // Helper: parse "5:25:00 AM" to Date (today)
-  function parseTime(str: string): Date | null {
-    if (!str) return null;
-    const [time, ampm] = str.split(' ');
-    let [h, m, s] = time.split(':');
-    h = parseInt(h, 10);
-    m = parseInt(m, 10);
-    s = s ? parseInt(s, 10) : 0;
-    if (ampm === 'PM' && h < 12) h += 12;
-    if (ampm === 'AM' && h === 12) h = 0;
-    const d = new Date(now);
-    d.setHours(h, m, s, 0);
-    return d;
-  }
-  const sunrise = parseTime(sunData.sunrise);
-  const sunset = parseTime(sunData.sunset);
-  // Calculate sun position (0=start, 1=end)
-  let sunPos = 0;
-  if (sunrise && sunset && now >= sunrise && now <= sunset) {
-    sunPos = (Number(now) - Number(sunrise)) / (Number(sunset) - Number(sunrise));
-  } else if (sunset && now > sunset) {
-    sunPos = 1;
-  }
-  // Arc geometry
-  const arcW = 240, arcH = 60;
-  const sunX = 20 + sunPos * (arcW - 40);
-  const sunY = 30 - 24 * Math.sin(Math.PI * sunPos);
-  // Time since sunrise/until sunset
-  function formatDuration(ms: number): string {
-    const min = Math.floor(ms / 60000);
-    const hr = Math.floor(min / 60);
-    const m = min % 60;
-    return hr > 0 ? `${hr}h ${m}m` : `${m}m`;
-  }
-  let sinceSunrise = sunrise && now > sunrise ? formatDuration(Number(now) - Number(sunrise)) : null;
-  let untilSunset = sunset && now < sunset ? formatDuration(Number(sunset) - Number(now)) : null;
-  // Tooltip content (only time)
-  const tooltip = (
-    <div className="absolute left-1/2 top-[-48px] -translate-x-1/2 bg-white shadow-lg rounded-lg px-3 py-2 text-xs z-20 border border-gray-200 min-w-[100px] max-w-[140px] flex flex-col items-center"
-         style={{ boxShadow: '0 2px 8px rgba(0,0,0,0.08)' }}>
-      <div className="absolute left-1/2 top-full -translate-x-1/2 w-0 h-0 border-l-6 border-r-6 border-t-6 border-l-transparent border-r-transparent border-t-white"></div>
-      <div className="font-semibold mb-1">☀️ Sun Details</div>
-      <div><span className="font-semibold">Time:</span> {now.toLocaleTimeString()}</div>
-    </div>
-  );
-  return (
-    <div className="w-full flex flex-col items-center relative select-none mt-4">
-      <div className="flex items-center w-full justify-between text-xs text-gray-600 mb-1">
-        <span>{sunData.sunrise || '--'}</span>
-        <span>{sunData.sunset || '--'}</span>
-      </div>
-      <div className="relative w-full h-20 flex items-center justify-center bg-white rounded-xl">
-        <svg width={arcW} height={arcH} viewBox={`0 0 ${arcW} ${arcH}`} fill="none" className="w-full h-16">
-          <path d={`M 20 50 Q ${arcW/2} 0 ${arcW-20} 50`} stroke="#fbbf24" strokeWidth="2" strokeDasharray="4 4" fill="none" />
-        </svg>
-        {/* Sun icon */}
-        <span
-          className={`absolute`} style={{ left: `calc(${(sunX/arcW)*100}% - 18px)`, top: `${sunY+8}px`, transition: 'left 1s linear, top 1s linear', zIndex: 10 }}
-          onMouseEnter={() => setShowTooltip(true)}
-          onMouseLeave={() => setShowTooltip(false)}
-        >
-          <span className={`text-4xl ${sunPos > 0 && sunPos < 1 ? 'animate-pulse' : ''}`} style={{ filter: sunPos > 0 && sunPos < 1 ? 'drop-shadow(0 0 12px #fbbf24)' : '' }}>☀️</span>
-        </span>
-        {showTooltip && tooltip}
-      </div>
-    </div>
-  );
-}
+// Remove all SunPathArc and its Card. Only render the Weather card in the left column and the Irrigation Tips card in the right column.
 
 export default function WeatherPage() {
   const [isLoading, setIsLoading] = useState(false);
@@ -254,17 +170,147 @@ export default function WeatherPage() {
     return '🌱';
   }
 
-  // Helper to get weather illustration image path
-  function getWeatherImage(condition: string) {
-    if (!condition) return '/weather-illustrations/sunny.png';
-    const cond = condition.toLowerCase();
-    if (cond.includes('cloud')) return '/weather-illustrations/cloudy.png';
-    if (cond.includes('rain')) return '/weather-illustrations/rainy.png';
-    if (cond.includes('clear')) return '/weather-illustrations/sunny.png';
-    if (cond.includes('snow')) return '/weather-illustrations/snowy.png';
-    if (cond.includes('storm')) return '/weather-illustrations/stormy.png';
-    if (cond.includes('night') || cond.includes('moon')) return '/weather-illustrations/night.png';
-    return '/weather-illustrations/sunny.png';
+  // Helper to get weather illustration SVG
+  function getWeatherSVG(condition: string) {
+    const cond = (condition || '').toLowerCase();
+    if (cond.includes('cloud')) {
+      return (
+        <svg width="96" height="96" viewBox="0 0 96 96" fill="none">
+          <ellipse cx="56" cy="60" rx="28" ry="18" fill="#B0BEC5"/>
+          <ellipse cx="40" cy="64" rx="18" ry="12" fill="#CFD8DC"/>
+        </svg>
+      );
+    }
+    if (cond.includes('rain')) {
+      return (
+        <svg width="96" height="96" viewBox="0 0 96 96" fill="none">
+          <ellipse cx="56" cy="60" rx="28" ry="18" fill="#B0BEC5"/>
+          <ellipse cx="40" cy="64" rx="18" ry="12" fill="#CFD8DC"/>
+          <g stroke="#2196F3" strokeWidth="4" strokeLinecap="round">
+            <line x1="40" y1="80" x2="40" y2="90"/>
+            <line x1="56" y1="80" x2="56" y2="90"/>
+            <line x1="72" y1="80" x2="72" y2="90"/>
+          </g>
+        </svg>
+      );
+    }
+    if (cond.includes('storm')) {
+      return (
+        <svg width="96" height="96" viewBox="0 0 96 96" fill="none">
+          <ellipse cx="56" cy="60" rx="28" ry="18" fill="#90A4AE"/>
+          <ellipse cx="40" cy="64" rx="18" ry="12" fill="#B0BEC5"/>
+          <polygon points="56,80 64,92 60,92 68,104 62,104 72,120" fill="#FFD93B"/>
+        </svg>
+      );
+    }
+    if (cond.includes('snow')) {
+      return (
+        <svg width="96" height="96" viewBox="0 0 96 96" fill="none">
+          <ellipse cx="56" cy="60" rx="28" ry="18" fill="#B0BEC5"/>
+          <ellipse cx="40" cy="64" rx="18" ry="12" fill="#CFD8DC"/>
+          <g stroke="#90CAF9" strokeWidth="3" strokeLinecap="round">
+            <line x1="40" y1="80" x2="40" y2="86"/>
+            <line x1="56" y1="80" x2="56" y2="86"/>
+            <line x1="72" y1="80" x2="72" y2="86"/>
+            <circle cx="40" cy="89" r="2" fill="#90CAF9"/>
+            <circle cx="56" cy="89" r="2" fill="#90CAF9"/>
+            <circle cx="72" cy="89" r="2" fill="#90CAF9"/>
+          </g>
+        </svg>
+      );
+    }
+    if (cond.includes('night') || cond.includes('moon')) {
+      return (
+        <svg width="96" height="96" viewBox="0 0 96 96" fill="none">
+          <circle cx="60" cy="48" r="20" fill="#FFD93B"/>
+          <circle cx="68" cy="44" r="20" fill="#212121"/>
+          <circle cx="80" cy="36" r="3" fill="#FFD93B"/>
+          <circle cx="76" cy="60" r="2" fill="#FFD93B"/>
+        </svg>
+      );
+    }
+    // Default: Sunny
+    return (
+      <svg width="96" height="96" viewBox="0 0 96 96" fill="none">
+        <circle cx="48" cy="48" r="20" fill="#FFD93B"/>
+        <g stroke="#FDB813" strokeWidth="4" strokeLinecap="round">
+          <line x1="48" y1="10" x2="48" y2="28"/>
+          <line x1="48" y1="68" x2="48" y2="86"/>
+          <line x1="10" y1="48" x2="28" y2="48"/>
+          <line x1="68" y1="48" x2="86" y2="48"/>
+          <line x1="24" y1="24" x2="36" y2="36"/>
+          <line x1="72" y1="24" x2="60" y2="36"/>
+          <line x1="24" y1="72" x2="36" y2="60"/>
+          <line x1="72" y1="72" x2="60" y2="60"/>
+        </g>
+      </svg>
+    );
+  }
+
+  // Helper to get dynamic background and icon
+  function getWeatherCardStyleAndIcon(condition: string) {
+    const cond = (condition || '').toLowerCase();
+    if (cond.includes('sunny') || cond.includes('clear')) {
+      return {
+        bg: 'bg-gradient-to-br from-yellow-200 via-yellow-400 to-orange-300',
+        icon: (
+          <svg width="32" height="32" viewBox="0 0 32 32">
+            <circle cx="16" cy="16" r="8" fill="#FFD93B" filter="url(#glow)" />
+            <g stroke="#FDB813" strokeWidth="2" strokeLinecap="round">
+              <line x1="16" y1="2" x2="16" y2="7" />
+              <line x1="16" y1="25" x2="16" y2="30" />
+              <line x1="2" y1="16" x2="7" y2="16" />
+              <line x1="25" y1="16" x2="30" y2="16" />
+              <line x1="7" y1="7" x2="10" y2="10" />
+              <line x1="25" y1="7" x2="22" y2="10" />
+              <line x1="7" y1="25" x2="10" y2="22" />
+              <line x1="25" y1="25" x2="22" y2="22" />
+            </g>
+            <defs>
+              <filter id="glow" x="-10" y="-10" width="52" height="52">
+                <feGaussianBlur stdDeviation="3" result="coloredBlur"/>
+                <feMerge>
+                  <feMergeNode in="coloredBlur"/>
+                  <feMergeNode in="SourceGraphic"/>
+                </feMerge>
+              </filter>
+            </defs>
+          </svg>
+        )
+      };
+    }
+    if (cond.includes('rain')) {
+      return {
+        bg: 'bg-gradient-to-br from-blue-400 via-blue-600 to-gray-400',
+        icon: (
+          <svg width="32" height="32" viewBox="0 0 32 32">
+            <ellipse cx="20" cy="22" rx="10" ry="6" fill="#B0BEC5"/>
+            <ellipse cx="12" cy="25" rx="6" ry="4" fill="#CFD8DC"/>
+            <g stroke="#2196F3" strokeWidth="2" strokeLinecap="round">
+              <line x1="12" y1="30" x2="12" y2="28" />
+              <line x1="20" y1="30" x2="20" y2="28" />
+              <line x1="28" y1="30" x2="28" y2="28" />
+            </g>
+          </svg>
+        )
+      };
+    }
+    if (cond.includes('cloud')) {
+      return {
+        bg: 'bg-gradient-to-br from-blue-200 via-blue-400 to-gray-300',
+        icon: (
+          <svg width="32" height="32" viewBox="0 0 32 32">
+            <ellipse cx="20" cy="22" rx="10" ry="6" fill="#B0BEC5"/>
+            <ellipse cx="12" cy="25" rx="6" ry="4" fill="#CFD8DC"/>
+          </svg>
+        )
+      };
+    }
+    // Default
+    return {
+      bg: 'bg-gradient-to-br from-blue-700 to-blue-500',
+      icon: null
+    };
   }
 
   // Parse lat/lon from locationCoords (string: "lat,lon")
@@ -365,42 +411,80 @@ export default function WeatherPage() {
 
           {result && (
             <>
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                <Card className="bg-[#f9f7f3] rounded-2xl shadow-lg p-8 text-gray-900 relative overflow-hidden">
-                  <div className="flex justify-center items-center w-full h-48">
-                    <img
-                      src={getWeatherImage(result.condition)}
-                      alt={result.condition}
-                      className="w-40 h-40 object-contain mx-auto"
-                      draggable={false}
-                    />
-                  </div>
-                  {/* Sunrise/Sunset Row */}
-                  <div className="flex flex-col items-center mt-4">
-                    <SunPathArc latitude={lat} longitude={lon} locationName={locationName || locationCoords} />
-                  </div>
-                </Card>
-                <Card>
-                  <CardHeader>
-                    <CardTitle className="flex items-center gap-2">
-                      <Droplets className="w-5 h-5" />
-                      Irrigation Tips
-                    </CardTitle>
-                  </CardHeader>
-                  <CardContent className="space-y-4">
-                    <div>
-                      <h3 className="font-semibold text-lg">Irrigation Tips</h3>
-                      {result.irrigationTips && !result.irrigationTips.trim().startsWith('The weather in') ? (
-                        <p className="text-gray-700">{result.irrigationTips}</p>
-                      ) : (
-                        <p className="text-gray-500 italic">No specific irrigation advice available for these conditions.</p>
-                      )}
-                    </div>
-                  </CardContent>
-                </Card>
+              {/* Responsive grid: left column (Weather + Sun Path), right column (Irrigation Tips) */}
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-8 items-start mb-8 h-full">
+                {/* Left column: Weather only */}
+                <div className="flex flex-col gap-6 max-w-xl w-full h-full flex-1">
+                  {/* Weather Card */}
+                  {(() => {
+                    const { bg } = getWeatherCardStyleAndIcon(result.condition);
+                    return (
+                      <div className={`w-full max-w-xl h-full min-h-[220px] flex-1 rounded-xl shadow-lg p-4 text-white flex flex-col justify-between ${bg} font-sans`}>
+                        <div>
+                          <div className="text-base font-semibold mb-1 flex items-center gap-2 tracking-tight">Current weather</div>
+                          <div className="flex flex-col items-center">
+                            <div className="flex items-end mt-4">
+                              <span className="text-4xl font-extrabold drop-shadow-sm" style={{textShadow:'0 2px 8px rgba(0,0,0,0.10)'}}>{result.temperature != null ? Math.round(result.temperature) : '--'}</span>
+                              <span className="text-xl font-semibold ml-1 drop-shadow-sm" style={{textShadow:'0 2px 8px rgba(0,0,0,0.10)'}}>°C</span>
+                            </div>
+                            <div className="text-lg font-semibold mt-1 capitalize drop-shadow-sm" style={{textShadow:'0 2px 8px rgba(0,0,0,0.10)'}}>{result.condition || '—'}</div>
+                            {/* Weather Metrics Row */}
+                            <div className="flex justify-center items-center gap-6 mt-4">
+                              {/* Humidity */}
+                              <div className="flex flex-col items-center">
+                                <svg width="20" height="20" fill="none" stroke="white" strokeWidth="2" className="mb-0.5">
+                                  <ellipse cx="10" cy="12" rx="5" ry="7" fill="#60A5FA" />
+                                  <path d="M10 4 Q10 10 15 12" stroke="#fff" />
+                                </svg>
+                                <span className="text-sm font-bold">{result.humidity != null ? `${result.humidity}%` : '--'}</span>
+                                <span className="text-xs">Humidity</span>
+                              </div>
+                              {/* Wind */}
+                              <div className="flex flex-col items-center">
+                                <svg width="20" height="20" fill="none" stroke="white" strokeWidth="2" className="mb-0.5">
+                                  <path d="M4 10h12M6 14h8M5 6h10" stroke="#A7F3D0" />
+                                </svg>
+                                <span className="text-sm font-bold">{result.wind_speed != null ? `${result.wind_speed} km/h` : '--'}</span>
+                                <span className="text-xs">Wind</span>
+                              </div>
+                              {/* Precipitation */}
+                              <div className="flex flex-col items-center">
+                                <svg width="20" height="20" fill="none" stroke="white" strokeWidth="2" className="mb-0.5">
+                                  <ellipse cx="10" cy="12" rx="6" ry="4" fill="#E0E7FF" />
+                                  <path d="M7 15v1M10 15v2M13 15v1" stroke="#fff" />
+                                </svg>
+                                <span className="text-sm font-bold">{result.precipitation != null ? `${result.precipitation} mm` : '--'}</span>
+                                <span className="text-xs">Precip.</span>
+                              </div>
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+                    );
+                  })()}
+                </div>
+                {/* Right column: Irrigation Tips */}
+                <div className="h-full flex-1 max-w-xl w-full">
+                  <Card className="w-full max-w-xl h-full min-h-[220px] flex-1 flex flex-col justify-between rounded-xl shadow-lg">
+                    <CardHeader>
+                      <CardTitle className="flex items-center gap-2">
+                        <Droplets className="w-5 h-5" />
+                        Irrigation Tips
+                      </CardTitle>
+                    </CardHeader>
+                    <CardContent className="space-y-4 flex-1 flex flex-col justify-center">
+                      <div>
+                        {result.irrigationTips && !result.irrigationTips.trim().startsWith('The weather in') ? (
+                          <p className="text-gray-700">{result.irrigationTips}</p>
+                        ) : (
+                          <p className="text-gray-500 italic">No specific irrigation advice available for these conditions.</p>
+                        )}
+                      </div>
+                    </CardContent>
+                  </Card>
+                </div>
               </div>
-              {/* Crops and Remedy Section */}
-              {console.log('Weather result:', result)}
+              {/* Below: Crops and Remedy Section (full width) */}
               <div className="mt-6">
                 <div className="font-bold text-green-800 mb-1">Recommended Crops</div>
                 <div className="flex flex-wrap gap-2 mb-2">
@@ -438,4 +522,4 @@ export default function WeatherPage() {
       </div>
     </AppLayout>
   );
-} 
+}
