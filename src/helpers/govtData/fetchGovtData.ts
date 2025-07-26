@@ -44,7 +44,7 @@ export async function fetchDataFromGovtAPI(
 			try {
 				const response = await fetch(apiUrl, {
 					headers: {
-						accept: "application/xml",
+						accept: "application/json",
 						"accept-language": "en-US,en;q=0.9,zh-CN;q=0.8,zh;q=0.7,hi;q=0.6",
 						"sec-ch-ua":
 							'"Opera";v="120", "Not-A.Brand";v="8", "Chromium";v="135"',
