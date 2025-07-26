@@ -22,6 +22,7 @@ import {
 	Bot,
 	ArrowLeft,
 	User as UserIcon,
+	ClipboardList,
 } from "lucide-react";
 import Link from "next/link";
 import { useRouter, usePathname } from "next/navigation";
@@ -90,6 +91,12 @@ export default function AppLayout({
 			active: pathname === "/weather",
 		},
 		{
+			icon: ClipboardList,
+			label: "Plan",
+			href: "/plan",
+			active: pathname === "/plan",
+		},
+		{
 			icon: Calendar,
 			label: "History",
 			href: "/history",
@@ -100,6 +107,12 @@ export default function AppLayout({
 			label: "Farm Journal",
 			href: "/journal",
 			active: pathname === "/journal",
+		},
+		{
+			icon: Calculator,
+			label: "CropCashFlow",
+			href: "/crop-cash-flow",
+			active: pathname === "/crop-cash-flow",
 		},
 		{
 			icon: UserIcon,

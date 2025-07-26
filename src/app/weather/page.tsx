@@ -8,7 +8,7 @@ import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { useToast } from '@/hooks/use-toast';
 import { getWeatherAndIrrigationTips, WeatherAndIrrigationTipsInput } from '@/ai/flows/weather-and-irrigation-tips';
-import { Loader2, Cloud, Droplets, Sun } from 'lucide-react';
+import { Loader2, Cloud, Droplets, Sun, Calendar } from 'lucide-react';
 import AppLayout from '@/components/agrimitra/app-layout';
 
 // Remove all SunPathArc and its Card. Only render the Weather card in the left column and the Irrigation Tips card in the right column.
@@ -18,6 +18,7 @@ export default function WeatherPage() {
   const [location, setLocation] = useState('');
   const [crop, setCrop] = useState('');
   const [result, setResult] = useState<any>(null);
+  const [forecastData, setForecastData] = useState<any>(null);
   const { toast } = useToast();
   const [selectedCrop, setSelectedCrop] = useState<{ name: string; reason: string; emoji: string } | null>(null);
   const [bestCropIndex, setBestCropIndex] = useState(0);
@@ -100,6 +101,12 @@ export default function WeatherPage() {
       };
       const weatherTips = await getWeatherAndIrrigationTips(input);
       setResult(weatherTips);
+      
+      // Extract forecast data from the result if available
+      if (weatherTips.forecast) {
+        setForecastData(weatherTips.forecast);
+      }
+      
       toast({
         title: "Weather Analysis Complete",
         description: `Weather and irrigation tips for ${locationName || coordsToUse || cityToUse} generated.`,
@@ -114,6 +121,36 @@ export default function WeatherPage() {
     } finally {
       setIsLoading(false);
     }
+  };
+
+  // Helper function to format date
+  const formatDate = (dateString: string) => {
+    const date = new Date(dateString);
+    return date.toLocaleDateString('en-US', { 
+      weekday: 'short', 
+      month: 'short', 
+      day: 'numeric' 
+    });
+  };
+
+  // Helper function to get weather icon
+  const getWeatherIcon = (condition: string) => {
+    const cond = condition.toLowerCase();
+    if (cond.includes('rain')) return '🌧️';
+    if (cond.includes('cloud')) return '☁️';
+    if (cond.includes('sunny') || cond.includes('clear')) return '☀️';
+    if (cond.includes('storm')) return '⛈️';
+    if (cond.includes('snow')) return '❄️';
+    if (cond.includes('fog') || cond.includes('mist')) return '🌫️';
+    return '🌤️';
+  };
+
+  // Helper function to get temperature color
+  const getTemperatureColor = (temp: number) => {
+    if (temp >= 30) return 'text-red-600';
+    if (temp >= 20) return 'text-orange-600';
+    if (temp >= 10) return 'text-yellow-600';
+    return 'text-blue-600';
   };
 
   // Handler for geolocation
@@ -411,9 +448,9 @@ export default function WeatherPage() {
 
           {result && (
             <>
-              {/* Responsive grid: left column (Weather + Sun Path), right column (Irrigation Tips) */}
+              {/* Responsive grid: left column (Weather + Forecast), right column (Irrigation Tips) */}
               <div className="grid grid-cols-1 md:grid-cols-2 gap-8 items-start mb-8 h-full">
-                {/* Left column: Weather only */}
+                {/* Left column: Weather and Forecast */}
                 <div className="flex flex-col gap-6 max-w-xl w-full h-full flex-1">
                   {/* Weather Card */}
                   {(() => {
@@ -462,6 +499,55 @@ export default function WeatherPage() {
                       </div>
                     );
                   })()}
+
+                  {/* Forecast Card */}
+                  {forecastData && forecastData.forecast && forecastData.forecast.length > 0 && (
+                    <Card className="w-full max-w-xl rounded-xl shadow-lg">
+                      <CardHeader className="pb-3">
+                        <CardTitle className="flex items-center gap-2 text-lg">
+                          <Calendar className="w-5 h-5" />
+                          3-Day Forecast
+                        </CardTitle>
+                      </CardHeader>
+                      <CardContent className="pt-0">
+                        <div className="grid grid-cols-3 gap-4">
+                          {forecastData.forecast.slice(0, 3).map((day: any, index: number) => (
+                            <div key={index} className="flex flex-col items-center p-3 bg-gradient-to-b from-blue-50 to-blue-100 rounded-lg border border-blue-200">
+                              <div className="text-sm font-semibold text-gray-700 mb-1">
+                                {formatDate(day.date)}
+                              </div>
+                              <div className="text-2xl mb-2">
+                                {getWeatherIcon(day.condition)}
+                              </div>
+                              <div className="text-center">
+                                <div className="flex items-center justify-center gap-1 mb-1">
+                                  <span className={`text-lg font-bold ${getTemperatureColor(day.max_temp)}`}>
+                                    {Math.round(day.max_temp)}°
+                                  </span>
+                                  <span className="text-sm text-gray-500">
+                                    {Math.round(day.min_temp)}°
+                                  </span>
+                                </div>
+                                <div className="text-xs text-gray-600 capitalize mb-2">
+                                  {day.condition}
+                                </div>
+                                <div className="flex flex-col items-center gap-1 text-xs">
+                                  <div className="flex items-center gap-1">
+                                    <span className="text-blue-600">💧</span>
+                                    <span>{day.chance_of_rain}%</span>
+                                  </div>
+                                  <div className="flex items-center gap-1">
+                                    <span className="text-gray-600">💨</span>
+                                    <span>{day.max_wind_kph} km/h</span>
+                                  </div>
+                                </div>
+                              </div>
+                            </div>
+                          ))}
+                        </div>
+                      </CardContent>
+                    </Card>
+                  )}
                 </div>
                 {/* Right column: Irrigation Tips */}
                 <div className="h-full flex-1 max-w-xl w-full">

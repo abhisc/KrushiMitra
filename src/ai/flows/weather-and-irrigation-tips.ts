@@ -74,6 +74,7 @@ const WeatherAndIrrigationTipsOutputSchema = z.object({
 	precipitation: z.number().optional(),
 	sunrise: z.string().optional(),
 	sunset: z.string().optional(),
+	forecast: z.any().optional().describe("Weather forecast data for upcoming days"),
 });
 export type WeatherAndIrrigationTipsOutput = z.infer<
 	typeof WeatherAndIrrigationTipsOutputSchema
@@ -258,6 +259,11 @@ const weatherAndIrrigationTipsFlow = ai.defineFlow(
 		if (forecastData?.forecast && forecastData.forecast.length > 0) {
 			output.sunrise = forecastData.forecast[0].sunrise;
 			output.sunset = forecastData.forecast[0].sunset;
+		}
+
+		// Add forecast data to output
+		if (forecastData) {
+			output.forecast = forecastData;
 		}
 
 		return output!;
