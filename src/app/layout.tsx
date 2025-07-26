@@ -7,7 +7,6 @@ import { LanguageProvider } from '@/contexts/language-context';
 import { PageTranslator } from '@/components/ui/page-translator';
 import { PlaceholderTranslator } from '@/components/ui/placeholder-translator';
 import { TranslationPreloader } from '@/components/ui/translation-preloader';
-import { TranslationStatus } from '@/components/ui/translation-status';
 
 import Script from 'next/script';
 
@@ -102,14 +101,16 @@ export default function RootLayout({
           enableSystem
           disableTransitionOnChange
         >
-          		<AuthProvider>
-			<LanguageProvider>
-				<TranslationPreloader />
-				<PlaceholderTranslator>
-					{children}
-				</PlaceholderTranslator>
-			</LanguageProvider>
-		</AuthProvider>
+          <AuthProvider>
+            <LanguageProvider>
+              <TranslationPreloader />
+              <PageTranslator>
+                <PlaceholderTranslator>
+                  {children}
+                </PlaceholderTranslator>
+              </PageTranslator>
+            </LanguageProvider>
+          </AuthProvider>
           <Toaster />
         </ThemeProvider>
         

@@ -18,91 +18,25 @@ import { marketplaceTool } from './tools/marketplace-tool';
 import { getGovernmentSchemeInfo } from './tools/government-scheme-information';
 import { fetchDistrictsTool } from './tools/GovtApisTools';
 
-// Create a simple MCP-like server interface
-export class KrushiMitraMCPServer {
-  private name = 'krushimitra-ai-server';
-  private version = '1.0.0';
-
-  // Expose flows as methods
-  async diagnoseCropDisease(input: any) {
-    return await diagnoseCropDisease(input);
-  }
-
-  async diagnoseFollowUp(input: any) {
-    return await diagnoseFollowUp(input);
-  }
-
-  async askAnything(input: any) {
-    return await AskAnything(input);
-  }
-
-  async getWeatherAndIrrigationTips(input: any) {
-    return await getWeatherAndIrrigationTips(input);
-  }
-
-  async getMarketplaceChatResponse(input: any) {
-    return await getMarketplaceChatResponse(input);
-  }
-
-  async getMarketplaceSearch(input: any) {
-    return await getMarketplaceSearch(input);
-  }
-
-  async getMarketAnalysis(input: any) {
-    return await getMarketAnalysis(input);
-  }
-
-  async farmJournalExtract(input: any) {
-    return await farmJournalExtractFlow(input);
-  }
-
-  async handleFarmerSchemeQuery(input: any) {
-    return await handleFarmerSchemeQuery(input);
-  }
-
-  // Expose tools as methods
-  async getCurrentWeather(input: any) {
-    return await getCurrentWeather(input);
-  }
-
-  async getMarketplaceData(input: any) {
-    return await marketplaceTool(input);
-  }
-
-  async getGovernmentSchemeInfo(input: any) {
-    return await getGovernmentSchemeInfo(input);
-  }
-
-  async getDistrictsData(input: any) {
-    return await fetchDistrictsTool(input);
-  }
-
-  // Get server info
-  getInfo() {
-    return {
-      name: this.name,
-      version: this.version,
-      flows: [
-        'diagnoseCropDisease',
-        'diagnoseFollowUp', 
-        'askAnything',
-        'getWeatherAndIrrigationTips',
-        'getMarketplaceChatResponse',
-        'getMarketplaceSearch',
-        'getMarketAnalysis',
-        'farmJournalExtract',
-        'handleFarmerSchemeQuery'
-      ],
-      tools: [
-        'getCurrentWeather',
-        'getMarketplaceData',
-        'getGovernmentSchemeInfo',
-        'getDistrictsData'
-      ]
-    };
-  }
-}
-
-// Create and export the server instance
-export const server = new KrushiMitraMCPServer();
-export default server; 
+// Export all flows and tools for use in the application
+export {
+  // Flows
+  diagnoseCropDisease,
+  diagnoseFollowUp,
+  AskAnything,
+  getWeatherAndIrrigationTips,
+  getMarketplaceChatResponse,
+  getMarketplaceSearch,
+  getMarketAnalysis,
+  farmJournalExtractFlow,
+  handleFarmerSchemeQuery,
+  
+  // Tools
+  getCurrentWeather,
+  marketplaceTool,
+  getGovernmentSchemeInfo,
+  fetchDistrictsTool,
+  
+  // AI instance
+  ai,
+}; 
