@@ -26,9 +26,10 @@ import {
 import Link from "next/link";
 import { useRouter, usePathname } from "next/navigation";
 import RightSidebar from "./right-sidebar";
-import { getRecentInputs } from "@/utils/localStorage";
 import { toast } from "@/hooks/use-toast";
 import { UserMenu } from "@/components/auth/user-menu";
+import { useChat } from "@/hooks/use-chat";
+import { ChatType } from "@/firebaseStore/services/chat-service";
 
 interface AppLayoutProps {
 	children: React.ReactNode;
@@ -53,6 +54,9 @@ export default function AppLayout({
 	const [sidebarOpen, setSidebarOpen] = useState(false);
 	const router = useRouter();
 	const pathname = usePathname();
+	
+	// Chat hook for recent chats
+	const { recentChats, loading: chatsLoading } = useChat();
 
 	// Supported languages
 	const languages = [
@@ -176,27 +180,36 @@ export default function AppLayout({
 								Recent Chats
 							</h3>
 							<div className="space-y-2">
-								{getRecentInputs().map((chat, index) => (
-									<button
-										key={index}
-										onClick={() => {
-											if (handleHistoryChatClick) {
-												handleHistoryChatClick(chat);
-											} else {
-												toast({
-													title: "Action unavailable",
-													description:
-														"Cannot handle chat history click at this time.",
-													variant: "destructive",
-												});
-											}
-										}}
-										className="w-full text-left px-3 py-2 text-sm text-muted-foreground hover:bg-accent rounded-lg transition-colors line-clamp-2"
-									>
-										<MessageCircle className="w-4 h-4 inline mr-2 text-muted-foreground" />
-										<span className="text-xs">{chat}</span>
-									</button>
-								))}
+								{chatsLoading ? (
+									<div className="text-xs text-muted-foreground">Loading chats...</div>
+								) : recentChats.length > 0 ? (
+									recentChats.map((chat) => (
+										<button
+											key={chat.id}
+											onClick={() => {
+												if (handleHistoryChatClick) {
+													handleHistoryChatClick(chat.lastMessage);
+												} else {
+													toast({
+														title: "Action unavailable",
+														description:
+															"Cannot handle chat history click at this time.",
+														variant: "destructive",
+													});
+												}
+											}}
+											className="w-full text-left px-3 py-2 text-sm text-muted-foreground hover:bg-accent rounded-lg transition-colors line-clamp-2"
+										>
+											<MessageCircle className="w-4 h-4 inline mr-2 text-muted-foreground" />
+											<div className="text-xs">
+												<div className="font-medium text-foreground">{chat.title}</div>
+												<div className="text-muted-foreground line-clamp-1">{chat.lastMessage}</div>
+											</div>
+										</button>
+									))
+								) : (
+									<div className="text-xs text-muted-foreground">No recent chats</div>
+								)}
 							</div>
 						</div>
 					)}

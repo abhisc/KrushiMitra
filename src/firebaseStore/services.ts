@@ -4,6 +4,7 @@ import {
 	DBCollectionKeys,
 } from "./firestore-service";
 import { SchemeService } from "./services/scheme-service";
+import { chatService, chatSessionService, chatMessageService, storageService } from "./services/chat-service";
 
 // Example interfaces for different collections
 export interface WeatherData extends BaseDocument {
@@ -172,3 +173,14 @@ export {
   type DiagnosisChat,
   type DiagnosisMessage
 } from './services/diagnosis-chat-service';
+
+// Export chat services
+export { 
+  chatService, 
+  chatSessionService, 
+  chatMessageService, 
+  storageService as chatStorageService,
+  type ChatSession,
+  type ChatMessage,
+  type ChatType
+} from './services/chat-service';
