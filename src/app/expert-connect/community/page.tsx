@@ -140,7 +140,6 @@ export default function CommunityForumPage() {
   const [suggestions, setSuggestions] = useState<string[]>([]);
   const [showSuggestions, setShowSuggestions] = useState(false);
   const [question, setQuestion] = useState("");
-  const [language, setLanguage] = useState("");
   const [image, setImage] = useState<File|null>(null);
 
   const handleDetectLocation = () => {
@@ -159,7 +158,6 @@ export default function CommunityForumPage() {
 
   const handleForumSelect = (forum: Forum) => {
     setSelectedForum(forum);
-    setLanguage(forum.languages[0]);
   };
 
   const handleImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -534,7 +532,6 @@ export default function CommunityForumPage() {
                     >
                       {forumIcons[forum.type]}
                       <div className="font-bold mt-2 text-green-800 text-lg text-center">{forum.name}</div>
-                      <div className="text-xs text-gray-500 mt-1 text-center">{forum.languages.join(", ")}</div>
                       <div className="flex gap-1 mt-2 flex-wrap justify-center">
                         {forum.categories.map(cat => (
                           <span key={cat} className="bg-green-100 text-green-700 px-2 py-1 rounded text-xs">{cat}</span>
@@ -563,19 +560,6 @@ export default function CommunityForumPage() {
                 </div>
                 
                 <div className="space-y-4">
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">Select Language:</label>
-                    <select
-                      value={language}
-                      onChange={e => setLanguage(e.target.value)}
-                      className="p-2 border rounded w-full bg-white text-gray-900 border-gray-300 focus:ring-green-500 focus:border-green-500"
-                    >
-                      {selectedForum.languages.map(lang => (
-                        <option key={lang} value={lang}>{lang}</option>
-                      ))}
-                    </select>
-                  </div>
-                  
                   <div>
                     <label className="block text-sm font-medium text-gray-700 mb-1">Your Question or Suggestion:</label>
                     <textarea

@@ -26,7 +26,7 @@ export default function AdditionalInfoCard({ onFillNow, onDismiss }: AdditionalI
   };
 
   return (
-    <Card className="border-primary/20 bg-primary/5 w-80 shadow-lg relative">
+    <Card className="border-primary/20 w-80 shadow-lg relative">
       <CardHeader className="pb-2">
         <div className="flex items-center justify-between">
           <CardTitle className="flex items-center gap-2 text-primary text-sm">
@@ -46,7 +46,7 @@ export default function AdditionalInfoCard({ onFillNow, onDismiss }: AdditionalI
             </Button>
           </div>
         </div>
-        <CardDescription className="text-primary/70 text-xs">
+        <CardDescription className="text-primary/90 text-sm">
           Fill additional info (optional) to get personalized recommendations.
         </CardDescription>
       </CardHeader>
