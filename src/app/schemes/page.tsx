@@ -1,70 +1,109 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { useToast } from '@/hooks/use-toast';
-import { getGovernmentSchemeInfo, GovernmentSchemeInfoInput } from '@/ai/flows/government-scheme-information';
-import { Loader2, Landmark, FileText, Users } from 'lucide-react';
+import { Loader2, Landmark, FileText, Users, User, AlertCircle, CheckCircle, Search, Filter } from 'lucide-react';
 import AppLayout from '@/components/agrimitra/app-layout';
+import { useAuth } from '@/contexts/auth-context';
+
+interface Scheme {
+  id: string;
+  fields: {
+    schemeName: string;
+    schemeShortTitle: string;
+    briefDescription: string;
+    schemeCategory: string[];
+    beneficiaryState: string[];
+    level: string;
+    schemeFor: string;
+    nodalMinistryName: string;
+    tags: string[];
+    slug: string;
+  };
+}
 
 export default function SchemesPage() {
   const [isLoading, setIsLoading] = useState(false);
-  const [cropType, setCropType] = useState('');
-  const [location, setLocation] = useState('');
-  const [farmSize, setFarmSize] = useState('');
-  const [query, setQuery] = useState('');
-  const [result, setResult] = useState<any>(null);
+  const [schemes, setSchemes] = useState<Scheme[]>([]);
+  const [filteredSchemes, setFilteredSchemes] = useState<Scheme[]>([]);
+  const [searchQuery, setSearchQuery] = useState('');
+  const [activeTab, setActiveTab] = useState('all');
   const { toast } = useToast();
+  const { userProfile } = useAuth();
 
-  const popularCrops = [
-    'Rice', 'Wheat', 'Corn', 'Soybeans', 'Cotton', 'Sugarcane',
-    'Potato', 'Tomato', 'Onion', 'Chilli', 'Pulses', 'Oilseeds'
-  ];
+  // Fetch all schemes on component mount
+  useEffect(() => {
+    fetchAllSchemes();
+  }, []);
 
-  const popularLocations = [
-    'Maharashtra', 'Delhi', 'Karnataka', 'Telangana', 'Tamil Nadu',
-    'West Bengal', 'Gujarat', 'Rajasthan', 'Uttar Pradesh', 'Bihar'
-  ];
-
-  const farmSizes = [
-    'Small (1-5 acres)', 'Medium (5-20 acres)', 'Large (20+ acres)'
-  ];
-
-  const handleSchemeSearch = async () => {
-    if (!cropType.trim() || !location.trim() || !farmSize.trim()) {
-      toast({
-        title: "Error",
-        description: "Please provide crop type, location, and farm size for scheme information.",
-        variant: "destructive",
-      });
-      return;
+  // Filter schemes when search query changes
+  useEffect(() => {
+    if (searchQuery.trim()) {
+      const filtered = schemes.filter(scheme => 
+        scheme.fields.schemeName.toLowerCase().includes(searchQuery.toLowerCase()) ||
+        scheme.fields.briefDescription.toLowerCase().includes(searchQuery.toLowerCase()) ||
+        scheme.fields.tags.some(tag => tag.toLowerCase().includes(searchQuery.toLowerCase()))
+      );
+      setFilteredSchemes(filtered);
+    } else {
+      setFilteredSchemes(schemes);
     }
+  }, [searchQuery, schemes]);
 
+  const fetchAllSchemes = async () => {
     setIsLoading(true);
     try {
-      const input: GovernmentSchemeInfoInput = {
-        cropType: cropType.trim(),
-        location: location.trim(),
-        farmSize: farmSize.trim(),
-        query: query.trim() || undefined,
-      };
+      // Try using a CORS proxy or different approach
+      const response = await fetch(
+        "https://api.myscheme.gov.in/search/v5/schemes?lang=en&q=%5B%7B%22identifier%22%3A%22schemeCategory%22%2C%22value%22%3A%22Agriculture%2CRural%20%26%20Environment%22%7D%5D&keyword=&sort=&from=0&size=10",
+        {
+          method: "GET",
+          headers: {
+            "Accept": "application/json",
+            "Content-Type": "application/json",
+            "x-api-key": "tYTy5eEhlu9rFjyxuCr7ra7ACp4dv1RH8gWuHTDc",
+          },
+          mode: "cors",
+        }
+      );
 
-      const schemeInfo = await getGovernmentSchemeInfo(input);
-      setResult(schemeInfo);
+      if (!response.ok) {
+        throw new Error(`HTTP error! status: ${response.status}`);
+      }
+
+      const data = await response.json();
+      
+             // Extract schemes from the response - based on the actual API response structure
+       let schemesData: Scheme[] = [];
+       if (data.data && data.data.hits && data.data.hits.items) {
+         schemesData = data.data.hits.items;
+       } else if (data.hits && data.hits.items) {
+         schemesData = data.hits.items;
+       } else if (data.data && Array.isArray(data.data)) {
+         schemesData = data.data;
+       } else if (data.schemes && Array.isArray(data.schemes)) {
+         schemesData = data.schemes;
+       } else if (Array.isArray(data)) {
+         schemesData = data;
+       }
+
+      setSchemes(schemesData);
+      setFilteredSchemes(schemesData);
       
       toast({
-        title: "Scheme Search Complete",
-        description: `Government schemes for ${cropType} in ${location} found.`,
+        title: "Schemes Loaded",
+        description: `Successfully loaded ${schemesData.length} government schemes.`,
       });
     } catch (error) {
-      console.error('Scheme search error:', error);
+      console.error('Error fetching schemes:', error);
       toast({
-        title: "Search Failed",
-        description: "Unable to get scheme information. Please try again.",
+        title: "Error",
+        description: "Failed to load schemes. Please try again.",
         variant: "destructive",
       });
     } finally {
@@ -72,147 +111,291 @@ export default function SchemesPage() {
     }
   };
 
+  const filterBasedOnUserData = () => {
+    if (!userProfile) {
+      toast({
+        title: "No Profile Data",
+        description: "Please complete your profile to use this filter.",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    const userFilters: string[] = [];
+    
+    // Filter based on user location
+    if (userProfile.location?.state) {
+      userFilters.push(userProfile.location.state);
+    }
+    
+    // Filter based on user characteristics
+    if (userProfile.caste) {
+      userFilters.push(userProfile.caste);
+    }
+    if (userProfile.residence) {
+      userFilters.push(userProfile.residence);
+    }
+    if (userProfile.gender) {
+      userFilters.push(userProfile.gender);
+    }
+
+    const filtered = schemes.filter(scheme => {
+      // Check if scheme is applicable to user's state
+      const isStateApplicable = scheme.fields.beneficiaryState.includes('All') || 
+        scheme.fields.beneficiaryState.some(state => 
+          userProfile.location?.state && state.toLowerCase().includes(userProfile.location.state.toLowerCase())
+        );
+
+      // Check if scheme tags match user characteristics
+      const hasMatchingTags = scheme.fields.tags.some(tag => 
+        userFilters.some(filter => tag.toLowerCase().includes(filter.toLowerCase()))
+      );
+
+      return isStateApplicable || hasMatchingTags;
+    });
+
+    setFilteredSchemes(filtered);
+    setActiveTab('user-data');
+    
+    toast({
+      title: "Filtered by Profile",
+      description: `Found ${filtered.length} schemes matching your profile.`,
+    });
+  };
+
+  const filterBasedOnPrompt = async (prompt: string) => {
+    if (!prompt.trim()) {
+      toast({
+        title: "Empty Prompt",
+        description: "Please enter a search prompt.",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    const filtered = schemes.filter(scheme => {
+      const searchText = `${scheme.fields.schemeName} ${scheme.fields.briefDescription} ${scheme.fields.tags.join(' ')}`.toLowerCase();
+      const promptLower = prompt.toLowerCase();
+      
+      // Simple keyword matching - in a real app, you might use AI for semantic search
+      const keywords = promptLower.split(' ').filter(word => word.length > 2);
+      return keywords.some(keyword => searchText.includes(keyword));
+    });
+
+    setFilteredSchemes(filtered);
+    setActiveTab('prompt');
+    
+    toast({
+      title: "Filtered by Prompt",
+      description: `Found ${filtered.length} schemes matching "${prompt}".`,
+    });
+  };
+
+  const resetFilters = () => {
+    setFilteredSchemes(schemes);
+    setSearchQuery('');
+    setActiveTab('all');
+  };
+
   return (
     <AppLayout 
-      title="Government Scheme Information" 
-      subtitle="Find relevant government schemes and subsidies for farmers"
+      title="Government Schemes" 
+      subtitle="Browse and filter government schemes for farmers"
       showBackButton={true}
     >
       <div className="p-6">
-        <div className="max-w-4xl mx-auto space-y-6">
+        <div className="max-w-6xl mx-auto space-y-6">
+          {/* Header with search and filters */}
           <Card>
             <CardHeader>
               <CardTitle className="flex items-center gap-2">
                 <Landmark className="w-5 h-5" />
-                Scheme Search Parameters
+                All Government Schemes
               </CardTitle>
             </CardHeader>
             <CardContent className="space-y-4">
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                <div>
-                  <Label htmlFor="cropType">Crop Type</Label>
-                  <Select value={cropType} onValueChange={setCropType}>
-                    <SelectTrigger>
-                      <SelectValue placeholder="Select crop" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {popularCrops.map((cropName) => (
-                        <SelectItem key={cropName} value={cropName}>
-                          {cropName}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                </div>
-                <div>
-                  <Label htmlFor="location">Location</Label>
-                  <Select value={location} onValueChange={setLocation}>
-                    <SelectTrigger>
-                      <SelectValue placeholder="Select location" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {popularLocations.map((loc) => (
-                        <SelectItem key={loc} value={loc}>
-                          {loc}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                </div>
-                <div>
-                  <Label htmlFor="farmSize">Farm Size</Label>
-                  <Select value={farmSize} onValueChange={setFarmSize}>
-                    <SelectTrigger>
-                      <SelectValue placeholder="Select farm size" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {farmSizes.map((size) => (
-                        <SelectItem key={size} value={size}>
-                          {size}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                </div>
-              </div>
-              <div>
-                <Label htmlFor="query">Specific Question (Optional)</Label>
+              {/* Search Bar */}
+              <div className="relative">
+                <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4" />
                 <Input
-                  id="query"
-                  placeholder="Ask about specific schemes or requirements..."
-                  value={query}
-                  onChange={(e) => setQuery(e.target.value)}
+                  placeholder="Search schemes by name, description, or tags..."
+                  value={searchQuery}
+                  onChange={(e) => setSearchQuery(e.target.value)}
+                  className="pl-10"
                 />
               </div>
+
+              {/* Filter Options */}
+              <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
+                <TabsList className="grid w-full grid-cols-3">
+                  <TabsTrigger value="all">All Schemes</TabsTrigger>
+                  <TabsTrigger value="user-data">Filter by My Data</TabsTrigger>
+                  <TabsTrigger value="prompt">Filter by Prompt</TabsTrigger>
+                </TabsList>
+
+                <TabsContent value="all" className="space-y-4">
+                  <div className="flex items-center justify-between">
+                    <p className="text-sm text-gray-600">
+                      Showing all available government schemes
+                    </p>
+                    <Button variant="outline" size="sm" onClick={resetFilters}>
+                      Reset Filters
+                    </Button>
+                  </div>
+                </TabsContent>
+
+                <TabsContent value="user-data" className="space-y-4">
+                  <div className="space-y-4">
+                    {userProfile ? (
+                      <div className="bg-blue-50 p-4 rounded-lg">
+                        <h4 className="font-medium text-blue-800 mb-2">Your Profile Data:</h4>
+                        <div className="grid grid-cols-2 gap-2 text-sm">
+                          <div><span className="font-medium">State:</span> {userProfile.location?.state || 'Not set'}</div>
+                          <div><span className="font-medium">Caste:</span> {userProfile.caste || 'Not set'}</div>
+                          <div><span className="font-medium">Residence:</span> {userProfile.residence || 'Not set'}</div>
+                          <div><span className="font-medium">Gender:</span> {userProfile.gender || 'Not set'}</div>
+                        </div>
+                      </div>
+                    ) : (
+                      <div className="bg-yellow-50 p-4 rounded-lg">
+                        <p className="text-yellow-800 text-sm">No profile data available. Complete your profile for personalized filtering.</p>
+                      </div>
+                    )}
+                    <Button 
+                      onClick={filterBasedOnUserData}
+                      disabled={!userProfile}
+                      className="w-full"
+                    >
+                      <Filter className="w-4 h-4 mr-2" />
+                      Filter Based on My Data
+                    </Button>
+                  </div>
+                </TabsContent>
+
+                <TabsContent value="prompt" className="space-y-4">
+                  <div className="space-y-4">
+                    <div>
+                      <Label htmlFor="prompt">Enter your search prompt</Label>
+                      <Input
+                        id="prompt"
+                        placeholder="e.g., schemes for small farmers, women farmers, organic farming..."
+                        onKeyPress={(e) => {
+                          if (e.key === 'Enter') {
+                            const target = e.target as HTMLInputElement;
+                            filterBasedOnPrompt(target.value);
+                          }
+                        }}
+                      />
+                    </div>
+                    <Button 
+                      onClick={() => {
+                        const promptInput = document.getElementById('prompt') as HTMLInputElement;
+                        filterBasedOnPrompt(promptInput.value);
+                      }}
+                      className="w-full"
+                    >
+                      <Search className="w-4 h-4 mr-2" />
+                      Filter Based on Prompt
+                    </Button>
+                  </div>
+                </TabsContent>
+              </Tabs>
             </CardContent>
           </Card>
 
-          <Button 
-            onClick={handleSchemeSearch} 
-            disabled={isLoading || !cropType.trim() || !location.trim() || !farmSize.trim()}
-            className="w-full"
-          >
-            {isLoading ? (
-              <>
-                <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-                Searching Schemes...
-              </>
-            ) : (
-              <>
-                <FileText className="w-4 h-4 mr-2" />
-                Search Government Schemes
-              </>
-            )}
-          </Button>
+          {/* Loading State */}
+          {isLoading && (
+            <Card>
+              <CardContent className="flex items-center justify-center py-8">
+                <Loader2 className="w-6 h-6 animate-spin mr-2" />
+                <span>Loading schemes...</span>
+              </CardContent>
+            </Card>
+          )}
 
-          {result && (
-            <div className="space-y-6">
-              <Card>
-                <CardHeader>
-                  <CardTitle className="flex items-center gap-2">
-                    <Users className="w-5 h-5" />
-                    Available Schemes
-                  </CardTitle>
-                </CardHeader>
-                <CardContent>
+          {/* Schemes List */}
+          {!isLoading && (
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <Users className="w-5 h-5" />
+                  Available Schemes ({filteredSchemes.length})
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                {filteredSchemes.length === 0 ? (
+                  <div className="text-center py-8 text-gray-500">
+                    <FileText className="w-12 h-12 mx-auto mb-4 text-gray-300" />
+                    <p>No schemes found matching your criteria.</p>
+                    <Button variant="outline" onClick={resetFilters} className="mt-4">
+                      Reset Filters
+                    </Button>
+                  </div>
+                ) : (
                   <div className="space-y-4">
-                    {result.schemes?.map((scheme: any, index: number) => (
-                      <div key={index} className="border rounded-lg p-4 space-y-2">
-                        <h3 className="font-semibold text-lg">{scheme.name}</h3>
-                        <p className="text-gray-600">{scheme.description}</p>
-                        <div className="grid grid-cols-1 md:grid-cols-3 gap-2 text-sm">
-                          <div>
-                            <span className="font-medium">Eligibility:</span> {scheme.eligibility}
+                    {filteredSchemes.map((scheme, index) => (
+                      <div key={scheme.id} className="border rounded-lg p-4 space-y-3 hover:shadow-md transition-shadow">
+                        <div className="flex items-start justify-between">
+                          <div className="flex-1">
+                            <h3 className="font-semibold text-lg text-green-700">
+                              {scheme.fields.schemeName}
+                            </h3>
+                            {scheme.fields.schemeShortTitle && (
+                              <p className="text-sm text-gray-600 font-medium">
+                                {scheme.fields.schemeShortTitle}
+                              </p>
+                            )}
                           </div>
-                          <div>
-                            <span className="font-medium">Benefits:</span> {scheme.benefits}
+                          <div className="flex flex-col items-end gap-2">
+                            <span className="text-xs bg-green-100 text-green-800 px-2 py-1 rounded-full">
+                              {scheme.fields.level}
+                            </span>
+                            <span className="text-xs bg-blue-100 text-blue-800 px-2 py-1 rounded-full">
+                              {scheme.fields.schemeFor}
+                            </span>
                           </div>
-                          <div>
-                            <span className="font-medium">How to Apply:</span> {scheme.howToApply}
+                        </div>
+                        
+                        <p className="text-gray-600 text-sm leading-relaxed">
+                          {scheme.fields.briefDescription}
+                        </p>
+                        
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm">
+                          <div className="space-y-2">
+                            <div className="bg-blue-50 p-3 rounded-lg">
+                              <span className="font-medium text-blue-800">Ministry:</span>
+                              <p className="text-blue-700 mt-1">{scheme.fields.nodalMinistryName}</p>
+                            </div>
+                            <div className="bg-green-50 p-3 rounded-lg">
+                              <span className="font-medium text-green-800">Categories:</span>
+                              <p className="text-green-700 mt-1">{scheme.fields.schemeCategory.join(', ')}</p>
+                            </div>
+                          </div>
+                          <div className="space-y-2">
+                            <div className="bg-orange-50 p-3 rounded-lg">
+                              <span className="font-medium text-orange-800">Applicable States:</span>
+                              <p className="text-orange-700 mt-1">{scheme.fields.beneficiaryState.join(', ')}</p>
+                            </div>
+                            {scheme.fields.tags.length > 0 && (
+                              <div className="bg-purple-50 p-3 rounded-lg">
+                                <span className="font-medium text-purple-800">Tags:</span>
+                                <div className="flex flex-wrap gap-1 mt-1">
+                                  {scheme.fields.tags.map((tag, tagIndex) => (
+                                    <span key={tagIndex} className="text-xs bg-purple-200 text-purple-800 px-2 py-1 rounded">
+                                      {tag}
+                                    </span>
+                                  ))}
+                                </div>
+                              </div>
+                            )}
                           </div>
                         </div>
                       </div>
                     ))}
                   </div>
-                </CardContent>
-              </Card>
-
-              <Card>
-                <CardHeader>
-                  <CardTitle>Summary</CardTitle>
-                </CardHeader>
-                <CardContent>
-                  <div className="space-y-4">
-                    <div>
-                      <h3 className="font-semibold text-lg">Total Schemes Found</h3>
-                      <p className="text-2xl font-bold text-green-600">
-                        {result.schemes?.length || 0} schemes
-                      </p>
-                    </div>
-                  </div>
-                </CardContent>
-              </Card>
-            </div>
+                )}
+              </CardContent>
+            </Card>
           )}
         </div>
       </div>

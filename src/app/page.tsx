@@ -12,9 +12,14 @@ import {
 	Bot,
 	Send,
 	Mic,
+	BookOpen,
 } from "lucide-react";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { storeRecentInput } from "@/utils/localStorage";
+import { useAuth } from "@/contexts/auth-context";
+import AdditionalInfoCard from "@/components/additional-info-card";
+import AdditionalInfoForm from "@/components/additional-info-form";
+import { useAdditionalInfo } from "@/hooks/use-additional-info";
 
 export default function Home() {
 	const quickPrompts = [
@@ -29,6 +34,24 @@ export default function Home() {
 	const [aiResponse, setAiResponse] = useState<{ response?: string }>({});
 	const [loading, setLoading] = useState(false);
 	const { toast } = useToast();
+	const { user, userProfile, loadUserProfile } = useAuth();
+	const [showAdditionalInfoForm, setShowAdditionalInfoForm] = useState(false);
+	const { showCard: showAdditionalInfoCard, dismissCard: dismissAdditionalInfoCard, resetCard } = useAdditionalInfo();
+
+	useEffect(() => {
+		// Check if user has additional info and show card if needed
+		if (user && userProfile) {
+			const hasAdditionalInfo = userProfile.age || userProfile.gender || userProfile.location?.city || 
+									userProfile.isStudent || userProfile.minority || userProfile.disability || 
+									userProfile.caste || userProfile.residence;
+			
+			if (!hasAdditionalInfo) {
+				resetCard(); // Reset card state to show it
+			}
+		} else if (user) {
+			resetCard(); // Reset card state to show it
+		}
+	}, [user, userProfile, resetCard]);
 
 	const handleUserSend = async () => {
 		if (!userInput.trim()) return;
@@ -56,6 +79,24 @@ export default function Home() {
 		}
 	};
 
+	const handleFillAdditionalInfo = () => {
+		setShowAdditionalInfoForm(true);
+		dismissAdditionalInfoCard();
+	};
+
+	const handleDismissAdditionalInfo = () => {
+		dismissAdditionalInfoCard();
+	};
+
+	const handleAdditionalInfoSuccess = async () => {
+		setShowAdditionalInfoForm(false);
+		await loadUserProfile();
+		toast({
+			title: "Success",
+			description: "Additional information saved successfully!",
+		});
+	};
+
 	return (
 		<AppLayout
 			handleHistoryChatClick={(text) => setUserInput(text)}
@@ -64,29 +105,37 @@ export default function Home() {
 		>
 			<div className="p-6">
 				<div className="max-w-4xl mx-auto space-y-8">
+					{/* Additional Info Form Modal */}
+					{showAdditionalInfoForm && (
+						<AdditionalInfoForm
+							onClose={() => setShowAdditionalInfoForm(false)}
+							onSuccess={handleAdditionalInfoSuccess}
+						/>
+					)}
+
 					{/* Welcome Section */}
 					<div className="text-center mb-8">
-						<div className="w-16 h-16 bg-green-600 rounded-2xl mx-auto mb-4 flex items-center justify-center">
-							<Bot className="w-8 h-8 text-white" />
+						<div className="w-16 h-16 bg-primary rounded-2xl mx-auto mb-4 flex items-center justify-center">
+							<Bot className="w-8 h-8 text-primary-foreground" />
 						</div>
-						<h2 className="text-3xl font-bold text-gray-900 mb-2">
+						<h2 className="text-3xl font-bold text-foreground mb-2">
 							AI-Powered Agricultural Assistant
 						</h2>
-						<p className="text-lg text-gray-600">
+						<p className="text-lg text-muted-foreground">
 							Smart farming solutions for modern agriculture
 						</p>
 					</div>
 
 					{/* Chat Interface */}
-					<div className="bg-white rounded-2xl shadow-xl p-8 border border-gray-100">
+					<div className="bg-card rounded-2xl shadow-xl p-8 border border-border">
 						<div className="flex items-center justify-center mb-6">
-							<Bot className="w-8 h-8 text-green-600 mr-3" />
-							<span className="text-2xl font-semibold text-green-700">
+							<Bot className="w-8 h-8 text-primary mr-3" />
+							<span className="text-2xl font-semibold text-primary">
 								Talk to KrushiMitra
 							</span>
 						</div>
 
-						<p className="text-gray-600 text-center mb-6">
+						<p className="text-muted-foreground text-center mb-6">
 							Get instant answers, advice, and support for your farming needs.
 						</p>
 
@@ -95,18 +144,18 @@ export default function Home() {
 								rows={3}
 								value={userInput}
 								onChange={(e) => setUserInput(e.target.value)}
-								className="w-full text-white border-2 border-gray-200 rounded-xl px-6 py-4 text-base focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent resize-none"
+								className="w-full bg-background text-foreground border-2 border-border rounded-xl px-6 py-4 text-base focus:outline-none focus:ring-2 focus:ring-ring focus:border-transparent resize-none"
 								placeholder="Ask me anything about farming - crop diseases, market prices, weather, subsidies..."
 							/>
 							<div className="flex justify-between items-center mt-4">
 								<button
 									onClick={handleUserSend}
 									disabled={loading || !userInput.trim()}
-									className="disabled:opacity-45 bg-gradient-to-r from-green-600 to-green-700 hover:from-green-700 hover:to-green-800 text-white px-8 py-3 rounded-xl font-semibold text-base transition-all duration-200 shadow-lg hover:shadow-xl flex items-center"
+									className="disabled:opacity-45 bg-gradient-to-r from-primary to-primary/80 hover:from-primary/90 hover:to-primary/70 text-primary-foreground px-8 py-3 rounded-xl font-semibold text-base transition-all duration-200 shadow-lg hover:shadow-xl flex items-center"
 								>
 									{loading ? (
 										<>
-											<div className="w-4 h-4 mr-2 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
+											<div className="w-4 h-4 mr-2 border-2 border-primary-foreground border-t-transparent rounded-full animate-spin"></div>
 											Thinking...
 										</>
 									) : (
@@ -118,7 +167,7 @@ export default function Home() {
 								</button>
 								<button
 									disabled={loading}
-									className="disabled:opacity-45 flex items-center px-6 py-3 bg-gray-100 hover:bg-green-100 text-green-700 rounded-xl font-medium transition-colors"
+									className="disabled:opacity-45 flex items-center px-6 py-3 bg-muted hover:bg-accent text-primary rounded-xl font-medium transition-colors"
 								>
 									<Mic className="w-4 h-4 mr-2" />
 									Speak
@@ -135,8 +184,8 @@ export default function Home() {
 						)}
 
 						{/* Quick Prompts */}
-						<div className="mt-8 pt-6 border-t border-gray-100">
-							<p className="text-sm font-medium text-gray-500 mb-3 text-center">
+						<div className="mt-8 pt-6 border-t border-border">
+							<p className="text-sm font-medium text-muted-foreground mb-3 text-center">
 								Quick prompts to get started:
 							</p>
 							<div className="flex flex-wrap justify-center gap-3">
@@ -144,7 +193,7 @@ export default function Home() {
 									<button
 										key={index}
 										onClick={() => setUserInput(prompt)}
-										className="text-sm text-green-600 hover:text-green-700 hover:bg-green-50 px-4 py-2 rounded-lg border border-green-200 transition-colors"
+										className="text-sm text-primary hover:text-primary/80 hover:bg-primary/10 px-4 py-2 rounded-lg border border-primary/20 transition-colors"
 									>
 										{prompt}
 									</button>
@@ -155,10 +204,17 @@ export default function Home() {
 
 					{/* Crop Management Tools */}
 					<div className="mb-8">
-						<h3 className="text-2xl font-bold text-gray-900 mb-6 text-center text-green-700">
+						<h3 className="text-2xl font-bold text-foreground mb-6 text-center text-primary">
 							Crop Management
 						</h3>
 						<div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+							{/* Farm Journal Entry Point */}
+							<a href="/journal" className="bg-card border border-primary/30 rounded-xl p-6 text-left hover:shadow-lg transition-all duration-200 hover:border-primary flex flex-col">
+								<BookOpen className="w-8 h-8 text-primary mb-4" />
+								<h4 className="text-lg font-semibold text-foreground mb-2">My Farm Journal</h4>
+								<p className="text-sm text-muted-foreground">Log daily activities, track inputs, and view your farm's history and insights.</p>
+							</a>
+							{/* Existing tools */}
 							{[
 								{
 									icon: Activity,
@@ -174,13 +230,13 @@ export default function Home() {
 							].map((tool, index) => (
 								<button
 									key={index}
-									className="bg-white border border-gray-200 rounded-xl p-6 text-left hover:shadow-lg transition-all duration-200 hover:border-green-300"
+									className="bg-card border border-border rounded-xl p-6 text-left hover:shadow-lg transition-all duration-200 hover:border-primary/30"
 								>
-									<tool.icon className="w-8 h-8 text-green-600 mb-4" />
-									<h4 className="text-lg font-semibold text-gray-900 mb-2">
+									<tool.icon className="w-8 h-8 text-primary mb-4" />
+									<h4 className="text-lg font-semibold text-foreground mb-2">
 										{tool.title}
 									</h4>
-									<p className="text-sm text-gray-600">{tool.subtitle}</p>
+									<p className="text-sm text-muted-foreground">{tool.subtitle}</p>
 								</button>
 							))}
 						</div>
@@ -188,7 +244,7 @@ export default function Home() {
 
 					{/* Marketplace & Finance Tools */}
 					<div>
-						<h3 className="text-2xl font-bold text-gray-900 mb-6 text-center text-green-700">
+						<h3 className="text-2xl font-bold text-foreground mb-6 text-center text-primary">
 							Marketplace & Financial Services
 						</h3>
 						<div className="grid grid-cols-1 md:grid-cols-2 gap-6">
@@ -218,19 +274,29 @@ export default function Home() {
 							].map((tool, index) => (
 								<button
 									key={index}
-									className="bg-white border border-gray-200 rounded-xl p-6 text-left hover:shadow-lg transition-all duration-200 hover:border-green-300"
+									className="bg-card border border-border rounded-xl p-6 text-left hover:shadow-lg transition-all duration-200 hover:border-primary/30"
 								>
-									<tool.icon className="w-8 h-8 text-green-600 mb-4" />
-									<h4 className="text-lg font-semibold text-gray-900 mb-2">
+									<tool.icon className="w-8 h-8 text-primary mb-4" />
+									<h4 className="text-lg font-semibold text-foreground mb-2">
 										{tool.title}
 									</h4>
-									<p className="text-sm text-gray-600">{tool.subtitle}</p>
+									<p className="text-sm text-muted-foreground">{tool.subtitle}</p>
 								</button>
 							))}
 						</div>
 					</div>
 				</div>
 			</div>
+
+			{/* Additional Info Card - Floating in bottom right */}
+			{user && showAdditionalInfoCard && (
+				<div className="fixed bottom-6 right-6 z-50">
+					<AdditionalInfoCard
+						onFillNow={handleFillAdditionalInfo}
+						onDismiss={handleDismissAdditionalInfo}
+					/>
+				</div>
+			)}
 		</AppLayout>
 	);
 }
