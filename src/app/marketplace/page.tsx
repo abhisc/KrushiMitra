@@ -46,7 +46,6 @@ import {
 } from "lucide-react";
 import AppLayout from "@/components/agrimitra/app-layout";
 import stateNames from "@/constants/stateNames";
-import { TranslatableText } from "@/components/ui/translatable-text";
 import {
 	Dialog,
 	DialogContent,
@@ -87,17 +86,17 @@ export default function MarketplacePage() {
 	}, [handleKeyPress]);
 
 	const productTypes = [
-		{ value: "tractor", label: <TranslatableText>Tractors & Farm Equipment</TranslatableText> },
-		{ value: "fertilizer", label: <TranslatableText>Fertilizers & Nutrients</TranslatableText> },
-		{ value: "seeds", label: <TranslatableText>Seeds & Planting Material</TranslatableText> },
-		{ value: "pesticides", label: <TranslatableText>Pesticides & Crop Protection</TranslatableText> },
-		{ value: "tools", label: <TranslatableText>Farm Tools & Implements</TranslatableText> },
+		{ value: "tractor", label: "Tractors & Farm Equipment" },
+		{ value: "fertilizer", label: "Fertilizers & Nutrients" },
+		{ value: "seeds", label: "Seeds & Planting Material" },
+		{ value: "pesticides", label: "Pesticides & Crop Protection" },
+		{ value: "tools", label: "Farm Tools & Implements" },
 	];
 
 	const sellerTypes = [
-		{ value: "krushi-kendra", label: <TranslatableText>Krushi Kendra (Govt)</TranslatableText> },
-		{ value: "local-dealer", label: <TranslatableText>Local Dealer</TranslatableText> },
-		{ value: "authorized-distributor", label: <TranslatableText>Authorized Distributor</TranslatableText> },
+		{ value: "krushi-kendra", label: "Krushi Kendra (Govt)" },
+		{ value: "local-dealer", label: "Local Dealer" },
+		{ value: "authorized-distributor", label: "Authorized Distributor" },
 	];
 
 	const resetAllStates = () => {
@@ -863,16 +862,16 @@ You can also visit their store location or call them directly for inquiries.
 						<CardHeader>
 							<CardTitle className="flex items-center gap-2">
 								<Search className="w-5 h-5" />
-								<TranslatableText>Search Products</TranslatableText>
+								Search Products
 							</CardTitle>
 						</CardHeader>
 						<CardContent className="space-y-4">
 							<div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
 								<div>
-									<Label htmlFor="product-type"><TranslatableText>Product Type</TranslatableText></Label>
+									<Label htmlFor="product-type">Product Type</Label>
 									<Select value={productType} onValueChange={setProductType}>
 										<SelectTrigger>
-											<SelectValue placeholder={<TranslatableText>Select product type</TranslatableText>} />
+											<SelectValue placeholder="Select product type" />
 										</SelectTrigger>
 										<SelectContent>
 											{productTypes.map((type) => (
@@ -884,7 +883,7 @@ You can also visit their store location or call them directly for inquiries.
 									</Select>
 								</div>
 								<div>
-									<Label htmlFor="product-name"><TranslatableText>Product/Brand Name</TranslatableText></Label>
+									<Label htmlFor="product-name">Product/Brand Name</Label>
 									<Input
 										id="product-name"
 										placeholder="e.g., Mahindra, John Deere, Urea"
@@ -893,7 +892,7 @@ You can also visit their store location or call them directly for inquiries.
 									/>
 								</div>
 								<div>
-									<Label htmlFor="location"><TranslatableText>Location</TranslatableText></Label>
+									<Label htmlFor="location">Location</Label>
 									<Select value={location} onValueChange={setLocation}>
 										<SelectTrigger>
 											<SelectValue placeholder="Select state" />
@@ -908,7 +907,7 @@ You can also visit their store location or call them directly for inquiries.
 									</Select>
 								</div>
 								<div>
-									<Label htmlFor="budget"><TranslatableText>Budget Range</TranslatableText></Label>
+									<Label htmlFor="budget">Budget Range</Label>
 									<Input
 										id="budget"
 										placeholder="e.g., ₹5,00,000 - ₹7,00,000"
@@ -917,7 +916,7 @@ You can also visit their store location or call them directly for inquiries.
 									/>
 								</div>
 								<div className="md:col-span-2">
-									<Label htmlFor="requirements"><TranslatableText>Additional Requirements</TranslatableText></Label>
+									<Label htmlFor="requirements">Additional Requirements</Label>
 									<Input
 										id="requirements"
 										placeholder="e.g., Govt certified, delivery available, organic"
@@ -935,12 +934,12 @@ You can also visit their store location or call them directly for inquiries.
 									{isLoading ? (
 										<>
 											<Loader2 className="w-4 h-4 mr-2 animate-spin" />
-											<TranslatableText>Searching...</TranslatableText>
+											Searching...
 										</>
 									) : (
 										<>
 											<Search className="w-4 h-4 mr-2" />
-											<TranslatableText>Search Products</TranslatableText>
+											Search Products
 										</>
 									)}
 								</Button>
@@ -951,7 +950,7 @@ You can also visit their store location or call them directly for inquiries.
 									className="px-6"
 								>
 									<X className="w-4 h-4 mr-2" />
-									<TranslatableText>Clear All</TranslatableText>
+									Clear All
 								</Button>
 							</div>
 						</CardContent>

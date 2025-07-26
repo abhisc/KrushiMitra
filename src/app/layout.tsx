@@ -3,10 +3,6 @@ import './globals.css';
 import { Toaster } from "@/components/ui/toaster"
 import { ThemeProvider } from '@/components/theme-provider';
 import { AuthProvider } from '@/contexts/auth-context';
-import { LanguageProvider } from '@/contexts/language-context';
-import { PageTranslator } from '@/components/ui/page-translator';
-import { PlaceholderTranslator } from '@/components/ui/placeholder-translator';
-import { TranslationPreloader } from '@/components/ui/translation-preloader';
 
 import Script from 'next/script';
 
@@ -102,14 +98,7 @@ export default function RootLayout({
           disableTransitionOnChange
         >
           <AuthProvider>
-            <LanguageProvider>
-              <TranslationPreloader />
-              <PageTranslator>
-                <PlaceholderTranslator>
-                  {children}
-                </PlaceholderTranslator>
-              </PageTranslator>
-            </LanguageProvider>
+            {children}
           </AuthProvider>
           <Toaster />
         </ThemeProvider>

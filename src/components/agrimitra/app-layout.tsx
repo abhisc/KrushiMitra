@@ -33,8 +33,6 @@ import { useChat } from "@/hooks/use-chat";
 import { ChatType } from "@/firebaseStore/services/chat-service";
 
 import { useNavigationHistory } from "@/hooks/use-navigation-history";
-import { LanguageSelector } from "@/components/ui/language-selector";
-import { TranslatableText } from "@/components/ui/translatable-text";
 
 interface AppLayoutProps {
 	children: React.ReactNode;
@@ -205,7 +203,7 @@ export default function AppLayout({
 									}`}
 								>
 									<link.icon className="w-5 h-5" />
-									{sidebarOpen && <span className="ml-3"><TranslatableText>{link.label}</TranslatableText></span>}
+									{sidebarOpen && <span className="ml-3">{link.label}</span>}
 								</Link>
 							))}
 						</nav>
@@ -215,12 +213,12 @@ export default function AppLayout({
 					{sidebarOpen && (
 						<div className="p-4 border-t border-border">
 																				<h3 className="text-xs font-semibold text-muted-foreground uppercase tracking-wide mb-3">
-								<TranslatableText>Recent Chats</TranslatableText>
+								Recent Chats
 							</h3>
 							<div className="space-y-2">
 								{chatsLoading ? (
 									<div className="text-xs text-muted-foreground">
-										<TranslatableText>Loading chats...</TranslatableText>
+										Loading chats...
 									</div>
 								) : recentChats.length > 0 ? (
 									recentChats.map((chat) => (
@@ -253,7 +251,7 @@ export default function AppLayout({
 									))
 								) : (
 									<div className="text-xs text-muted-foreground">
-										<TranslatableText>No recent chats</TranslatableText>
+										No recent chats
 									</div>
 								)}
 							</div>
@@ -273,7 +271,7 @@ export default function AppLayout({
 					>
 						<Settings className="w-4 h-4" />
 						{sidebarOpen && (
-							<span className="ml-2"><TranslatableText>{isAdvanced ? "Advanced" : "Basic"}</TranslatableText></span>
+							<span className="ml-2">{isAdvanced ? "Advanced" : "Basic"}</span>
 						)}
 					</button>
 				</div>
@@ -302,7 +300,7 @@ export default function AppLayout({
 
 						<div className="ml-4 top-0 static">
 							<h1 className="text-xl font-semibold text-primary">
-								{title ? title : <TranslatableText>Agrimitra</TranslatableText>}
+								{title ? title : "Agrimitra"}
 							</h1>
 							{subtitle && (
 								<p className="text-sm text-muted-foreground">{subtitle}</p>
@@ -310,10 +308,8 @@ export default function AppLayout({
 						</div>
 					</div>
 
-					{/* Language Selector and Settings */}
+					{/* User Menu and Settings */}
 					<div className="flex items-center space-x-4">
-						<LanguageSelector />
-
 						{/* User Menu */}
 						<UserMenu />
 

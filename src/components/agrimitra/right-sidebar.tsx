@@ -16,11 +16,19 @@ import {
   SelectValue,
 } from '@/components/ui/select';
 import { Label } from '@/components/ui/label';
-import { Input } from '@/components/ui/input';
 import { Switch } from '@/components/ui/switch';
-import { Slider } from '@/components/ui/slider';
 import { Separator } from '@/components/ui/separator';
 import { useTheme } from 'next-themes';
+import { 
+  Palette, 
+  Shield, 
+  Settings as SettingsIcon,
+  Sun,
+  Moon,
+  Monitor,
+  Bell,
+  Save
+} from 'lucide-react';
 
 type RightSidebarProps = {
   children: React.ReactNode;
@@ -29,77 +37,114 @@ type RightSidebarProps = {
 export default function RightSidebar({ children }: RightSidebarProps) {
   const { setTheme, theme } = useTheme();
 
+  const getThemeIcon = (currentTheme: string) => {
+    switch (currentTheme) {
+      case 'light':
+        return <Sun className="w-4 h-4" />;
+      case 'dark':
+        return <Moon className="w-4 h-4" />;
+      default:
+        return <Monitor className="w-4 h-4" />;
+    }
+  };
+
   return (
     <Sheet>
       <SheetTrigger asChild>{children}</SheetTrigger>
-      <SheetContent>
-        <SheetHeader>
-          <SheetTitle>Settings</SheetTitle>
-          <SheetDescription>
-            Customize your Agrimitra experience.
-          </SheetDescription>
+      <SheetContent className="w-[400px] sm:w-[540px]">
+        <SheetHeader className="pb-6">
+          <div className="flex items-center gap-3">
+            <div className="p-2 bg-primary/10 rounded-lg">
+              <SettingsIcon className="w-5 h-5 text-primary" />
+            </div>
+            <div>
+              <SheetTitle className="text-xl font-semibold">Settings</SheetTitle>
+              <SheetDescription className="text-sm text-muted-foreground">
+                Customize your Agrimitra experience
+              </SheetDescription>
+            </div>
+          </div>
         </SheetHeader>
-        <div className="py-4 space-y-6">
+        
+        <div className="space-y-8">
+          {/* Appearance Section */}
           <div className="space-y-4">
-            <h3 className="font-semibold text-muted-foreground">Appearance</h3>
-            <div className="grid w-full items-center gap-2">
-              <Label htmlFor="theme">Theme</Label>
-              <Select value={theme} onValueChange={setTheme}>
-                <SelectTrigger id="theme">
-                  <SelectValue placeholder="Select theme" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="light">Light</SelectItem>
-                  <SelectItem value="dark">Dark</SelectItem>
-                  <SelectItem value="system">System</SelectItem>
-                </SelectContent>
-              </Select>
+            <div className="flex items-center gap-3">
+              <div className="p-2 bg-blue-50 dark:bg-blue-950/20 rounded-lg">
+                <Palette className="w-4 h-4 text-blue-600 dark:text-blue-400" />
+              </div>
+              <div>
+                <h3 className="font-semibold text-foreground">Appearance</h3>
+                <p className="text-xs text-muted-foreground">Customize the look and feel</p>
+              </div>
+            </div>
+            
+            <div className="ml-11 space-y-4">
+              <div className="space-y-2">
+                <Label htmlFor="theme" className="text-sm font-medium">Theme</Label>
+                <Select value={theme} onValueChange={setTheme}>
+                  <SelectTrigger className="w-full">
+                    <div className="flex items-center gap-2">
+                      {getThemeIcon(theme || 'system')}
+                      <SelectValue placeholder="Select theme" />
+                    </div>
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="light">Light</SelectItem>
+                    <SelectItem value="dark">Dark</SelectItem>
+                    <SelectItem value="system">System</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
             </div>
           </div>
 
-          <Separator />
+          <Separator className="my-6" />
 
+          {/* Data & Privacy Section */}
           <div className="space-y-4">
-            <h3 className="font-semibold text-muted-foreground">General</h3>
-
-             <div className="grid w-full items-center gap-2">
-              <Label htmlFor="crop">Default Crop Preference</Label>
-              <Input id="crop" placeholder="e.g., Wheat" />
+            <div className="flex items-center gap-3">
+              <div className="p-2 bg-green-50 dark:bg-green-950/20 rounded-lg">
+                <Shield className="w-4 h-4 text-green-600 dark:text-green-400" />
+              </div>
+              <div>
+                <h3 className="font-semibold text-foreground">Data & Privacy</h3>
+                <p className="text-xs text-muted-foreground">Manage your data and privacy settings</p>
+              </div>
             </div>
-             <div className="grid w-full items-center gap-2">
-              <Label htmlFor="mandi">Default Market (Mandi)</Label>
-              <Input id="mandi" placeholder="e.g., Vashi, Navi Mumbai" />
+            
+            <div className="ml-11 space-y-4">
+              <div className="flex items-center justify-between p-3 rounded-lg border bg-card hover:bg-accent/50 transition-colors">
+                <div className="flex items-center gap-3">
+                  <div className="p-1.5 bg-blue-50 dark:bg-blue-950/20 rounded">
+                    <Save className="w-3.5 h-3.5 text-blue-600 dark:text-blue-400" />
+                  </div>
+                  <div>
+                    <Label htmlFor="save-history" className="text-sm font-medium cursor-pointer">
+                      Save Chat History
+                    </Label>
+                    <p className="text-xs text-muted-foreground">Store conversations for future reference</p>
+                  </div>
+                </div>
+                <Switch id="save-history" defaultChecked />
+              </div>
+              
+              <div className="flex items-center justify-between p-3 rounded-lg border bg-card hover:bg-accent/50 transition-colors">
+                <div className="flex items-center gap-3">
+                  <div className="p-1.5 bg-orange-50 dark:bg-orange-950/20 rounded">
+                    <Bell className="w-3.5 h-3.5 text-orange-600 dark:text-orange-400" />
+                  </div>
+                  <div>
+                    <Label htmlFor="notifications" className="text-sm font-medium cursor-pointer">
+                      Enable Notifications
+                    </Label>
+                    <p className="text-xs text-muted-foreground">Receive alerts and updates</p>
+                  </div>
+                </div>
+                <Switch id="notifications" />
+              </div>
             </div>
           </div>
-
-          <Separator />
-          
-          <div className="space-y-4">
-            <h3 className="font-semibold text-muted-foreground">Voice & Audio</h3>
-             <div className="flex items-center justify-between">
-              <Label htmlFor="mic-toggle">Microphone</Label>
-              <Switch id="mic-toggle" defaultChecked />
-            </div>
-            <div className="grid w-full items-center gap-2">
-              <Label htmlFor="speech-rate">Speech Rate</Label>
-              <Slider id="speech-rate" defaultValue={[50]} max={100} step={1} />
-            </div>
-          </div>
-
-          <Separator />
-
-          <div className="space-y-4">
-            <h3 className="font-semibold text-muted-foreground">Data & Privacy</h3>
-            <div className="flex items-center justify-between">
-              <Label htmlFor="save-history">Save Chat History</Label>
-              <Switch id="save-history" defaultChecked />
-            </div>
-             <div className="flex items-center justify-between">
-              <Label htmlFor="notifications">Enable Notifications</Label>
-              <Switch id="notifications" />
-            </div>
-          </div>
-
         </div>
       </SheetContent>
     </Sheet>
