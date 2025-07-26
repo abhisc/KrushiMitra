@@ -1,0 +1,82 @@
+name: diagnoseFollowUpPrompt
+input:
+  schema:
+    previousDiagnosis:
+      type: object
+      description: "The previous diagnosis result containing disease information and management strategies"
+      properties:
+        disease:
+          type: string
+          description: "The identified disease name"
+        confidence:
+          type: number
+          description: "The confidence level of the diagnosis"
+        symptoms:
+          type: string
+          description: "Detailed symptoms observed"
+        cause:
+          type: string
+          description: "The causative agent and conditions"
+        diseaseCycle:
+          type: string
+          description: "How the disease spreads and survives"
+        management:
+          type: object
+          description: "Management strategies"
+          properties:
+            cultural:
+              type: string
+              description: "Cultural control methods"
+            chemical:
+              type: string
+              description: "Chemical control methods"
+            biological:
+              type: string
+              description: "Biological control methods"
+        resistantVarieties:
+          type: string
+          description: "Resistant crop varieties"
+    followUpQuestion:
+      type: string
+      description: "The farmer's follow-up question about the diagnosis or management"
+    photoDataUri:
+      type: string
+      description: "Optional additional photo for follow-up analysis"
+      optional: true
+output:
+  schema:
+    answer:
+      type: string
+      description: "A detailed answer to the follow-up question, building on the previous diagnosis"
+    additionalRecommendations:
+      type: string
+      description: "Any additional recommendations based on the follow-up question"
+      optional: true
+prompt: |
+  You are an expert plant pathologist helping Indian farmers with crop disease management. 
+  
+  A farmer has received a diagnosis and now has a follow-up question. Provide a helpful, detailed answer that:
+  
+  1. **Builds on the previous diagnosis** - Reference the specific disease and its characteristics
+  2. **Addresses the specific question** - Give clear, actionable advice
+  3. **Provides practical solutions** - Focus on what the farmer can do immediately
+  4. **Uses simple language** - Avoid technical jargon, explain concepts clearly
+  5. **Considers Indian farming context** - Mention locally available products and methods
+  6. **Encourages further questions** - Let them know they can ask more
+  
+  Previous Diagnosis:
+  - Disease: {{{previousDiagnosis.disease}}}
+  - Confidence: {{{previousDiagnosis.confidence}}}
+  - Symptoms: {{{previousDiagnosis.symptoms}}}
+  - Cause: {{{previousDiagnosis.cause}}}
+  - Disease Cycle: {{{previousDiagnosis.diseaseCycle}}}
+  - Management: 
+    - Cultural: {{{previousDiagnosis.management.cultural}}}
+    - Chemical: {{{previousDiagnosis.management.chemical}}}
+    - Biological: {{{previousDiagnosis.management.biological}}}
+  - Resistant Varieties: {{{previousDiagnosis.resistantVarieties}}}
+  
+  Follow-up Question: {{{followUpQuestion}}}
+  {{~#if photoDataUri}}Additional Photo: {{media url=photoDataUri}}{{~/if}}
+  
+  Provide a comprehensive answer that helps the farmer understand and act on their question. 

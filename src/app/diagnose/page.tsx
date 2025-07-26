@@ -7,11 +7,17 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { useToast } from '@/hooks/use-toast';
-import { diagnoseCropDisease, DiagnoseCropDiseaseInput } from '@/ai/flows/diagnose-crop-disease';
-import { Loader2, Upload, Camera, Mic, MicOff, FileImage, X } from 'lucide-react';
+import { diagnoseCropDisease, DiagnoseCropDiseaseInput, diagnoseFollowUp, DiagnoseFollowUpInput } from '@/ai/flows/diagnose-crop-disease';
+import { Loader2, Upload, Camera, Mic, MicOff, FileImage, X, Send, MessageCircle } from 'lucide-react';
 import AppLayout from '@/components/agrimitra/app-layout';
 import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
+
+interface ChatMessage {
+  type: 'user' | 'ai';
+  content: string;
+  timestamp: Date;
+}
 
 export default function DiagnosePage() {
   const [isLoading, setIsLoading] = useState(false);
@@ -20,9 +26,13 @@ export default function DiagnosePage() {
   const [result, setResult] = useState<any>(null);
   const [isRecording, setIsRecording] = useState(false);
   const [isDragOver, setIsDragOver] = useState(false);
+  const [followUpQuestion, setFollowUpQuestion] = useState('');
+  const [isFollowUpLoading, setIsFollowUpLoading] = useState(false);
+  const [chatMessages, setChatMessages] = useState<ChatMessage[]>([]);
   const { toast } = useToast();
   const fileInputRef = useRef<HTMLInputElement>(null);
   const mediaRecorderRef = useRef<MediaRecorder | null>(null);
+  const chatContainerRef = useRef<HTMLDivElement>(null);
 
   const handlePhotoUpload = (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
@@ -121,15 +131,27 @@ export default function DiagnosePage() {
       const input: DiagnoseCropDiseaseInput = {
         photoDataUri: photoDataUri || undefined,
         description: description.trim() || undefined,
+        outputFormat: 'detailed',
       };
 
       const diagnosis = await diagnoseCropDisease(input);
       setResult(diagnosis);
       
-      toast({
-        title: "Diagnosis Complete",
-        description: `Identified: ${diagnosis.disease} (Confidence: ${(diagnosis.confidence * 100).toFixed(1)}%)`,
-      });
+      // Clear chat messages when new diagnosis is made
+      setChatMessages([]);
+      
+      // Type guard to check if it's detailed output format
+      if ('disease' in diagnosis && 'confidence' in diagnosis) {
+        toast({
+          title: "Diagnosis Complete",
+          description: `Identified: ${diagnosis.disease} (Confidence: ${(diagnosis.confidence * 100).toFixed(1)}%)`,
+        });
+      } else {
+        toast({
+          title: "Diagnosis Complete",
+          description: "Analysis completed successfully",
+        });
+      }
     } catch (error) {
       console.error('Diagnosis error:', error);
       toast({
@@ -139,6 +161,64 @@ export default function DiagnosePage() {
       });
     } finally {
       setIsLoading(false);
+    }
+  };
+
+  const handleFollowUpQuestion = async () => {
+    if (!followUpQuestion.trim() || !result) {
+      toast({
+        title: "Error",
+        description: "Please enter a follow-up question.",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    setIsFollowUpLoading(true);
+    
+    // Add user message to chat
+    const userMessage: ChatMessage = {
+      type: 'user',
+      content: followUpQuestion,
+      timestamp: new Date(),
+    };
+    setChatMessages(prev => [...prev, userMessage]);
+
+    try {
+      const followUpInput: DiagnoseFollowUpInput = {
+        previousDiagnosis: result,
+        followUpQuestion: followUpQuestion.trim(),
+        photoDataUri: undefined, // Can be extended to support additional photos
+      };
+
+      const followUpResponse = await diagnoseFollowUp(followUpInput);
+      
+      // Add AI response to chat
+      const aiMessage: ChatMessage = {
+        type: 'ai',
+        content: followUpResponse.answer,
+        timestamp: new Date(),
+      };
+      setChatMessages(prev => [...prev, aiMessage]);
+
+      setFollowUpQuestion('');
+      
+      // Scroll to bottom of chat
+      setTimeout(() => {
+        if (chatContainerRef.current) {
+          chatContainerRef.current.scrollTop = chatContainerRef.current.scrollHeight;
+        }
+      }, 100);
+
+    } catch (error) {
+      console.error('Follow-up error:', error);
+      toast({
+        title: "Follow-up Failed",
+        description: "Unable to process your question. Please try again.",
+        variant: "destructive",
+      });
+    } finally {
+      setIsFollowUpLoading(false);
     }
   };
 
@@ -302,27 +382,30 @@ export default function DiagnosePage() {
 
           {/* Results Section */}
           {result && (
-            <Card className="border-green-200 bg-green-50/30">
-              <CardHeader>
-                <CardTitle className="flex items-center gap-2 text-green-800">
-                  <div className="w-2 h-2 bg-green-500 rounded-full"></div>
-                  Diagnosis Results
-                </CardTitle>
-              </CardHeader>
-              <CardContent className="space-y-6">
-                
-                {/* Disease Name and Confidence */}
-                <div className="bg-white p-4 rounded-lg border border-green-200">
-                  <div className="flex items-center justify-between">
-                    <h3 className="font-bold text-xl text-green-700">{result.disease}</h3>
-                    <div className="text-right">
-                      <p className="text-sm text-gray-600">Confidence</p>
-                      <p className="text-lg font-semibold text-green-600">
-                        {(result.confidence * 100).toFixed(1)}%
-                      </p>
+            <>
+              {/* Detailed Output Format */}
+              {'disease' in result && 'confidence' in result ? (
+                <Card className="border-green-200 bg-green-50/30">
+                  <CardHeader>
+                    <CardTitle className="flex items-center gap-2 text-green-800">
+                      <div className="w-2 h-2 bg-green-500 rounded-full"></div>
+                      Diagnosis Results
+                    </CardTitle>
+                  </CardHeader>
+                  <CardContent className="space-y-6">
+                    
+                    {/* Disease Name and Confidence */}
+                    <div className="bg-white p-4 rounded-lg border border-green-200">
+                      <div className="flex items-center justify-between">
+                        <h3 className="font-bold text-xl text-green-700">{result.disease}</h3>
+                        <div className="text-right">
+                          <p className="text-sm text-gray-600">Confidence</p>
+                          <p className="text-lg font-semibold text-green-600">
+                            {(result.confidence * 100).toFixed(1)}%
+                          </p>
+                        </div>
+                      </div>
                     </div>
-                  </div>
-                </div>
 
                 {/* Symptoms */}
                 {result.symptoms && (
@@ -491,8 +574,125 @@ export default function DiagnosePage() {
                     <p className="text-gray-700 leading-relaxed">{result.resistantVarieties}</p>
                   </div>
                 )}
+
+                {/* Follow-up Chat Messages */}
+                {chatMessages.length > 0 && (
+                  <div className="bg-white p-4 rounded-lg border border-blue-200">
+                    <h4 className="font-semibold text-gray-800 mb-3 flex items-center gap-2">
+                      <MessageCircle className="w-4 h-4 text-blue-600" />
+                      Follow-up Discussion
+                    </h4>
+                    <div 
+                      ref={chatContainerRef}
+                      className="space-y-3"
+                    >
+                      {chatMessages.map((message, index) => (
+                        <div
+                          key={index}
+                          className={`flex ${message.type === 'user' ? 'justify-end' : 'justify-start'}`}
+                        >
+                          <div
+                            className={`max-w-xs lg:max-w-md px-3 py-2 rounded-lg text-sm ${
+                              message.type === 'user'
+                                ? 'bg-blue-500 text-white'
+                                : 'bg-gray-100 text-gray-800'
+                            }`}
+                          >
+                            <p>{message.content}</p>
+                            <p className="text-xs opacity-70 mt-1">
+                              {message.timestamp.toLocaleTimeString()}
+                            </p>
+                          </div>
+                        </div>
+                      ))}
+                      {isFollowUpLoading && (
+                        <div className="flex justify-start">
+                          <div className="bg-gray-100 text-gray-800 max-w-xs lg:max-w-md px-3 py-2 rounded-lg">
+                            <div className="flex items-center gap-2">
+                              <Loader2 className="w-4 h-4 animate-spin" />
+                              <span className="text-sm">Thinking...</span>
+                            </div>
+                          </div>
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                )}
+
+                {/* Follow-up Question Input */}
+                <div className="bg-white p-4 rounded-lg border border-blue-200">
+                  <h4 className="font-semibold text-gray-800 mb-3 flex items-center gap-2">
+                    <MessageCircle className="w-4 h-4 text-blue-600" />
+                    Ask Follow-up Questions
+                  </h4>
+                  <div className="flex gap-2">
+                    <Input
+                      placeholder="Ask a follow-up question about your diagnosis..."
+                      value={followUpQuestion}
+                      onChange={(e) => setFollowUpQuestion(e.target.value)}
+                      onKeyPress={(e) => {
+                        if (e.key === 'Enter' && !isFollowUpLoading) {
+                          handleFollowUpQuestion();
+                        }
+                      }}
+                      disabled={isFollowUpLoading}
+                      className="flex-1"
+                    />
+                    <Button
+                      onClick={handleFollowUpQuestion}
+                      disabled={isFollowUpLoading || !followUpQuestion.trim()}
+                      size="icon"
+                    >
+                      {isFollowUpLoading ? (
+                        <Loader2 className="w-4 h-4 animate-spin" />
+                      ) : (
+                        <Send className="w-4 h-4" />
+                      )}
+                    </Button>
+                  </div>
+                </div>
               </CardContent>
             </Card>
+              ) : (
+                /* Chat Output Format */
+                <Card className="border-blue-200 bg-blue-50/30">
+                  <CardHeader>
+                    <CardTitle className="flex items-center gap-2 text-blue-800">
+                      <div className="w-2 h-2 bg-blue-500 rounded-full"></div>
+                      Diagnosis Results
+                    </CardTitle>
+                  </CardHeader>
+                  <CardContent>
+                    <div className="bg-white p-4 rounded-lg border border-blue-200">
+                      <div className="text-gray-700 leading-relaxed prose prose-sm max-w-none">
+                        <ReactMarkdown 
+                          remarkPlugins={[remarkGfm]}
+                          components={{
+                            p: ({children}) => <p className="mb-3">{children}</p>,
+                            ul: ({children}) => <ul className="list-disc list-inside mb-3 space-y-1">{children}</ul>,
+                            ol: ({children}) => <ol className="list-decimal list-inside mb-3 space-y-1">{children}</ol>,
+                            li: ({children}) => <li className="text-gray-700">{children}</li>,
+                            strong: ({children}) => <strong className="font-semibold text-gray-800">{children}</strong>,
+                            em: ({children}) => <em className="italic">{children}</em>,
+                            h1: ({children}) => <h1 className="text-xl font-bold text-gray-800 mb-3">{children}</h1>,
+                            h2: ({children}) => <h2 className="text-lg font-semibold text-gray-800 mb-2">{children}</h2>,
+                            h3: ({children}) => <h3 className="text-base font-semibold text-gray-800 mb-2">{children}</h3>,
+                            h4: ({children}) => <h4 className="text-sm font-semibold text-gray-800 mb-2">{children}</h4>,
+                            h5: ({children}) => <h5 className="text-sm font-medium text-gray-800 mb-1">{children}</h5>,
+                            h6: ({children}) => <h6 className="text-xs font-medium text-gray-800 mb-1">{children}</h6>,
+                            blockquote: ({children}) => <blockquote className="border-l-4 border-gray-300 pl-4 italic text-gray-600 mb-3">{children}</blockquote>,
+                            code: ({children}) => <code className="bg-gray-100 px-1 py-0.5 rounded text-sm font-mono">{children}</code>,
+                            pre: ({children}) => <pre className="bg-gray-100 p-3 rounded overflow-x-auto mb-3">{children}</pre>,
+                          }}
+                        >
+                          {result.diagnosisResult}
+                        </ReactMarkdown>
+                      </div>
+                    </div>
+                  </CardContent>
+                </Card>
+              )}
+            </>
           )}
         </div>
       </div>
