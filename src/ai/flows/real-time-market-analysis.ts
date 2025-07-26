@@ -112,8 +112,9 @@ export const fetchMarketDataTool = ai.defineTool(
 				ResourcesEnum["mandiPrices"],
 				query,
 				"60",
-				3,
+				5,
 			);
+			console.log(marketDataResponse);
 
 			if (
 				!marketDataResponse.records ||

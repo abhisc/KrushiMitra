@@ -21,6 +21,7 @@ import {
 	ChevronDown,
 	Bot,
 	ArrowLeft,
+	Sprout,
 	User as UserIcon,
 } from "lucide-react";
 import Link from "next/link";
@@ -106,6 +107,12 @@ export default function AppLayout({
 			label: "Profile",
 			href: "/profile",
 			active: pathname === "/profile",
+		},
+		{
+			icon: Sprout,
+			label: "Plantation Flows",
+			href: "/plantationFlow",
+			active: pathname === "/plantationFlow",
 		},
 	];
 
