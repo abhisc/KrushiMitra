@@ -331,8 +331,27 @@ export default function DiagnosePage() {
                       <div className="w-1.5 h-1.5 bg-blue-500 rounded-full"></div>
                       Symptoms Observed
                     </h4>
-                    <div className="text-gray-700 leading-relaxed">
-                      <ReactMarkdown remarkPlugins={[remarkGfm]}>
+                    <div className="text-gray-700 leading-relaxed prose prose-sm max-w-none">
+                      <ReactMarkdown 
+                        remarkPlugins={[remarkGfm]}
+                        components={{
+                          p: ({children}) => <p className="mb-3">{children}</p>,
+                          ul: ({children}) => <ul className="list-disc list-inside mb-3 space-y-1">{children}</ul>,
+                          ol: ({children}) => <ol className="list-decimal list-inside mb-3 space-y-1">{children}</ol>,
+                          li: ({children}) => <li className="text-gray-700">{children}</li>,
+                          strong: ({children}) => <strong className="font-semibold text-gray-800">{children}</strong>,
+                          em: ({children}) => <em className="italic">{children}</em>,
+                          h1: ({children}) => <h1 className="text-xl font-bold text-gray-800 mb-3">{children}</h1>,
+                          h2: ({children}) => <h2 className="text-lg font-semibold text-gray-800 mb-2">{children}</h2>,
+                          h3: ({children}) => <h3 className="text-base font-semibold text-gray-800 mb-2">{children}</h3>,
+                          h4: ({children}) => <h4 className="text-sm font-semibold text-gray-800 mb-2">{children}</h4>,
+                          h5: ({children}) => <h5 className="text-sm font-medium text-gray-800 mb-1">{children}</h5>,
+                          h6: ({children}) => <h6 className="text-xs font-medium text-gray-800 mb-1">{children}</h6>,
+                          blockquote: ({children}) => <blockquote className="border-l-4 border-gray-300 pl-4 italic text-gray-600 mb-3">{children}</blockquote>,
+                          code: ({children}) => <code className="bg-gray-100 px-1 py-0.5 rounded text-sm font-mono">{children}</code>,
+                          pre: ({children}) => <pre className="bg-gray-100 p-3 rounded overflow-x-auto mb-3">{children}</pre>,
+                        }}
+                      >
                         {result.symptoms}
                       </ReactMarkdown>
                     </div>
@@ -372,27 +391,90 @@ export default function DiagnosePage() {
                       {result.management.cultural && (
                         <div className="bg-blue-50 p-4 rounded-lg border-l-4 border-blue-400">
                           <h5 className="font-medium text-blue-800 mb-2">Cultural Control</h5>
-                          <p className="text-blue-700 text-sm leading-relaxed">
-                            {result.management.cultural}
-                          </p>
+                          <div className="text-blue-700 text-sm leading-relaxed prose prose-sm max-w-none">
+                            <ReactMarkdown 
+                              remarkPlugins={[remarkGfm]}
+                              components={{
+                                p: ({children}) => <p className="mb-2">{children}</p>,
+                                ul: ({children}) => <ul className="list-disc list-inside mb-2 space-y-1">{children}</ul>,
+                                ol: ({children}) => <ol className="list-decimal list-inside mb-2 space-y-1">{children}</ol>,
+                                li: ({children}) => <li className="text-blue-700">{children}</li>,
+                                strong: ({children}) => <strong className="font-semibold text-blue-800">{children}</strong>,
+                                em: ({children}) => <em className="italic">{children}</em>,
+                                h1: ({children}) => <h1 className="text-lg font-bold text-blue-800 mb-2">{children}</h1>,
+                                h2: ({children}) => <h2 className="text-base font-semibold text-blue-800 mb-2">{children}</h2>,
+                                h3: ({children}) => <h3 className="text-sm font-semibold text-blue-800 mb-1">{children}</h3>,
+                                h4: ({children}) => <h4 className="text-sm font-medium text-blue-800 mb-1">{children}</h4>,
+                                h5: ({children}) => <h5 className="text-xs font-medium text-blue-800 mb-1">{children}</h5>,
+                                h6: ({children}) => <h6 className="text-xs font-medium text-blue-800 mb-1">{children}</h6>,
+                                blockquote: ({children}) => <blockquote className="border-l-4 border-blue-300 pl-3 italic text-blue-600 mb-2">{children}</blockquote>,
+                                code: ({children}) => <code className="bg-blue-100 px-1 py-0.5 rounded text-xs font-mono">{children}</code>,
+                                pre: ({children}) => <pre className="bg-blue-100 p-2 rounded overflow-x-auto mb-2 text-xs">{children}</pre>,
+                              }}
+                            >
+                              {result.management.cultural}
+                            </ReactMarkdown>
+                          </div>
                         </div>
                       )}
                       
                       {result.management.chemical && (
                         <div className="bg-orange-50 p-4 rounded-lg border-l-4 border-orange-400">
                           <h5 className="font-medium text-orange-800 mb-2">Chemical Control</h5>
-                          <p className="text-orange-700 text-sm leading-relaxed">
-                            {result.management.chemical}
-                          </p>
+                          <div className="text-orange-700 text-sm leading-relaxed prose prose-sm max-w-none">
+                            <ReactMarkdown 
+                              remarkPlugins={[remarkGfm]}
+                              components={{
+                                p: ({children}) => <p className="mb-2">{children}</p>,
+                                ul: ({children}) => <ul className="list-disc list-inside mb-2 space-y-1">{children}</ul>,
+                                ol: ({children}) => <ol className="list-decimal list-inside mb-2 space-y-1">{children}</ol>,
+                                li: ({children}) => <li className="text-orange-700">{children}</li>,
+                                strong: ({children}) => <strong className="font-semibold text-orange-800">{children}</strong>,
+                                em: ({children}) => <em className="italic">{children}</em>,
+                                h1: ({children}) => <h1 className="text-lg font-bold text-orange-800 mb-2">{children}</h1>,
+                                h2: ({children}) => <h2 className="text-base font-semibold text-orange-800 mb-2">{children}</h2>,
+                                h3: ({children}) => <h3 className="text-sm font-semibold text-orange-800 mb-1">{children}</h3>,
+                                h4: ({children}) => <h4 className="text-sm font-medium text-orange-800 mb-1">{children}</h4>,
+                                h5: ({children}) => <h5 className="text-xs font-medium text-orange-800 mb-1">{children}</h5>,
+                                h6: ({children}) => <h6 className="text-xs font-medium text-orange-800 mb-1">{children}</h6>,
+                                blockquote: ({children}) => <blockquote className="border-l-4 border-orange-300 pl-3 italic text-orange-600 mb-2">{children}</blockquote>,
+                                code: ({children}) => <code className="bg-orange-100 px-1 py-0.5 rounded text-xs font-mono">{children}</code>,
+                                pre: ({children}) => <pre className="bg-orange-100 p-2 rounded overflow-x-auto mb-2 text-xs">{children}</pre>,
+                              }}
+                            >
+                              {result.management.chemical}
+                            </ReactMarkdown>
+                          </div>
                         </div>
                       )}
                       
                       {result.management.biological && (
                         <div className="bg-green-50 p-4 rounded-lg border-l-4 border-green-400">
                           <h5 className="font-medium text-green-800 mb-2">Biological Control</h5>
-                          <p className="text-green-700 text-sm leading-relaxed">
-                            {result.management.biological}
-                          </p>
+                          <div className="text-green-700 text-sm leading-relaxed prose prose-sm max-w-none">
+                            <ReactMarkdown 
+                              remarkPlugins={[remarkGfm]}
+                              components={{
+                                p: ({children}) => <p className="mb-2">{children}</p>,
+                                ul: ({children}) => <ul className="list-disc list-inside mb-2 space-y-1">{children}</ul>,
+                                ol: ({children}) => <ol className="list-decimal list-inside mb-2 space-y-1">{children}</ol>,
+                                li: ({children}) => <li className="text-green-700">{children}</li>,
+                                strong: ({children}) => <strong className="font-semibold text-green-800">{children}</strong>,
+                                em: ({children}) => <em className="italic">{children}</em>,
+                                h1: ({children}) => <h1 className="text-lg font-bold text-green-800 mb-2">{children}</h1>,
+                                h2: ({children}) => <h2 className="text-base font-semibold text-green-800 mb-2">{children}</h2>,
+                                h3: ({children}) => <h3 className="text-sm font-semibold text-green-800 mb-1">{children}</h3>,
+                                h4: ({children}) => <h4 className="text-sm font-medium text-green-800 mb-1">{children}</h4>,
+                                h5: ({children}) => <h5 className="text-xs font-medium text-green-800 mb-1">{children}</h5>,
+                                h6: ({children}) => <h6 className="text-xs font-medium text-green-800 mb-1">{children}</h6>,
+                                blockquote: ({children}) => <blockquote className="border-l-4 border-green-300 pl-3 italic text-green-600 mb-2">{children}</blockquote>,
+                                code: ({children}) => <code className="bg-green-100 px-1 py-0.5 rounded text-xs font-mono">{children}</code>,
+                                pre: ({children}) => <pre className="bg-green-100 p-2 rounded overflow-x-auto mb-2 text-xs">{children}</pre>,
+                              }}
+                            >
+                              {result.management.biological}
+                            </ReactMarkdown>
+                          </div>
                         </div>
                       )}
                     </div>
