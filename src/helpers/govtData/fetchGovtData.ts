@@ -39,7 +39,7 @@ export async function fetchDataFromGovtAPI(
 				limit,
 				"filters[Arrival_Date]": date, // Add date filter
 			}).toString();
-			const apiUrl = `${baseUrl}?${queryString}&api-key=${process.env.GOVT_DATA_API}`;
+			const apiUrl = `${baseUrl}?${queryString}&api-key=${"579b464db66ec23bdd0000010a0b007fd4fc40b34482a6c41d1447d7"}`;
 
 			try {
 				const response = await fetch(apiUrl, {
