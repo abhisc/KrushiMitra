@@ -1,6 +1,9 @@
 'use client';
 import React, { useEffect, useState } from "react";
 import AppLayout from '@/components/agrimitra/app-layout';
+import ErrorBoundary from '@/components/error-boundary';
+import { useNavigationHistory } from '@/hooks/use-navigation-history';
+import { useRouter } from 'next/navigation';
 
 // Example data
 type Expert = {
@@ -130,89 +133,309 @@ const regions = [
 ];
 
 export default function FindExpertList() {
-  const [region, setRegion] = useState("Karnataka"); // Default to Karnataka
+  const [region, setRegion] = useState(""); // No default region
   const [experts, setExperts] = useState<Expert[]>([]);
+  const [showLocationSelector, setShowLocationSelector] = useState(true);
+  const [isDetectingLocation, setIsDetectingLocation] = useState(false);
+  const router = useRouter();
+  const { getPreviousPath } = useNavigationHistory();
 
   useEffect(() => {
-    console.log('Selected region:', region);
-    const filteredExperts = allExperts.filter(e => e.region === region);
-    setExperts(filteredExperts);
-    console.log('Filtered experts for', region, ':', filteredExperts.length);
+    if (region) {
+      console.log('Selected region:', region);
+      const filteredExperts = allExperts.filter(e => e.region === region);
+      setExperts(filteredExperts);
+      console.log('Filtered experts for', region, ':', filteredExperts.length);
+      setShowLocationSelector(false);
+    }
   }, [region]);
 
-  return (
-    <AppLayout
-      title="Find an Expert"
-      subtitle="Browse agriculture experts or call the Kisan Call Center for help."
-      showBackButton={true}
-    >
-      <div className="max-w-md mx-auto p-4">
-        <h2 className="text-xl font-bold text-green-700 mb-4">Nearby Agriculture Experts</h2>
-        <label className="block mb-2 text-sm font-medium text-gray-700">Select your region:</label>
-        <select value={region} onChange={e => setRegion(e.target.value)} className="mb-4 p-2 border rounded w-full bg-white text-gray-900 border-gray-300 focus:ring-green-500 focus:border-green-500">
-          {regions.map(r => <option key={r} value={r}>{r}</option>)}
-        </select>
-        <div className="space-y-4">
-          {experts.length === 0 ? (
-            <div className="bg-blue-50 border border-blue-200 rounded-xl p-4 flex flex-col items-start">
-              <div className="text-green-800 font-semibold mb-1">Need expert advice in {region}?</div>
-              <div className="text-gray-700 mb-2">Call the <span className="font-bold">Kisan Call Center</span> for free agricultural help in your language.</div>
-              <div className="text-lg font-bold text-blue-900 mb-2">1800-180-1551</div>
-              <a
-                href="tel:18001801551"
-                className="px-4 py-2 bg-green-600 text-white rounded-lg text-base font-bold shadow hover:bg-green-700 active:bg-green-800 transition"
-                style={{ minWidth: 120, minHeight: 44, display: "flex", alignItems: "center", justifyContent: "center" }}
-              >
-                Call Now
-              </a>
-              <a
-                href="https://dackkms.gov.in/"
-                target="_blank"
-                rel="noopener noreferrer"
-                className="mt-2 text-blue-700 underline text-sm"
-              >
-                Visit Kisan Call Center Website
-              </a>
-            </div>
+  const handleDetectLocation = () => {
+    setIsDetectingLocation(true);
+    
+    // Use accurate location detection with reverse geocoding
+    if (navigator.geolocation) {
+      navigator.geolocation.getCurrentPosition(
+        async (position) => {
+          const { latitude, longitude } = position.coords;
+          console.log('Detected coordinates:', latitude, longitude);
+          
+          try {
+            // Use reverse geocoding to get location details
+            const response = await fetch(
+              `https://api.bigdatacloud.net/data/reverse-geocode-client?latitude=${latitude}&longitude=${longitude}&localityLanguage=en`
+            );
+            
+            if (response.ok) {
+              const data = await response.json();
+              console.log('Reverse geocoding result:', data);
+              
+              // Extract state/region from the response
+              const state = data.principalSubdivision || data.localityInfo?.administrative?.[1]?.name;
+              
+              if (state) {
+                // Map the detected state to our regions list
+                const detectedRegion = regions.find(region => 
+                  region.toLowerCase().includes(state.toLowerCase()) ||
+                  state.toLowerCase().includes(region.toLowerCase())
+                );
+                
+                if (detectedRegion) {
+                  setRegion(detectedRegion);
+                  console.log('Detected region:', detectedRegion);
+                } else {
+                  // If exact match not found, try fuzzy matching
+                  const bestMatch = regions.find(region => {
+                    const regionWords = region.toLowerCase().split(' ');
+                    const stateWords = state.toLowerCase().split(' ');
+                    return regionWords.some((word: string) => stateWords.includes(word)) ||
+                           stateWords.some((word: string) => regionWords.includes(word));
+                  });
+                  
+                  if (bestMatch) {
+                    setRegion(bestMatch);
+                    console.log('Fuzzy matched region:', bestMatch);
+                  } else {
+                    // Fallback to manual selection
+                    alert(`Location detected: ${state}\nPlease select your region manually from the dropdown.`);
+                    setShowLocationSelector(true);
+                  }
+                }
+              } else {
+                alert('Could not determine your state/region. Please select manually.');
+                setShowLocationSelector(true);
+              }
+            } else {
+              throw new Error('Reverse geocoding failed');
+            }
+          } catch (error) {
+            console.error('Reverse geocoding error:', error);
+            
+            // Fallback: Use coordinates to estimate region based on rough boundaries
+            const estimatedRegion = estimateRegionFromCoordinates(latitude, longitude);
+            if (estimatedRegion) {
+              setRegion(estimatedRegion);
+              console.log('Estimated region from coordinates:', estimatedRegion);
+            } else {
+              alert('Could not determine your location. Please select your region manually.');
+              setShowLocationSelector(true);
+            }
+          } finally {
+            setIsDetectingLocation(false);
+          }
+        },
+        (error) => {
+          console.error('Geolocation error:', error);
+          let errorMessage = 'Could not detect your location. ';
+          
+          switch (error.code) {
+            case error.PERMISSION_DENIED:
+              errorMessage += 'Please allow location access or select manually.';
+              break;
+            case error.POSITION_UNAVAILABLE:
+              errorMessage += 'Location information unavailable. Please select manually.';
+              break;
+            case error.TIMEOUT:
+              errorMessage += 'Location request timed out. Please select manually.';
+              break;
+            default:
+              errorMessage += 'Please select your region manually.';
+          }
+          
+          alert(errorMessage);
+          setShowLocationSelector(true);
+          setIsDetectingLocation(false);
+        },
+        {
+          enableHighAccuracy: true,
+          timeout: 10000,
+          maximumAge: 300000 // 5 minutes
+        }
+      );
+    } else {
+      alert('Geolocation is not supported by your browser. Please select your region manually.');
+      setShowLocationSelector(true);
+      setIsDetectingLocation(false);
+    }
+  };
+
+  // Helper function to estimate region from coordinates (rough boundaries)
+  const estimateRegionFromCoordinates = (lat: number, lng: number): string | null => {
+    // Rough coordinate boundaries for major Indian states
+    const regionBoundaries: { [key: string]: { minLat: number; maxLat: number; minLng: number; maxLng: number } } = {
+      'Karnataka': { minLat: 11.5, maxLat: 18.5, minLng: 74, maxLng: 78.5 },
+      'Tamil Nadu': { minLat: 8, maxLat: 13.5, minLng: 76, maxLng: 80.5 },
+      'Maharashtra': { minLat: 15.5, maxLat: 22, minLng: 72.5, maxLng: 80.5 },
+      'Uttar Pradesh': { minLat: 23.5, maxLat: 31, minLng: 77, maxLng: 84.5 },
+      'Andhra Pradesh': { minLat: 12.5, maxLat: 19.5, minLng: 76.5, maxLng: 84.5 },
+      'Telangana': { minLat: 15.5, maxLat: 19.5, minLng: 77, maxLng: 81.5 },
+      'Gujarat': { minLat: 20, maxLat: 24.5, minLng: 69, maxLng: 74.5 },
+      'Punjab': { minLat: 29.5, maxLat: 32.5, minLng: 73.5, maxLng: 77.5 },
+      'Haryana': { minLat: 27.5, maxLat: 31, minLng: 74.5, maxLng: 77.5 },
+      'Rajasthan': { minLat: 23, maxLat: 30.5, minLng: 69.5, maxLng: 78.5 },
+      'Madhya Pradesh': { minLat: 21, maxLat: 26.5, minLng: 74, maxLng: 82.5 },
+      'Bihar': { minLat: 24, maxLat: 27.5, minLng: 83, maxLng: 88.5 },
+      'West Bengal': { minLat: 21.5, maxLat: 27.5, minLng: 85.5, maxLng: 89.5 },
+      'Odisha': { minLat: 17.5, maxLat: 22.5, minLng: 81.5, maxLng: 87.5 },
+      'Kerala': { minLat: 8, maxLat: 12.5, minLng: 74.5, maxLng: 77.5 },
+      'Assam': { minLat: 24, maxLat: 28, minLng: 89.5, maxLng: 96.5 },
+      'Jharkhand': { minLat: 22, maxLat: 25.5, minLng: 83.5, maxLng: 87.5 },
+      'Chhattisgarh': { minLat: 17.5, maxLat: 24, minLng: 80.5, maxLng: 84.5 },
+      'Uttarakhand': { minLat: 28.5, maxLat: 31.5, minLng: 77.5, maxLng: 81.5 },
+      'Himachal Pradesh': { minLat: 30.5, maxLat: 33.5, minLng: 75.5, maxLng: 78.5 },
+      'Delhi': { minLat: 28.4, maxLat: 28.9, minLng: 76.8, maxLng: 77.3 },
+      'Goa': { minLat: 14.5, maxLat: 15.8, minLng: 73.7, maxLng: 74.2 }
+    };
+
+    for (const [region, bounds] of Object.entries(regionBoundaries)) {
+      if (lat >= bounds.minLat && lat <= bounds.maxLat && 
+          lng >= bounds.minLng && lng <= bounds.maxLng) {
+        return region;
+      }
+    }
+
+    return null;
+  };
+
+    return (
+    <ErrorBoundary>
+      <AppLayout
+        title="Find an Expert"
+        subtitle="Browse agriculture experts or call the Kisan Call Center for help."
+        showBackButton={true}
+        onBack={() => {
+          const previousPath = getPreviousPath();
+          if (previousPath) {
+            router.push(previousPath);
+          } else {
+            router.push('/expert-connect');
+          }
+        }}
+      >
+        <div className="max-w-md mx-auto p-4">
+          {showLocationSelector ? (
+            <>
+              <h2 className="text-xl font-bold text-green-700 mb-6 text-center">Choose Your Location</h2>
+              
+              {/* Detect Location Button */}
+              <div className="mb-6">
+                <button
+                  onClick={handleDetectLocation}
+                  className="w-full px-6 py-4 bg-green-600 text-white rounded-xl font-bold text-lg shadow hover:bg-green-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                  disabled={isDetectingLocation}
+                >
+                  {isDetectingLocation ? (
+                    <div className="flex items-center justify-center gap-2">
+                      <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-white"></div>
+                      Detecting Location...
+                    </div>
+                  ) : (
+                    '📍 Detect My Location'
+                  )}
+                </button>
+              </div>
+
+              {/* Manual Selection */}
+              <div className="text-center mb-4">
+                <span className="text-gray-500">or</span>
+              </div>
+
+              <div className="mb-6">
+                <label className="block mb-2 text-sm font-medium text-gray-700">Select your region manually:</label>
+                <select 
+                  value={region} 
+                  onChange={e => setRegion(e.target.value)} 
+                  className="w-full p-3 border rounded-lg bg-white text-gray-900 border-gray-300 focus:ring-green-500 focus:border-green-500"
+                >
+                  <option value="">Choose your state/region...</option>
+                  {regions.map(r => <option key={r} value={r}>{r}</option>)}
+                </select>
+              </div>
+
+              {region && (
+                <button
+                  onClick={() => setShowLocationSelector(false)}
+                  className="w-full px-6 py-3 bg-blue-600 text-white rounded-lg font-bold shadow hover:bg-blue-700 transition-colors"
+                >
+                  Continue to Experts
+                </button>
+              )}
+            </>
           ) : (
             <>
-              {/* Information Section */}
-              <div className="bg-green-50 border border-green-200 rounded-xl p-4 mb-4">
-                <h3 className="text-lg font-bold text-green-800 mb-2">📋 Expert Information for {region}</h3>
-                <div className="text-sm text-gray-700 space-y-1">
-                  <p>• <strong>Available Experts:</strong> {experts.length} agricultural specialists</p>
-                  <p>• <strong>Expert Types:</strong> {[...new Set(experts.map(e => e.role))].join(', ')}</p>
-                  <p>• <strong>Response Time:</strong> Usually within 24 hours</p>
-                </div>
-                <div className="mt-3 p-2 bg-yellow-50 border border-yellow-200 rounded">
-                  <p className="text-xs text-yellow-800">
-                    💡 <strong>Tip:</strong> Call during business hours (9 AM - 6 PM) for faster response. 
-                    Have your crop details ready for better assistance.
-                  </p>
-                </div>
+              <div className="flex items-center justify-between mb-4">
+                <h2 className="text-xl font-bold text-green-700">Agriculture Experts in {region}</h2>
+                <button
+                  onClick={() => setShowLocationSelector(true)}
+                  className="text-sm text-blue-600 hover:text-blue-800 underline"
+                >
+                  Change Location
+                </button>
               </div>
-              
-              {/* Expert List */}
-              {experts.map((expert) => (
-                <div key={expert.id} className="flex items-center justify-between bg-white rounded-xl shadow p-4">
-                  <div>
-                    <div className="text-lg font-semibold text-gray-900">{expert.name}</div>
-                    <div className="text-sm text-gray-600">{expert.role}</div>
-                    <div className="text-sm text-gray-700 mt-1">{expert.phone}</div>
+              <div className="space-y-4">
+                {experts.length === 0 ? (
+                  <div className="bg-blue-50 border border-blue-200 rounded-xl p-4 flex flex-col items-start">
+                    <div className="text-green-800 font-semibold mb-1">Need expert advice in {region}?</div>
+                    <div className="text-gray-700 mb-2">Call the <span className="font-bold">Kisan Call Center</span> for free agricultural help in your language.</div>
+                    <div className="text-lg font-bold text-blue-900 mb-2">1800-180-1551</div>
+                    <a
+                      href="tel:18001801551"
+                      className="px-4 py-2 bg-green-600 text-white rounded-lg text-base font-bold shadow hover:bg-green-700 active:bg-green-800 transition"
+                      style={{ minWidth: 120, minHeight: 44, display: "flex", alignItems: "center", justifyContent: "center" }}
+                    >
+                      Call Now
+                    </a>
+                    <a
+                      href="https://dackkms.gov.in/"
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="mt-2 text-blue-700 underline text-sm"
+                    >
+                      Visit Kisan Call Center Website
+                    </a>
                   </div>
-                  <a
-                    href={`tel:${expert.phone.replace(/\s+/g, "")}`}
-                    className="ml-4 px-4 py-2 bg-green-600 text-white rounded-lg text-base font-bold shadow hover:bg-green-700 active:bg-green-800 transition"
-                    style={{ minWidth: 80, minHeight: 44, display: "flex", alignItems: "center", justifyContent: "center" }}
-                  >
-                    Call
-                  </a>
-                </div>
-              ))}
+                ) : (
+                  <>
+                    {/* Information Section */}
+                    <div className="bg-green-50 border border-green-200 rounded-xl p-4 mb-4">
+                      <h3 className="text-lg font-bold text-green-800 mb-2">📋 Expert Information for {region}</h3>
+                      <div className="text-sm text-gray-700 space-y-1">
+                        <p>• <strong>Available Experts:</strong> {experts.length} agricultural specialists</p>
+                        <p>• <strong>Expert Types:</strong> {[...new Set(experts.map(e => e.role))].join(', ')}</p>
+                        <p>• <strong>Response Time:</strong> Usually within 24 hours</p>
+                      </div>
+                      <div className="mt-3 p-2 bg-yellow-50 border border-yellow-200 rounded">
+                        <p className="text-xs text-yellow-800">
+                          💡 <strong>Tip:</strong> Call during business hours (9 AM - 6 PM) for faster response. 
+                          Have your crop details ready for better assistance.
+                        </p>
+                      </div>
+                    </div>
+                    
+                    {/* Expert List */}
+                    {experts.map((expert) => (
+                      <div key={expert.id} className="flex items-center justify-between bg-white rounded-xl shadow p-4">
+                        <div>
+                          <div className="text-lg font-semibold text-gray-900">{expert.name}</div>
+                          <div className="text-sm text-gray-600">{expert.role}</div>
+                          <div className="text-sm text-gray-700 mt-1">{expert.phone}</div>
+                        </div>
+                        <a
+                          href={`tel:${expert.phone.replace(/\s+/g, "")}`}
+                          className="ml-4 px-4 py-2 bg-green-600 text-white rounded-lg text-base font-bold shadow hover:bg-green-700 active:bg-green-800 transition"
+                          style={{ minWidth: 80, minHeight: 44, display: "flex", alignItems: "center", justifyContent: "center" }}
+                        >
+                          Call
+                        </a>
+                      </div>
+                    ))}
+                  </>
+                )}
+              </div>
             </>
           )}
         </div>
-      </div>
-    </AppLayout>
+      </AppLayout>
+    </ErrorBoundary>
   );
 } 
