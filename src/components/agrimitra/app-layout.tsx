@@ -37,6 +37,7 @@ interface AppLayoutProps {
 	title?: string;
 	subtitle?: string;
 	handleHistoryChatClick?: (text: string) => void;
+	onBack?: () => void;
 }
 
 export default function AppLayout({
@@ -45,6 +46,7 @@ export default function AppLayout({
 	title,
 	subtitle,
 	handleHistoryChatClick,
+	onBack,
 }: AppLayoutProps) {
 	// React state for selected language
 	const [selectedLanguage, setSelectedLanguage] = useState("EN");
@@ -54,7 +56,7 @@ export default function AppLayout({
 	const [sidebarOpen, setSidebarOpen] = useState(false);
 	const router = useRouter();
 	const pathname = usePathname();
-	
+
 	// Chat hook for recent chats
 	const { recentChats, loading: chatsLoading } = useChat();
 
@@ -110,6 +112,12 @@ export default function AppLayout({
 			label: "Farm Journal",
 			href: "/journal",
 			active: pathname === "/journal",
+		},
+		{
+			icon: Users, // or MessageCircle
+			label: "Expert Connect",
+			href: "/expert-connect",
+			active: pathname === "/expert-connect",
 		},
 		{
 			icon: UserIcon,
@@ -187,7 +195,9 @@ export default function AppLayout({
 							</h3>
 							<div className="space-y-2">
 								{chatsLoading ? (
-									<div className="text-xs text-muted-foreground">Loading chats...</div>
+									<div className="text-xs text-muted-foreground">
+										Loading chats...
+									</div>
 								) : recentChats.length > 0 ? (
 									recentChats.map((chat) => (
 										<button
@@ -208,13 +218,19 @@ export default function AppLayout({
 										>
 											<MessageCircle className="w-4 h-4 inline mr-2 text-muted-foreground" />
 											<div className="text-xs">
-												<div className="font-medium text-foreground">{chat.title}</div>
-												<div className="text-muted-foreground line-clamp-1">{chat.lastMessage}</div>
+												<div className="font-medium text-foreground">
+													{chat.title}
+												</div>
+												<div className="text-muted-foreground line-clamp-1">
+													{chat.lastMessage}
+												</div>
 											</div>
 										</button>
 									))
 								) : (
-									<div className="text-xs text-muted-foreground">No recent chats</div>
+									<div className="text-xs text-muted-foreground">
+										No recent chats
+									</div>
 								)}
 							</div>
 						</div>
@@ -253,8 +269,8 @@ export default function AppLayout({
 
 						{showBackButton && (
 							<button
-								onClick={handleBack}
-								className="ml-4 p-2 hover:bg-accent rounded-lg transition-colors"
+								onClick={onBack ? onBack : handleBack}
+								className="ml-4 p-2 hover:bg-gray-100 rounded-lg transition-colors"
 							>
 								<ArrowLeft className="w-5 h-5 text-muted-foreground" />
 							</button>
