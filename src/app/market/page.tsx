@@ -3,25 +3,16 @@
 import { useEffect, useState } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
+import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
-import {
-	Select,
-	SelectContent,
-	SelectItem,
-	SelectTrigger,
-	SelectValue,
-} from "@/components/ui/select";
 import { useToast } from "@/hooks/use-toast";
 import {
 	getMarketAnalysis,
 	MarketAnalysisInput,
 } from "@/ai/flows/real-time-market-analysis";
-import { Loader2, TrendingUp, BarChart3, PieChart } from "lucide-react";
+import { Loader2, TrendingUp, BarChart3, PieChart, MessageSquare } from "lucide-react";
 import AppLayout from "@/components/agrimitra/app-layout";
 import stateNames from "@/constants/stateNames";
-import { fetchDataFromGovtAPI } from "@/helpers/govtData/fetchGovtData";
-import { govtResources, ResourcesEnum } from "@/helpers/govtData/resources";
 import {
 	BarChart,
 	Bar,
@@ -49,15 +40,12 @@ const COLORS = [
 
 export default function MarketPage() {
 	const [isLoading, setIsLoading] = useState(false);
-	const [state, setState] = useState("");
-	const [market, setMarket] = useState("");
-	const [moreDetails, setMoreDetails] = useState("");
+	const [userQuery, setUserQuery] = useState("");
 	const [activeView, setActiveView] = useState<
 		"analysis" | "charts" | "distribution"
 	>("analysis");
 
 	const [result, setResult] = useState<any>({});
-	const [marketList, setMarketList] = useState<[] | string[]>([]);
 
 	const { toast } = useToast();
 
@@ -94,46 +82,62 @@ export default function MarketPage() {
 		</Card>
 	);
 
-	useEffect(() => {
-		market && setMarket("");
-		state &&
-			fetchDataFromGovtAPI(ResourcesEnum.districts, {
-				format: "json",
-				limit: "100",
-				offset: "0",
-				"filters[State]": state,
-				...(govtResources["districts"].queryDefault || {}),
-			})
-				.then((data) => {
-					const districts = (data?.records || [])?.reduce(
-						(acc: string[], item: any) => {
-							if (!acc.includes(item.District)) {
-								acc.push(item.District);
-							}
-							return acc;
-						},
-						[],
-					); // Remove duplicates
+	// Function to extract information from natural language query
+	const extractMarketInfo = (query: string) => {
+		const lowerQuery = query.toLowerCase();
+		let state = "";
+		let market = "";
+		let moreDetails = query; // Keep original query as details
 
-					setMarketList(districts);
-				})
-				.catch((error) => {
-					console.error("Error fetching districts:", error);
-					toast({
-						title: "Error",
-						description: "Failed to load districts. Please try again later.",
-						variant: "destructive",
-					});
-				});
-	}, [state]);
+		// Extract state information
+		const states = stateNames.map(s => s.toLowerCase());
+		for (const stateName of states) {
+			if (lowerQuery.includes(stateName)) {
+				state = stateNames[states.indexOf(stateName)];
+				break;
+			}
+		}
+
+		// Extract common district/market names that might be mentioned
+		const commonMarkets = [
+			"mumbai", "pune", "nashik", "aurangabad", "nagpur",
+			"bangalore", "mysore", "hubli", "mangalore",
+			"delhi", "gurgaon", "faridabad", "ghaziabad",
+			"chandigarh", "ludhiana", "amritsar", "jalandhar",
+			"chennai", "coimbatore", "madurai", "salem",
+			"hyderabad", "vijayawada", "visakhapatnam",
+			"kochi", "thiruvananthapuram", "calicut"
+		];
+
+		for (const marketName of commonMarkets) {
+			if (lowerQuery.includes(marketName)) {
+				market = marketName.charAt(0).toUpperCase() + marketName.slice(1);
+				break;
+			}
+		}
+
+		return { state, market, moreDetails };
+	};
 
 	const handleMarketAnalysis = async () => {
+		if (!userQuery.trim()) {
+			toast({
+				title: "Input Required",
+				description: "Please describe what market analysis you need.",
+				variant: "destructive",
+			});
+			return;
+		}
+
 		setIsLoading(true);
 		try {
+			// Extract information from natural language query
+			const { state, market, moreDetails } = extractMarketInfo(userQuery);
+
 			const input: MarketAnalysisInput = {
-				state: state.trim(),
-				market: market.trim(),
-				moreDetails: moreDetails.trim(),
+				state: state,
+				market: market,
+				moreDetails: moreDetails,
 			};
 
 			const analysis = await getMarketAnalysis(input);
@@ -141,7 +145,7 @@ export default function MarketPage() {
 
 			toast({
 				title: "Analysis Complete",
-				description: `Market analysis for ${state} in ${market} completed.`,
+				description: "Market analysis completed successfully.",
 			});
 		} catch (error) {
 			console.error("Market analysis error:", error);
@@ -180,7 +184,7 @@ export default function MarketPage() {
 	return (
 		<AppLayout
 			title="Real-Time Market Analysis"
-			subtitle="Get latest prices and market trends for agricultural products"
+			subtitle="Describe your market analysis needs in natural language"
 			showBackButton={true}
 		>
 			<div className="p-2">
@@ -188,55 +192,30 @@ export default function MarketPage() {
 					<Card>
 						<CardHeader>
 							<CardTitle className="flex items-center gap-2">
-								<TrendingUp className="w-5 h-5" />
-								Market Analysis Parameters
+								<MessageSquare className="w-5 h-5" />
+								Describe Your Market Analysis Needs
 							</CardTitle>
 						</CardHeader>
 						<CardContent className="space-y-4">
-							<div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-								<div>
-									<Label htmlFor="state">State</Label>
-									<Select value={state} onValueChange={setState}>
-										<SelectTrigger>
-											<SelectValue placeholder="State" />
-										</SelectTrigger>
-										<SelectContent>
-											{stateNames.map((state) => (
-												<SelectItem key={state} value={state}>
-													{state}
-												</SelectItem>
-											))}
-										</SelectContent>
-									</Select>
-								</div>
-								<div>
-									<Label htmlFor="market">APMC</Label>
-									<Select value={market} onValueChange={setMarket}>
-										<SelectTrigger>
-											<SelectValue placeholder="Select market" />
-										</SelectTrigger>
-										<SelectContent>
-											{marketList.map((marketName) => (
-												<SelectItem key={marketName} value={marketName}>
-													{marketName}
-												</SelectItem>
-											))}
-										</SelectContent>
-									</Select>
-								</div>
-								<div className="md:col-span-2">
-									<Label htmlFor="custom-market">Specific Requirements</Label>
-									<Input
-										id="more_details"
-										placeholder="Enter any additional details"
-										value={moreDetails}
-										onChange={(e) => setMoreDetails(e.target.value)}
-									/>
-								</div>
+							<div>
+								<Label htmlFor="user-query" className="text-base font-medium">
+									What market information do you need?
+								</Label>
+								<Textarea
+									id="user-query"
+									placeholder="Example: 'I want to know wheat prices in Punjab markets' or 'Show me rice market analysis for Maharashtra' or 'What are the current potato prices in UP and market trends?'"
+									value={userQuery}
+									onChange={(e) => setUserQuery(e.target.value)}
+									className="min-h-[120px] mt-2"
+									rows={5}
+								/>
+								<p className="text-sm text-gray-500 mt-2">
+									💡 You can mention: crops/commodities, states, districts, price trends, market conditions, etc.
+								</p>
 							</div>
 							<Button
 								onClick={handleMarketAnalysis}
-								disabled={isLoading || !(moreDetails || state || market)}
+								disabled={isLoading || !userQuery.trim()}
 								className="w-full"
 							>
 								{isLoading ? (
