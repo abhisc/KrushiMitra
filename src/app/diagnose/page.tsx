@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useRef } from 'react';
+import { useRouter } from 'next/navigation';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -8,7 +9,7 @@ import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { useToast } from '@/hooks/use-toast';
 import { diagnoseCropDisease, DiagnoseCropDiseaseInput, diagnoseFollowUp, DiagnoseFollowUpInput } from '@/ai/flows/diagnose-crop-disease';
-import { Loader2, Upload, Camera, Mic, MicOff, FileImage, X, Send, MessageCircle } from 'lucide-react';
+import { Loader2, Upload, Camera, Mic, MicOff, FileImage, X, Send, MessageCircle, Brain } from 'lucide-react';
 import AppLayout from '@/components/agrimitra/app-layout';
 import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
@@ -20,6 +21,7 @@ interface ChatMessage {
 }
 
 export default function DiagnosePage() {
+  const router = useRouter();
   const [isLoading, setIsLoading] = useState(false);
   const [photoDataUri, setPhotoDataUri] = useState<string>('');
   const [description, setDescription] = useState('');
@@ -378,6 +380,15 @@ export default function DiagnosePage() {
             ) : (
               'Diagnose Crop Disease'
             )}
+          </Button>
+
+          {/* Smart Diagnosis Button */}
+          <Button 
+            onClick={() => router.push('/smart-diagnose')} 
+            className="w-full h-12 text-lg font-medium"
+          >
+            <Brain className="w-5 h-5 mr-2" />
+            Smart Diagnosis
           </Button>
 
           {/* Results Section */}

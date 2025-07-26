@@ -5,7 +5,7 @@ import {
   Home, MessageCircle, TrendingUp, Cloud, FileText, Calendar,
   Leaf, Activity, Zap, BookOpen, Calculator, ShoppingCart,
   Users, BarChart3, Menu, Settings, ChevronDown, Bot,
-  ClipboardList
+  ClipboardList, Brain
 } from 'lucide-react';
 import Link from 'next/link';
 
@@ -148,6 +148,12 @@ export default function SimpleSidebar() {
           {/* Grid of Main Features */}
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-12">
             {[
+              {
+                icon: Brain,
+                title: 'Smart AI Diagnosis',
+                subtitle: 'Ask anything - AI routes intelligently',
+                color: 'bg-gradient-to-r from-blue-50 to-purple-50 border-blue-200'
+              },
               {
                 icon: Activity,
                 title: 'Diagnose Crop Disease',
