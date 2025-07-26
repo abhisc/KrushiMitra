@@ -5,8 +5,8 @@ import { Mic, Send, Image as ImageIcon } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { cn } from "@/utils/utils";
-// import { askAnything } from '@/ai/flows/ask-anything';
-// import { diagnoseCropDiseaseFromChat } from '@/ai/flows/diagnose-crop-disease-from-chat';
+import { AskAnything } from '@/ai/flows/ask-anything';
+import { diagnoseCropDisease, DiagnoseCropDiseaseChatOutput } from '@/ai/flows/diagnose-crop-disease';
 
 const HINTS = [
 	"Tap to Speak (English)",
@@ -194,19 +194,28 @@ export default function InteractionArea({
 		}
 
 		if (interactionMode === "diagnose") {
-			// Call the dedicated diagnosis flow
-			diagnoseCropDiseaseFromChat({ textDescription: text, photoDataUri }).then(
+			// Call the consolidated diagnosis flow with chat output format
+			diagnoseCropDisease({ 
+				textDescription: text, 
+				photoDataUri,
+				outputFormat: 'chat'
+			}).then(
 				(res) => {
-					setAIResponse(
-						res.diagnosisResult || "Could not diagnose, please try again.",
-					);
+					// Type guard to ensure we're getting the chat output format
+					if ('diagnosisResult' in res) {
+						setAIResponse(
+							res.diagnosisResult || "Could not diagnose, please try again.",
+						);
+					} else {
+						setAIResponse("Unexpected response format from diagnosis.");
+					}
 				},
 			);
 		} else {
-			// Call the general askAnything flow
-			askAnything({ text, photoDataUri }).then((res) => {
+			// Call the general AskAnything flow
+			AskAnything({ text, photoDataUri }).then((res) => {
 				setAIResponse(
-					res.data?.response || "No response, please contact help!",
+					res.response || "No response, please contact help!",
 				);
 			});
 		}
