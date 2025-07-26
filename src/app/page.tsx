@@ -48,7 +48,10 @@ export default function Home() {
 
 	useEffect(() => {
 		// Check if user has additional info and show card if needed
-		if (user && userProfile) {
+		// Only show if user hasn't explicitly dismissed it
+		const isDismissed = localStorage.getItem('additional-info-dismissed');
+		
+		if (user && userProfile && !isDismissed) {
 			const hasAdditionalInfo = userProfile.age || userProfile.gender || userProfile.location?.city || 
 									userProfile.isStudent || userProfile.minority || userProfile.disability || 
 									userProfile.caste || userProfile.residence;
@@ -56,7 +59,7 @@ export default function Home() {
 			if (!hasAdditionalInfo) {
 				resetCard(); // Reset card state to show it
 			}
-		} else if (user) {
+		} else if (user && !isDismissed) {
 			resetCard(); // Reset card state to show it
 		}
 	}, [user, userProfile, resetCard]);
@@ -93,6 +96,7 @@ export default function Home() {
 	};
 
 	const handleDismissAdditionalInfo = () => {
+		console.log('handleDismissAdditionalInfo called');
 		dismissAdditionalInfoCard();
 	};
 
@@ -290,11 +294,13 @@ export default function Home() {
 
 			{/* Additional Info Card - Floating in bottom right */}
 			{user && showAdditionalInfoCard && (
-				<div className="fixed bottom-6 right-6 z-50">
-					<AdditionalInfoCard
-						onFillNow={handleFillAdditionalInfo}
-						onDismiss={handleDismissAdditionalInfo}
-					/>
+				<div className="fixed bottom-6 right-6 z-[60] pointer-events-none">
+					<div className="pointer-events-auto">
+						<AdditionalInfoCard
+							onFillNow={handleFillAdditionalInfo}
+							onDismiss={handleDismissAdditionalInfo}
+						/>
+					</div>
 				</div>
 			)}
 		</AppLayout>

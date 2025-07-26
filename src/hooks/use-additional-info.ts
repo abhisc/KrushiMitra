@@ -12,6 +12,7 @@ export function useAdditionalInfo() {
   }, []);
 
   const dismissCard = () => {
+    console.log('dismissCard called, setting showCard to false');
     setShowCard(false);
     localStorage.setItem('additional-info-dismissed', 'true');
   };

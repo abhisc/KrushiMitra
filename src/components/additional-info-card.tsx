@@ -11,22 +11,40 @@ interface AdditionalInfoCardProps {
 }
 
 export default function AdditionalInfoCard({ onFillNow, onDismiss }: AdditionalInfoCardProps) {
+  const handleDismiss = (e: React.MouseEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    console.log('Close button clicked');
+    onDismiss();
+  };
+
+  const handleFillNow = (e: React.MouseEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    console.log('Fill Now button clicked');
+    onFillNow();
+  };
+
   return (
-    <Card className="border-primary/20 bg-primary/5 w-80 shadow-lg">
+    <Card className="border-primary/20 bg-primary/5 w-80 shadow-lg relative">
       <CardHeader className="pb-2">
         <div className="flex items-center justify-between">
           <CardTitle className="flex items-center gap-2 text-primary text-sm">
             <UserPlus className="w-4 h-4" />
             Help us improve your experience
           </CardTitle>
-          <Button
-            variant="ghost"
-            size="sm"
-            onClick={onDismiss}
-            className="h-6 w-6 p-0 text-primary hover:text-primary/80"
-          >
-            <X className="w-3 h-3" />
-          </Button>
+          <div className="relative z-[60]">
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={handleDismiss}
+              className="h-8 w-8 p-0 text-primary hover:text-primary/80 pointer-events-auto relative z-[60]"
+              type="button"
+              aria-label="Close"
+            >
+              <X className="w-4 h-4" />
+            </Button>
+          </div>
         </div>
         <CardDescription className="text-primary/70 text-xs">
           Fill additional info (optional) to get personalized recommendations.
@@ -34,9 +52,10 @@ export default function AdditionalInfoCard({ onFillNow, onDismiss }: AdditionalI
       </CardHeader>
       <CardContent className="pt-0">
         <Button 
-          onClick={onFillNow}
+          onClick={handleFillNow}
           size="sm"
           className="bg-primary hover:bg-primary/90 text-primary-foreground w-full"
+          type="button"
         >
           Fill Now
         </Button>
