@@ -14,7 +14,7 @@ import {
 import { useAuth } from '@/contexts/auth-context';
 import { useToast } from '@/hooks/use-toast';
 import { useRouter } from 'next/navigation';
-import { User as UserIcon, LogOut, Settings, UserCircle, LogIn, Shield } from 'lucide-react';
+import { User as UserIcon, LogOut, UserCircle, LogIn } from 'lucide-react';
 
 export function UserMenu() {
   const { user, logout } = useAuth();
@@ -95,10 +95,6 @@ export function UserMenu() {
         <DropdownMenuItem onClick={() => router.push('/profile')}>
           <UserCircle className="mr-2 h-4 w-4" />
           <span>Profile</span>
-        </DropdownMenuItem>
-        <DropdownMenuItem>
-          <Settings className="mr-2 h-4 w-4" />
-          <span>Settings</span>
         </DropdownMenuItem>
         <DropdownMenuSeparator />
         <DropdownMenuItem onClick={handleLogout}>
