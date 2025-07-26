@@ -3,6 +3,12 @@ import './globals.css';
 import { Toaster } from "@/components/ui/toaster"
 import { ThemeProvider } from '@/components/theme-provider';
 import { AuthProvider } from '@/contexts/auth-context';
+import { LanguageProvider } from '@/contexts/language-context';
+import { PageTranslator } from '@/components/ui/page-translator';
+import { PlaceholderTranslator } from '@/components/ui/placeholder-translator';
+import { TranslationPreloader } from '@/components/ui/translation-preloader';
+import { TranslationStatus } from '@/components/ui/translation-status';
+
 import Script from 'next/script';
 
 export const metadata: Metadata = {
@@ -96,10 +102,15 @@ export default function RootLayout({
           enableSystem
           disableTransitionOnChange
         >
-          <AuthProvider>
-            {children}
-            <Toaster />
-          </AuthProvider>
+          		<AuthProvider>
+			<LanguageProvider>
+				<TranslationPreloader />
+				<PlaceholderTranslator>
+					{children}
+				</PlaceholderTranslator>
+			</LanguageProvider>
+		</AuthProvider>
+          <Toaster />
         </ThemeProvider>
         
         {/* Service Worker Registration */}

@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useState, useCallback } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -46,6 +46,7 @@ import {
 } from "lucide-react";
 import AppLayout from "@/components/agrimitra/app-layout";
 import stateNames from "@/constants/stateNames";
+import { TranslatableText } from "@/components/ui/translatable-text";
 import {
 	Dialog,
 	DialogContent,
@@ -64,24 +65,73 @@ export default function MarketplacePage() {
 	const [result, setResult] = useState<any>({});
 	const [selectedProduct, setSelectedProduct] = useState<any>(null);
 	const [showDetailsDialog, setShowDetailsDialog] = useState(false);
+	const [error, setError] = useState<string | null>(null);
 
 	const { toast } = useToast();
 
+	// Keyboard shortcut for search (Enter)
+	const handleKeyPress = useCallback((event: KeyboardEvent) => {
+		if (event.key === 'Enter') {
+			event.preventDefault();
+			if (!isLoading && productType.trim() && location.trim()) {
+				handleMarketplaceSearch();
+			}
+		}
+	}, [isLoading, productType, location]);
+
+	useEffect(() => {
+		document.addEventListener('keydown', handleKeyPress);
+		return () => {
+			document.removeEventListener('keydown', handleKeyPress);
+		};
+	}, [handleKeyPress]);
+
 	const productTypes = [
-		{ value: "tractor", label: "Tractors & Farm Equipment" },
-		{ value: "fertilizer", label: "Fertilizers & Nutrients" },
-		{ value: "seeds", label: "Seeds & Planting Material" },
-		{ value: "pesticides", label: "Pesticides & Crop Protection" },
-		{ value: "tools", label: "Farm Tools & Implements" },
+		{ value: "tractor", label: <TranslatableText>Tractors & Farm Equipment</TranslatableText> },
+		{ value: "fertilizer", label: <TranslatableText>Fertilizers & Nutrients</TranslatableText> },
+		{ value: "seeds", label: <TranslatableText>Seeds & Planting Material</TranslatableText> },
+		{ value: "pesticides", label: <TranslatableText>Pesticides & Crop Protection</TranslatableText> },
+		{ value: "tools", label: <TranslatableText>Farm Tools & Implements</TranslatableText> },
 	];
 
 	const sellerTypes = [
-		{ value: "krushi-kendra", label: "Krushi Kendra (Govt)" },
-		{ value: "local-dealer", label: "Local Dealer" },
-		{ value: "authorized-distributor", label: "Authorized Distributor" },
+		{ value: "krushi-kendra", label: <TranslatableText>Krushi Kendra (Govt)</TranslatableText> },
+		{ value: "local-dealer", label: <TranslatableText>Local Dealer</TranslatableText> },
+		{ value: "authorized-distributor", label: <TranslatableText>Authorized Distributor</TranslatableText> },
 	];
 
+	const resetAllStates = () => {
+		setProductType("");
+		setProductName("");
+		setLocation("");
+		setBudget("");
+		setRequirements("");
+		setResult({});
+		setSelectedProduct(null);
+		setShowDetailsDialog(false);
+		setError(null);
+	};
+
 	const handleMarketplaceSearch = async () => {
+		// Validate required fields
+		if (!productType.trim()) {
+			toast({
+				title: "Validation Error",
+				description: "Please select a product type.",
+				variant: "destructive",
+			});
+			return;
+		}
+
+		if (!location.trim()) {
+			toast({
+				title: "Validation Error",
+				description: "Please select a location.",
+				variant: "destructive",
+			});
+			return;
+		}
+
 		setIsLoading(true);
 		try {
 			const input: MarketplaceSearchInput = {
@@ -93,19 +143,34 @@ export default function MarketplacePage() {
 			};
 
 			const searchResult = await getMarketplaceSearch(input);
+			
+			// Validate search result
+			if (!searchResult || !searchResult.products || searchResult.products.length === 0) {
+				toast({
+					title: "No Results Found",
+					description: "No products found for your search criteria. Try adjusting your search parameters.",
+					variant: "destructive",
+				});
+				setResult({});
+				return;
+			}
+
 			setResult(searchResult);
 
 			toast({
 				title: "Search Complete",
-				description: `Found ${searchResult.totalResults} products for your search.`,
+				description: `Found ${searchResult.totalResults || searchResult.products.length} products for your search.`,
 			});
 		} catch (error) {
 			console.error("Marketplace search error:", error);
+			const errorMessage = error instanceof Error ? error.message : "Unknown error occurred";
+			setError(errorMessage);
 			toast({
 				title: "Search Failed",
 				description: "Unable to search marketplace. Please try again.",
 				variant: "destructive",
 			});
+			setResult({});
 		} finally {
 			setIsLoading(false);
 		}
@@ -364,16 +429,7 @@ export default function MarketplacePage() {
 
 		const sellerDetails = getSellerDetails(selectedProduct.sellerType, selectedProduct.sellerName);
 
-		// Handler functions for buttons
-		const handleContactSeller = () => {
-			// Open phone dialer with seller's number
-			const phoneNumber = sellerDetails.phone.replace(/\s+/g, '');
-			window.open(`tel:${phoneNumber}`, '_blank');
-			toast({
-				title: "Contacting Seller",
-				description: `Opening phone dialer for ${selectedProduct.sellerName}`,
-			});
-		};
+
 
 		const handleViewLocation = () => {
 			// Open Google Maps with seller's location
@@ -419,23 +475,34 @@ export default function MarketplacePage() {
 			});
 		};
 
+		const handleContactSeller = () => {
+			// Show comprehensive contact information
+			const contactInfo = `
+Contact ${selectedProduct.sellerName}:
+
+📞 Phone: ${sellerDetails.phone}
+📧 Email: ${sellerDetails.email}
+🌐 Website: ${sellerDetails.website}
+📍 Address: ${sellerDetails.address}
+🕒 Hours: ${sellerDetails.hours}
+
+You can also visit their store location or call them directly for inquiries.
+			`;
+			
+			toast({
+				title: "Contact Information",
+				description: contactInfo,
+				duration: 8000, // Show for 8 seconds to allow reading
+			});
+		};
+
 		return (
 			<Dialog open={showDetailsDialog} onOpenChange={setShowDetailsDialog}>
-				<DialogContent className="max-w-5xl max-h-[90vh] overflow-y-auto">
+				<DialogContent className="max-w-6xl max-h-[90vh] overflow-y-auto">
 					<DialogHeader>
-						<div className="flex items-center justify-between">
-							<DialogTitle className="text-2xl font-bold text-gray-900">
-								{selectedProduct.productName}
-							</DialogTitle>
-							<Button
-								variant="ghost"
-								size="sm"
-								onClick={() => setShowDetailsDialog(false)}
-								className="h-8 w-8 p-0"
-							>
-								<X className="h-4 w-4" />
-							</Button>
-						</div>
+						<DialogTitle className="text-2xl font-bold text-gray-900">
+							{selectedProduct.productName}
+						</DialogTitle>
 						<DialogDescription className="text-lg text-gray-600">
 							{selectedProduct.brand} {selectedProduct.model}
 						</DialogDescription>
@@ -486,12 +553,10 @@ export default function MarketplacePage() {
 									<div className="flex items-center gap-2">
 										{getSellerIcon(selectedProduct.sellerType)}
 										<span className="text-sm text-gray-600">{selectedProduct.sellerType}</span>
-									</div>
-									<div className="flex items-center gap-2">
-										<Phone className="w-4 h-4 text-gray-500" />
-										<span className="text-sm">{selectedProduct.contactInfo}</span>
-									</div>
-								</div>
+																						</div>
+
+
+												</div>
 							</div>
 						</div>
 
@@ -520,6 +585,7 @@ export default function MarketplacePage() {
 												<p className="text-sm font-medium">{sellerDetails.phone}</p>
 											</div>
 										</div>
+
 										<div className="flex items-center gap-3">
 											<Mail className="w-5 h-5 text-gray-500" />
 											<div>
@@ -698,33 +764,68 @@ export default function MarketplacePage() {
 							</div>
 						</div>
 
+						{/* Contact Information Card */}
+						<div className="bg-gradient-to-r from-blue-50 to-indigo-50 border border-blue-200 rounded-lg p-6">
+							<h3 className="text-xl font-bold text-gray-900 mb-4 flex items-center gap-2">
+								<Phone className="w-5 h-5 text-blue-600" />
+								Contact Information
+							</h3>
+							<div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+								<div className="space-y-3">
+									<div className="flex items-center gap-3">
+										<Phone className="w-4 h-4 text-blue-600" />
+										<div>
+											<span className="text-sm text-gray-600">Phone:</span>
+											<p className="font-medium">{sellerDetails.phone}</p>
+										</div>
+									</div>
+									<div className="flex items-center gap-3">
+										<Mail className="w-4 h-4 text-blue-600" />
+										<div>
+											<span className="text-sm text-gray-600">Email:</span>
+											<p className="font-medium">{sellerDetails.email}</p>
+										</div>
+									</div>
+								</div>
+								<div className="space-y-3">
+									<div className="flex items-center gap-3">
+										<Globe className="w-4 h-4 text-blue-600" />
+										<div>
+											<span className="text-sm text-gray-600">Website:</span>
+											<p className="font-medium">{sellerDetails.website}</p>
+										</div>
+									</div>
+									<div className="flex items-center gap-3">
+										<Clock className="w-4 h-4 text-blue-600" />
+										<div>
+											<span className="text-sm text-gray-600">Business Hours:</span>
+											<p className="font-medium">{sellerDetails.hours}</p>
+										</div>
+									</div>
+								</div>
+							</div>
+						</div>
+
 						{/* Action Buttons */}
 						<div className="flex flex-col sm:flex-row gap-3 pt-4 border-t">
-							<Button className="flex-1 bg-green-600 hover:bg-green-700" onClick={handleBuyNow}>
-								{selectedProduct.action.includes("Buy") && "Buy Now"}
-								{selectedProduct.action.includes("Call") && "Call Seller"}
-								{selectedProduct.action.includes("Visit") && "Visit Store"}
+							<Button 
+								className="flex-1 bg-green-600 hover:bg-green-700 text-white font-semibold" 
+								onClick={handleBuyNow}
+							>
+								<CreditCard className="w-4 h-4 mr-2" />
+								Buy Now
 							</Button>
-							<Button variant="outline" className="flex-1" onClick={handleContactSeller}>
+							<Button 
+								variant="outline"
+								className="flex-1 border-blue-200 text-blue-700 hover:bg-blue-50" 
+								onClick={handleContactSeller}
+							>
 								<Phone className="w-4 h-4 mr-2" />
 								Contact Seller
 							</Button>
 						</div>
 
-						{/* Additional Contact Options */}
-						<div className="bg-gray-50 border rounded-lg p-4">
-							<h4 className="font-semibold text-gray-800 mb-3">Additional Contact Options</h4>
-							<div className="flex flex-wrap gap-3">
-								<Button variant="outline" size="sm" onClick={handleEmailSeller}>
-									<Mail className="w-4 h-4 mr-2" />
-									Send Email
-								</Button>
-								<Button variant="outline" size="sm" onClick={handleVisitWebsite}>
-									<Globe className="w-4 h-4 mr-2" />
-									Visit Website
-								</Button>
-							</div>
-						</div>
+
 
 						{/* Important Notes */}
 						<div className="bg-orange-50 border border-orange-200 rounded-lg p-4">
@@ -758,20 +859,20 @@ export default function MarketplacePage() {
 			<div className="p-2">
 				<div className="max-w-6xl mx-auto space-y-3">
 					{/* Search Form */}
-					<Card>
+					<Card id="search-form">
 						<CardHeader>
 							<CardTitle className="flex items-center gap-2">
 								<Search className="w-5 h-5" />
-								Search Products
+								<TranslatableText>Search Products</TranslatableText>
 							</CardTitle>
 						</CardHeader>
 						<CardContent className="space-y-4">
 							<div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
 								<div>
-									<Label htmlFor="product-type">Product Type</Label>
+									<Label htmlFor="product-type"><TranslatableText>Product Type</TranslatableText></Label>
 									<Select value={productType} onValueChange={setProductType}>
 										<SelectTrigger>
-											<SelectValue placeholder="Select product type" />
+											<SelectValue placeholder={<TranslatableText>Select product type</TranslatableText>} />
 										</SelectTrigger>
 										<SelectContent>
 											{productTypes.map((type) => (
@@ -783,7 +884,7 @@ export default function MarketplacePage() {
 									</Select>
 								</div>
 								<div>
-									<Label htmlFor="product-name">Product/Brand Name</Label>
+									<Label htmlFor="product-name"><TranslatableText>Product/Brand Name</TranslatableText></Label>
 									<Input
 										id="product-name"
 										placeholder="e.g., Mahindra, John Deere, Urea"
@@ -792,7 +893,7 @@ export default function MarketplacePage() {
 									/>
 								</div>
 								<div>
-									<Label htmlFor="location">Location</Label>
+									<Label htmlFor="location"><TranslatableText>Location</TranslatableText></Label>
 									<Select value={location} onValueChange={setLocation}>
 										<SelectTrigger>
 											<SelectValue placeholder="Select state" />
@@ -807,7 +908,7 @@ export default function MarketplacePage() {
 									</Select>
 								</div>
 								<div>
-									<Label htmlFor="budget">Budget Range</Label>
+									<Label htmlFor="budget"><TranslatableText>Budget Range</TranslatableText></Label>
 									<Input
 										id="budget"
 										placeholder="e.g., ₹5,00,000 - ₹7,00,000"
@@ -816,7 +917,7 @@ export default function MarketplacePage() {
 									/>
 								</div>
 								<div className="md:col-span-2">
-									<Label htmlFor="requirements">Additional Requirements</Label>
+									<Label htmlFor="requirements"><TranslatableText>Additional Requirements</TranslatableText></Label>
 									<Input
 										id="requirements"
 										placeholder="e.g., Govt certified, delivery available, organic"
@@ -825,40 +926,127 @@ export default function MarketplacePage() {
 									/>
 								</div>
 							</div>
-							<Button
-								onClick={handleMarketplaceSearch}
-								disabled={isLoading}
-								className="w-full"
-							>
-								{isLoading ? (
-									<>
-										<Loader2 className="w-4 h-4 mr-2 animate-spin" />
-										Searching...
-									</>
-								) : (
-									<>
-										<Search className="w-4 h-4 mr-2" />
-										Search Products
-									</>
-								)}
-							</Button>
+							<div className="flex flex-col sm:flex-row gap-3">
+								<Button
+									onClick={handleMarketplaceSearch}
+									disabled={isLoading || !productType.trim() || !location.trim()}
+									className="flex-1 bg-green-600 hover:bg-green-700 disabled:bg-gray-300 disabled:cursor-not-allowed"
+								>
+									{isLoading ? (
+										<>
+											<Loader2 className="w-4 h-4 mr-2 animate-spin" />
+											<TranslatableText>Searching...</TranslatableText>
+										</>
+									) : (
+										<>
+											<Search className="w-4 h-4 mr-2" />
+											<TranslatableText>Search Products</TranslatableText>
+										</>
+									)}
+								</Button>
+								<Button
+									variant="outline"
+									onClick={resetAllStates}
+									disabled={isLoading}
+									className="px-6"
+								>
+									<X className="w-4 h-4 mr-2" />
+									<TranslatableText>Clear All</TranslatableText>
+								</Button>
+							</div>
 						</CardContent>
 					</Card>
 
+					{/* Error State */}
+					{error && (
+						<Card className="bg-gradient-to-r from-red-50 to-pink-50 border-red-200">
+							<CardContent className="flex items-center justify-center py-8">
+								<div className="text-center">
+									<AlertCircle className="w-8 h-8 mx-auto mb-4 text-red-600" />
+									<h3 className="text-lg font-semibold text-gray-800 mb-2">Search Error</h3>
+									<p className="text-gray-600 mb-4">{error}</p>
+									<Button 
+										variant="outline" 
+										onClick={() => {
+											setError(null);
+											setResult({});
+										}}
+										className="border-red-200 text-red-700 hover:bg-red-50"
+									>
+										<Search className="w-4 h-4 mr-2" />
+										Try Again
+									</Button>
+								</div>
+							</CardContent>
+						</Card>
+					)}
+
+					{/* Loading State */}
+					{isLoading && (
+						<Card className="bg-gradient-to-r from-blue-50 to-purple-50">
+							<CardContent className="flex items-center justify-center py-12">
+								<div className="text-center">
+									<Loader2 className="w-8 h-8 animate-spin mx-auto mb-4 text-blue-600" />
+									<h3 className="text-lg font-semibold text-gray-800 mb-2">Searching Marketplace</h3>
+									<p className="text-gray-600">Finding the best products for you...</p>
+								</div>
+							</CardContent>
+						</Card>
+					)}
+
 					{/* Results */}
-					{result.overview && (
+					{result.overview && !isLoading && (
 						<>
-							{/* Overview */}
+							{/* Search Summary */}
 							<Card className="bg-gradient-to-r from-green-50 to-blue-50">
 								<CardHeader>
-									<CardTitle className="flex items-center gap-2">
-										<Package className="w-5 h-5" />
-										Search Results
+									<CardTitle className="flex items-center justify-between">
+										<div className="flex items-center gap-2">
+											<Search className="w-5 h-5" />
+											Search Summary
+										</div>
+										<Button
+											variant="outline"
+											size="sm"
+											onClick={() => {
+												const searchForm = document.getElementById('search-form');
+												if (searchForm) {
+													searchForm.scrollIntoView({ behavior: 'smooth' });
+												}
+											}}
+											className="text-xs"
+										>
+											<Search className="w-3 h-3 mr-1" />
+											Back to Search
+										</Button>
 									</CardTitle>
 								</CardHeader>
 								<CardContent>
-									<div className="prose prose-sm text-gray-800">
-										<p>{result.overview}</p>
+									<div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+										<div className="prose prose-sm text-gray-800">
+											<p>{result.overview}</p>
+										</div>
+										<div className="bg-white rounded-lg p-4 border">
+											<h4 className="font-semibold text-gray-800 mb-3">Search Criteria</h4>
+											<div className="space-y-2 text-sm">
+												<div className="flex justify-between">
+													<span className="text-gray-600">Product Type:</span>
+													<span className="font-medium">{productType || "Any"}</span>
+												</div>
+												<div className="flex justify-between">
+													<span className="text-gray-600">Product Name:</span>
+													<span className="font-medium">{productName || "Any"}</span>
+												</div>
+												<div className="flex justify-between">
+													<span className="text-gray-600">Location:</span>
+													<span className="font-medium">{location || "Any"}</span>
+												</div>
+												<div className="flex justify-between">
+													<span className="text-gray-600">Budget:</span>
+													<span className="font-medium">{budget || "Any"}</span>
+												</div>
+											</div>
+										</div>
 									</div>
 								</CardContent>
 							</Card>
@@ -866,16 +1054,24 @@ export default function MarketplacePage() {
 							{/* Products */}
 							<Card>
 								<CardHeader>
-									<CardTitle className="flex items-center gap-2">
-										<Package className="w-5 h-5" />
-										Available Products ({result.totalResults || result.products?.length || 0})
+									<CardTitle className="flex items-center justify-between">
+										<div className="flex items-center gap-2">
+											<Package className="w-5 h-5" />
+											Available Products ({result.totalResults || result.products?.length || 0})
+										</div>
+										{result.products && result.products.length > 0 && (
+											<div className="flex items-center gap-2 text-sm text-gray-500">
+												<CheckCircle className="w-4 h-4 text-green-600" />
+												{result.products.length} products found
+											</div>
+										)}
 									</CardTitle>
 								</CardHeader>
 								<CardContent className="space-y-4">
 									{result.products?.map((product: any, index: number) => (
 										<div
 											key={index}
-											className="bg-white border border-gray-200 rounded-lg p-6 hover:shadow-lg transition-shadow"
+											className="bg-white border border-gray-200 rounded-lg p-6 hover:shadow-lg transition-all duration-200 hover:border-green-300 hover:bg-green-50/30"
 										>
 											<div className="flex flex-col lg:flex-row gap-6">
 												{/* Product Info */}
@@ -926,6 +1122,12 @@ export default function MarketplacePage() {
 																	{product.certification}
 																</Badge>
 															</div>
+															<div className="flex items-center gap-2">
+																<Phone className="w-4 h-4 text-gray-500" />
+																<span className="text-sm text-gray-600">
+																	{product.contactInfo}
+																</span>
+															</div>
 														</div>
 														<div className="space-y-2">
 															<div className="flex items-center gap-2">
@@ -943,33 +1145,50 @@ export default function MarketplacePage() {
 														</div>
 													</div>
 
-													{/* Contact Info */}
-													<div className="flex items-center gap-2 text-sm text-gray-600 mb-4">
-														<Phone className="w-4 h-4" />
-														<span>{product.contactInfo}</span>
-													</div>
+
 												</div>
 
 												{/* Action Buttons */}
 												<div className="flex flex-col gap-3 lg:w-48">
 													<Button
-														className="w-full"
+														className="w-full bg-green-600 hover:bg-green-700 text-white font-semibold"
 														onClick={() => {
 															toast({
-																title: "Action",
-																description: `Processing ${product.action} for ${product.productName}`,
+																title: "Buy Now",
+																description: `Redirecting to store location for ${product.productName}`,
 															});
+															// Simulate opening store location
+															setTimeout(() => {
+																window.open(`https://www.google.com/maps/search/?api=1&query=${product.sellerName}`, '_blank');
+															}, 1000);
 														}}
 													>
-														{product.action.includes("Buy") && "Buy Now"}
-														{product.action.includes("Call") && "Call Seller"}
-														{product.action.includes("Visit") && "Visit Store"}
+														<CreditCard className="w-4 h-4 mr-2" />
+														Buy Now
 													</Button>
 													<Button
 														variant="outline"
-														className="w-full"
+														className="w-full border-blue-200 text-blue-700 hover:bg-blue-50"
+														onClick={() => {
+															toast({
+																title: "Contact Seller",
+																description: `Contact ${product.sellerName} via phone: ${product.contactInfo}`,
+															});
+															// Open phone dialer
+															setTimeout(() => {
+																window.open(`tel:${product.contactInfo}`, '_blank');
+															}, 1000);
+														}}
+													>
+														<Phone className="w-4 h-4 mr-2" />
+														Contact Seller
+													</Button>
+													<Button
+														variant="outline"
+														className="w-full border-green-200 text-green-700 hover:bg-green-50"
 														onClick={() => handleViewDetails(product)}
 													>
+														<FileText className="w-4 h-4 mr-2" />
 														View Details
 													</Button>
 												</div>
@@ -1036,8 +1255,29 @@ export default function MarketplacePage() {
 						</>
 					)}
 
+					{/* Empty State */}
+					{!result.overview && !isLoading && Object.keys(result).length > 0 && (
+						<Card className="bg-gradient-to-r from-yellow-50 to-orange-50">
+							<CardContent className="flex items-center justify-center py-12">
+								<div className="text-center">
+									<Package className="w-12 h-12 mx-auto mb-4 text-orange-600" />
+									<h3 className="text-lg font-semibold text-gray-800 mb-2">No Products Found</h3>
+									<p className="text-gray-600 mb-4">Try adjusting your search criteria or browse our quick search examples below.</p>
+									<Button 
+										variant="outline" 
+										onClick={() => setResult({})}
+										className="border-orange-200 text-orange-700 hover:bg-orange-50"
+									>
+										<Search className="w-4 h-4 mr-2" />
+										New Search
+									</Button>
+								</div>
+							</CardContent>
+						</Card>
+					)}
+
 					{/* Quick Search Examples */}
-					{!result.overview && (
+					{!result.overview && !isLoading && (
 						<Card>
 							<CardHeader>
 								<CardTitle className="flex items-center gap-2">
@@ -1047,53 +1287,272 @@ export default function MarketplacePage() {
 							</CardHeader>
 							<CardContent>
 								<div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+									<p className="text-sm text-gray-600 col-span-full mb-2">
+										Click any example below to quickly search for popular products:
+									</p>
 									<Button
 										variant="outline"
-										onClick={() => {
+										disabled={isLoading}
+										onClick={async () => {
 											setProductType("tractor");
 											setProductName("Mahindra");
 											setLocation("Maharashtra");
-											toast({
-												title: "Quick Search",
-												description: "Searching for Mahindra tractors in Maharashtra",
-											});
+											setBudget("");
+											setRequirements("");
+											
+											// Trigger search automatically
+											const input: MarketplaceSearchInput = {
+												productType: "tractor",
+												productName: "Mahindra",
+												location: "Maharashtra",
+												budget: "",
+												requirements: "",
+											};
+											
+											setIsLoading(true);
+											try {
+												const searchResult = await getMarketplaceSearch(input);
+												setResult(searchResult);
+												toast({
+													title: "Search Complete",
+													description: `Found ${searchResult.totalResults} products for Mahindra tractors in Maharashtra`,
+												});
+											} catch (error) {
+												console.error('Search error:', error);
+												toast({
+													title: "Search Failed",
+													description: "Failed to search for products. Please try again.",
+													variant: "destructive",
+												});
+											} finally {
+												setIsLoading(false);
+											}
 										}}
-										className="h-auto p-4 flex flex-col items-start gap-2"
+										className="h-auto p-4 flex flex-col items-start gap-2 hover:bg-green-50 hover:border-green-300 transition-all duration-200"
 									>
-										<span className="font-semibold">Mahindra Tractors</span>
+										<div className="flex items-center gap-2 mb-1">
+											<Truck className="w-4 h-4 text-green-600" />
+											<span className="font-semibold text-green-700">Mahindra Tractors</span>
+										</div>
 										<span className="text-sm text-gray-600">In Maharashtra</span>
 									</Button>
 									<Button
 										variant="outline"
-										onClick={() => {
+										disabled={isLoading}
+										onClick={async () => {
 											setProductType("fertilizer");
 											setProductName("Urea");
 											setLocation("Punjab");
-											toast({
-												title: "Quick Search",
-												description: "Searching for Urea fertilizers in Punjab",
-											});
+											setBudget("");
+											setRequirements("");
+											
+											// Trigger search automatically
+											const input: MarketplaceSearchInput = {
+												productType: "fertilizer",
+												productName: "Urea",
+												location: "Punjab",
+												budget: "",
+												requirements: "",
+											};
+											
+											setIsLoading(true);
+											try {
+												const searchResult = await getMarketplaceSearch(input);
+												setResult(searchResult);
+												toast({
+													title: "Search Complete",
+													description: `Found ${searchResult.totalResults} products for Urea fertilizers in Punjab`,
+												});
+											} catch (error) {
+												console.error('Search error:', error);
+												toast({
+													title: "Search Failed",
+													description: "Failed to search for products. Please try again.",
+													variant: "destructive",
+												});
+											} finally {
+												setIsLoading(false);
+											}
 										}}
-										className="h-auto p-4 flex flex-col items-start gap-2"
+										className="h-auto p-4 flex flex-col items-start gap-2 hover:bg-blue-50 hover:border-blue-300 transition-all duration-200"
 									>
-										<span className="font-semibold">Urea Fertilizers</span>
+										<div className="flex items-center gap-2 mb-1">
+											<Package className="w-4 h-4 text-blue-600" />
+											<span className="font-semibold text-blue-700">Urea Fertilizers</span>
+										</div>
 										<span className="text-sm text-gray-600">In Punjab</span>
 									</Button>
 									<Button
 										variant="outline"
-										onClick={() => {
+										disabled={isLoading}
+										onClick={async () => {
 											setProductType("seeds");
 											setProductName("Pioneer");
 											setLocation("Karnataka");
-											toast({
-												title: "Quick Search",
-												description: "Searching for Pioneer seeds in Karnataka",
-											});
+											setBudget("");
+											setRequirements("");
+											
+											// Trigger search automatically
+											const input: MarketplaceSearchInput = {
+												productType: "seeds",
+												productName: "Pioneer",
+												location: "Karnataka",
+												budget: "",
+												requirements: "",
+											};
+											
+											setIsLoading(true);
+											try {
+												const searchResult = await getMarketplaceSearch(input);
+												setResult(searchResult);
+												toast({
+													title: "Search Complete",
+													description: `Found ${searchResult.totalResults} products for Pioneer seeds in Karnataka`,
+												});
+											} catch (error) {
+												console.error('Search error:', error);
+												toast({
+													title: "Search Failed",
+													description: "Failed to search for products. Please try again.",
+													variant: "destructive",
+												});
+											} finally {
+												setIsLoading(false);
+											}
 										}}
 										className="h-auto p-4 flex flex-col items-start gap-2"
 									>
 										<span className="font-semibold">Pioneer Seeds</span>
 										<span className="text-sm text-gray-600">In Karnataka</span>
+									</Button>
+									<Button
+										variant="outline"
+										disabled={isLoading}
+										onClick={async () => {
+											setProductType("pesticides");
+											setProductName("Bayer");
+											setLocation("Tamil Nadu");
+											setBudget("");
+											setRequirements("");
+											
+											// Trigger search automatically
+											const input: MarketplaceSearchInput = {
+												productType: "pesticides",
+												productName: "Bayer",
+												location: "Tamil Nadu",
+												budget: "",
+												requirements: "",
+											};
+											
+											setIsLoading(true);
+											try {
+												const searchResult = await getMarketplaceSearch(input);
+												setResult(searchResult);
+												toast({
+													title: "Search Complete",
+													description: `Found ${searchResult.totalResults} products for Bayer pesticides in Tamil Nadu`,
+												});
+											} catch (error) {
+												console.error('Search error:', error);
+												toast({
+													title: "Search Failed",
+													description: "Failed to search for products. Please try again.",
+													variant: "destructive",
+												});
+											} finally {
+												setIsLoading(false);
+											}
+										}}
+										className="h-auto p-4 flex flex-col items-start gap-2"
+									>
+										<span className="font-semibold">Bayer Pesticides</span>
+										<span className="text-sm text-gray-600">In Tamil Nadu</span>
+									</Button>
+									<Button
+										variant="outline"
+										disabled={isLoading}
+										onClick={async () => {
+											setProductType("tools");
+											setProductName("John Deere");
+											setLocation("Maharashtra");
+											setBudget("");
+											setRequirements("");
+											
+											// Trigger search automatically
+											const input: MarketplaceSearchInput = {
+												productType: "tools",
+												productName: "John Deere",
+												location: "Maharashtra",
+												budget: "",
+												requirements: "",
+											};
+											
+											setIsLoading(true);
+											try {
+												const searchResult = await getMarketplaceSearch(input);
+												setResult(searchResult);
+												toast({
+													title: "Search Complete",
+													description: `Found ${searchResult.totalResults} products for John Deere tools in Maharashtra`,
+												});
+											} catch (error) {
+												console.error('Search error:', error);
+												toast({
+													title: "Search Failed",
+													description: "Failed to search for products. Please try again.",
+													variant: "destructive",
+												});
+											} finally {
+												setIsLoading(false);
+											}
+										}}
+										className="h-auto p-4 flex flex-col items-start gap-2"
+									>
+										<span className="font-semibold">John Deere Tools</span>
+										<span className="text-sm text-gray-600">In Maharashtra</span>
+									</Button>
+									<Button
+										variant="outline"
+										disabled={isLoading}
+										onClick={async () => {
+											setProductType("tractor");
+											setProductName("Swaraj");
+											setLocation("Punjab");
+											setBudget("");
+											setRequirements("");
+											
+											// Trigger search automatically
+											const input: MarketplaceSearchInput = {
+												productType: "tractor",
+												productName: "Swaraj",
+												location: "Punjab",
+												budget: "",
+												requirements: "",
+											};
+											
+											setIsLoading(true);
+											try {
+												const searchResult = await getMarketplaceSearch(input);
+												setResult(searchResult);
+												toast({
+													title: "Search Complete",
+													description: `Found ${searchResult.totalResults} products for Swaraj tractors in Punjab`,
+												});
+											} catch (error) {
+												console.error('Search error:', error);
+												toast({
+													title: "Search Failed",
+													description: "Failed to search for products. Please try again.",
+													variant: "destructive",
+												});
+											} finally {
+												setIsLoading(false);
+											}
+										}}
+										className="h-auto p-4 flex flex-col items-start gap-2"
+									>
+										<span className="font-semibold">Swaraj Tractors</span>
+										<span className="text-sm text-gray-600">In Punjab</span>
 									</Button>
 								</div>
 							</CardContent>

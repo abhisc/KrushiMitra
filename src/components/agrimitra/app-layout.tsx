@@ -31,14 +31,16 @@ import { toast } from "@/hooks/use-toast";
 import { UserMenu } from "@/components/auth/user-menu";
 import { useChat } from "@/hooks/use-chat";
 import { ChatType } from "@/firebaseStore/services/chat-service";
-import { useAiTranslation } from "@/hooks/use-ai-translation";
+
+import { useNavigationHistory } from "@/hooks/use-navigation-history";
+import { LanguageSelector } from "@/components/ui/language-selector";
 import { TranslatableText } from "@/components/ui/translatable-text";
 
 interface AppLayoutProps {
 	children: React.ReactNode;
 	showBackButton?: boolean;
-	title?: string;
-	subtitle?: string;
+	title?: React.ReactNode;
+	subtitle?: React.ReactNode;
 	handleHistoryChatClick?: (text: string) => void;
 	onBack?: () => void;
 }
@@ -51,25 +53,16 @@ export default function AppLayout({
 	handleHistoryChatClick,
 	onBack,
 }: AppLayoutProps) {
-	// AI Translation hook
-	const { locale, changeLanguage, isTranslating } = useAiTranslation();
 	// Toggle between basic and advanced UI mode
 	const [isAdvanced, setIsAdvanced] = useState(false);
 	// Toggle sidebar visibility
 	const [sidebarOpen, setSidebarOpen] = useState(false);
 	const router = useRouter();
 	const pathname = usePathname();
+	const { getPreviousPath } = useNavigationHistory();
 
 	// Chat hook for recent chats
 	const { recentChats, loading: chatsLoading } = useChat();
-
-	// Supported languages
-	const languages = [
-		{ code: "en", name: "English" },
-		{ code: "ka", name: "ಕನ್ನಡ" },
-		{ code: "tn", name: "தமிழ்" },
-		{ code: "hi", name: "हिन्दी" },
-	];
 
 	// Sidebar quick navigation links
 	const quickLinks = [
@@ -140,12 +133,8 @@ export default function AppLayout({
 			href: "/profile",
 			active: pathname === "/profile",
 		},
-		{
-			icon: BookOpen,
-			label: "Translation Demo",
-			href: "/translation-demo",
-			active: pathname === "/translation-demo",
-		},
+
+
 	];
 
 	// List of recent user chat prompts
@@ -158,7 +147,21 @@ export default function AppLayout({
 	];
 
 	const handleBack = () => {
-		router.push("/");
+		if (onBack) {
+			// Use custom onBack function if provided
+			onBack();
+		} else {
+			// Get the previous path from our navigation history
+			const previousPath = getPreviousPath();
+			
+			if (previousPath && previousPath !== pathname) {
+				// Navigate to the previous path
+				router.push(previousPath);
+			} else {
+				// Fallback to home page if no previous path or same page
+				router.push("/");
+			}
+		}
 	};
 
 	return (
@@ -186,7 +189,7 @@ export default function AppLayout({
 					<div className="p-4">
 						{sidebarOpen && (
 							<h3 className="text-xs font-semibold text-muted-foreground uppercase tracking-wide mb-3">
-								<TranslatableText context="navigation section">Navigation</TranslatableText>
+								Navigation
 							</h3>
 						)}
 						<nav className="space-y-2">
@@ -202,7 +205,7 @@ export default function AppLayout({
 									}`}
 								>
 									<link.icon className="w-5 h-5" />
-									{sidebarOpen && <span className="ml-3"><TranslatableText context="navigation link">{link.label}</TranslatableText></span>}
+									{sidebarOpen && <span className="ml-3"><TranslatableText>{link.label}</TranslatableText></span>}
 								</Link>
 							))}
 						</nav>
@@ -211,13 +214,13 @@ export default function AppLayout({
 					{/* Recently used chat prompts */}
 					{sidebarOpen && (
 						<div className="p-4 border-t border-border">
-							<h3 className="text-xs font-semibold text-muted-foreground uppercase tracking-wide mb-3">
-								<TranslatableText context="section header">Recent Chats</TranslatableText>
+																				<h3 className="text-xs font-semibold text-muted-foreground uppercase tracking-wide mb-3">
+								<TranslatableText>Recent Chats</TranslatableText>
 							</h3>
 							<div className="space-y-2">
 								{chatsLoading ? (
 									<div className="text-xs text-muted-foreground">
-										<TranslatableText context="loading state">Loading chats...</TranslatableText>
+										<TranslatableText>Loading chats...</TranslatableText>
 									</div>
 								) : recentChats.length > 0 ? (
 									recentChats.map((chat) => (
@@ -250,7 +253,7 @@ export default function AppLayout({
 									))
 								) : (
 									<div className="text-xs text-muted-foreground">
-										<TranslatableText context="empty state">No recent chats</TranslatableText>
+										<TranslatableText>No recent chats</TranslatableText>
 									</div>
 								)}
 							</div>
@@ -270,7 +273,7 @@ export default function AppLayout({
 					>
 						<Settings className="w-4 h-4" />
 						{sidebarOpen && (
-							<span className="ml-2"><TranslatableText context="ui mode">{isAdvanced ? "Advanced" : "Basic"}</TranslatableText></span>
+							<span className="ml-2"><TranslatableText>{isAdvanced ? "Advanced" : "Basic"}</TranslatableText></span>
 						)}
 					</button>
 				</div>
@@ -299,35 +302,17 @@ export default function AppLayout({
 
 						<div className="ml-4 top-0 static">
 							<h1 className="text-xl font-semibold text-primary">
-								{title ? <TranslatableText context="page title">{title}</TranslatableText> : <TranslatableText context="app name">Agrimitra</TranslatableText>}
+								{title ? title : <TranslatableText>Agrimitra</TranslatableText>}
 							</h1>
 							{subtitle && (
-								<p className="text-sm text-muted-foreground"><TranslatableText context="page subtitle">{subtitle}</TranslatableText></p>
+								<p className="text-sm text-muted-foreground">{subtitle}</p>
 							)}
 						</div>
 					</div>
 
 					{/* Language Selector and Settings */}
 					<div className="flex items-center space-x-4">
-						{/* Language Selector */}
-						<div className="relative">
-							<select
-								value={locale || 'en'}
-								onChange={(e) => changeLanguage(e.target.value)}
-								disabled={isTranslating}
-								className="appearance-none bg-background border border-border rounded-lg px-4 py-2 pr-8 text-sm font-medium text-foreground hover:border-ring focus:outline-none focus:ring-2 focus:ring-ring focus:border-ring disabled:opacity-50 disabled:cursor-not-allowed"
-							>
-								{languages.map((lang) => (
-									<option key={lang.code} value={lang.code}>
-										{lang.name}
-									</option>
-								))}
-							</select>
-							<ChevronDown className="absolute right-2 top-1/2 transform -translate-y-1/2 w-4 h-4 text-muted-foreground pointer-events-none" />
-							{isTranslating && (
-								<div className="absolute right-8 top-1/2 transform -translate-y-1/2 w-4 h-4 border-2 border-primary border-t-transparent rounded-full animate-spin" />
-							)}
-						</div>
+						<LanguageSelector />
 
 						{/* User Menu */}
 						<UserMenu />

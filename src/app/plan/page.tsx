@@ -41,7 +41,7 @@ import { useToast } from "@/hooks/use-toast";
 import { format, addDays, isSameDay, isBefore, isAfter, startOfDay, differenceInDays } from "date-fns";
 
 // OpenAI API configuration
-const OPENAI_API_KEY = process.env.NEXT_PUBLIC_OPENAI_API_KEY;
+const OPENAI_API_KEY = process.env.NEXT_PUBLIC_OPENAI_API_KEY || process.env.OPENAI_API_KEY || '';
 const OPENAI_API_URL = "https://api.openai.com/v1/chat/completions";
 
 // AI Task Parsing Interface

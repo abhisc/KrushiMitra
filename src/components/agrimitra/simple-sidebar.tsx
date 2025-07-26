@@ -8,45 +8,31 @@ import {
   ClipboardList
 } from 'lucide-react';
 import Link from 'next/link';
-import { useTranslations } from '@/utils/translations';
-import { useI18n } from '@/hooks/use-i18n';
-import { LanguageSwitcher } from '@/components/ui/language-switcher';
+
 
 export default function SimpleSidebar() {
-  // Translation hooks
-  const { t } = useTranslations();
-  const { locale, changeLanguage, getLocaleName } = useI18n();
-  
   // Toggle between basic and advanced UI mode
   const [isAdvanced, setIsAdvanced] = useState(false);
   // Toggle sidebar visibility
   const [sidebarOpen, setSidebarOpen] = useState(true);
 
-  // Supported languages
-  const languages = [
-    { code: 'en', name: 'English' },
-    { code: 'hi', name: 'हिन्दी' },
-    { code: 'kn', name: 'ಕನ್ನಡ' },
-    { code: 'ta', name: 'தமிழ்' }
-  ];
-
   // Sidebar quick navigation links
   const quickLinks = [
-    { icon: Home, label: t('home'), href: '/', active: true },
-    { icon: Activity, label: t('diagnose'), href: '/diagnose' },
-    { icon: TrendingUp, label: t('market'), href: '/market' },
+    { icon: Home, label: 'Home', href: '/', active: true },
+    { icon: Activity, label: 'Diagnose', href: '/diagnose' },
+    { icon: TrendingUp, label: 'Market', href: '/market' },
     { icon: ShoppingCart, label: 'Marketplace', href: '/marketplace' },
-    { icon: FileText, label: t('schemes'), href: '/schemes' },
-    { icon: Cloud, label: t('weather'), href: '/weather' },
+    { icon: FileText, label: 'Schemes', href: '/schemes' },
+    { icon: Cloud, label: 'Weather', href: '/weather' },
     { icon: ClipboardList, label: 'Plan', href: '/plan' },
-    { icon: Calendar, label: t('history'), href: '/history' }
+    { icon: Calendar, label: 'History', href: '/history' }
   ];
 
   // List of recent user chat prompts
   const pastChats = [
-    t('checkPriceOfTomato'),
-    t('myWheatCropLooksYellow'),
-    t('showFertilizerSubsidies'),
+    'Check price of tomato',
+    'My wheat crop looks yellow',
+    'Show fertilizer subsidies',
     'Weather forecast for crops',
     'Pest control for rice'
   ];
@@ -61,13 +47,13 @@ export default function SimpleSidebar() {
           <div className="w-8 h-8 bg-green-600 rounded-lg flex items-center justify-center">
             <Leaf className="w-5 h-5 text-white" />
           </div>
-          {sidebarOpen && <span className="ml-3 font-bold text-lg text-gray-900">{t('appName')}</span>}
+          {sidebarOpen && <span className="ml-3 font-bold text-lg text-gray-900">Agrimitra</span>}
         </div>
 
         {/* Sidebar Navigation */}
         <div className="flex-1">
           <div className="p-4">
-            {sidebarOpen && <h3 className="text-xs font-semibold text-gray-500 uppercase tracking-wide mb-3">{t('navigation')}</h3>}
+            {sidebarOpen && <h3 className="text-xs font-semibold text-gray-500 uppercase tracking-wide mb-3">Navigation</h3>}
             <nav className="space-y-2">
               {/* List of quick links */}
               {quickLinks.map((link, index) => (
@@ -90,7 +76,7 @@ export default function SimpleSidebar() {
           {/* Recently used chat prompts */}
           {sidebarOpen && (
             <div className="p-4 border-t border-gray-100">
-              <h3 className="text-xs font-semibold text-gray-500 uppercase tracking-wide mb-3">{t('recentChats')}</h3>
+              <h3 className="text-xs font-semibold text-gray-500 uppercase tracking-wide mb-3">Recent Chats</h3>
               <div className="space-y-2">
                 {pastChats.map((chat, index) => (
                   <button
@@ -117,7 +103,7 @@ export default function SimpleSidebar() {
             }`}
           >
             <Settings className="w-4 h-4" />
-            {sidebarOpen && <span className="ml-2">{isAdvanced ? t('advanced') : t('basic')}</span>}
+            {sidebarOpen && <span className="ml-2">{isAdvanced ? 'Advanced' : 'Basic'}</span>}
           </button>
         </div>
       </div>
@@ -134,11 +120,10 @@ export default function SimpleSidebar() {
             >
               <Menu className="w-5 h-5 text-gray-600" />
             </button>
-            <h1 className="ml-4 text-xl font-semibold text-green-700">{t('appName')}</h1>
+            <h1 className="ml-4 text-xl font-semibold text-green-700">Agrimitra</h1>
           </div>
 
-          {/* Language Selector */}
-          <LanguageSwitcher />
+
         </header>
 
         {/* Main Page Content */}
@@ -149,14 +134,14 @@ export default function SimpleSidebar() {
             <div className="w-16 h-16 bg-green-600 rounded-2xl mx-auto mb-4 flex items-center justify-center">
               <Bot className="w-8 h-8 text-white" />
             </div>
-            <h2 className="text-3xl font-bold text-gray-900 mb-2">{t('aiPoweredAssistant')}</h2>
-            <p className="text-lg text-gray-600">{t('smartFarmingSolutions')}</p>
+            <h2 className="text-3xl font-bold text-gray-900 mb-2">AI-Powered Agricultural Assistant</h2>
+            <p className="text-lg text-gray-600">Smart farming solutions for modern agriculture</p>
           </div>
 
           {/* Start Chat Button */}
           <div className="flex justify-center mb-12">
             <button className="bg-green-600 hover:bg-green-700 text-white px-8 py-3 rounded-lg font-semibold text-lg transition-colors shadow-lg hover:shadow-xl">
-              {t('startChat')}
+              Start Chat / Diagnose Crop Disease
             </button>
           </div>
 
@@ -165,26 +150,26 @@ export default function SimpleSidebar() {
             {[
               {
                 icon: Activity,
-                title: t('diagnoseCropDisease'),
-                subtitle: t('uploadImageOrDescribe'),
+                title: 'Diagnose Crop Disease',
+                subtitle: 'Upload image or describe symptoms',
                 color: 'bg-green-50 border-green-200'
               },
               {
                 icon: TrendingUp,
-                title: t('realTimeMarketAnalysis'),
-                subtitle: t('getLatestPricesAndTrends'),
+                title: 'Real-Time Market Analysis',
+                subtitle: 'Get latest prices and trends',
                 color: 'bg-blue-50 border-blue-200'
               },
               {
                 icon: FileText,
-                title: t('governmentSchemeInfo'),
-                subtitle: t('findRelevantSchemes'),
+                title: 'Government Scheme Info',
+                subtitle: 'Find relevant schemes & subsidies',
                 color: 'bg-purple-50 border-purple-200'
               },
               {
                 icon: Cloud,
-                title: t('weatherAndIrrigationTips'),
-                subtitle: t('forecastsAndWaterManagement'),
+                title: 'Weather & Irrigation Tips',
+                subtitle: 'Forecasts and water management',
                 color: 'bg-cyan-50 border-cyan-200'
               }
             ].map((feature, index) => (
@@ -202,33 +187,33 @@ export default function SimpleSidebar() {
           {/* Quick Chat Prompts */}
           <div className="bg-white rounded-xl p-6 mb-8 shadow-sm border border-gray-200">
             <div className="flex justify-center space-x-8 text-sm">
-              <button className="text-green-600 hover:text-green-700 font-medium">{t('checkPriceOfTomato')}</button>
-              <button className="text-green-600 hover:text-green-700 font-medium">{t('myWheatCropLooksYellow')}</button>
-              <button className="text-green-600 hover:text-green-700 font-medium">{t('showFertilizerSubsidies')}</button>
+              <button className="text-green-600 hover:text-green-700 font-medium">Check price of tomato</button>
+              <button className="text-green-600 hover:text-green-700 font-medium">My wheat crop looks yellow</button>
+              <button className="text-green-600 hover:text-green-700 font-medium">Show fertilizer subsidies</button>
             </div>
           </div>
 
           {/* Crop Management Tools */}
           <div className="mb-8">
             <h3 className="text-2xl font-bold text-gray-900 mb-6 text-center text-green-700">
-              {t('cropManagementAndDecisionSupport')}
+              Crop Management & Decision Support
             </h3>
             <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
               {[
                 {
                   icon: Leaf,
-                  title: t('cropGrowthProcessAdvisor'),
-                  subtitle: t('trackCropLifecycle')
+                  title: 'Crop Growth Process Advisor',
+                  subtitle: 'Track crop lifecycle and get intelligent farming suggestions'
                 },
                 {
                   icon: Zap,
-                  title: t('instantCropDiseaseDiagnosis'),
-                  subtitle: t('detectDiseasesFromImages')
+                  title: 'Instant Crop Disease Diagnosis',
+                  subtitle: 'Detect diseases from crop images using AI'
                 },
                 {
                   icon: BookOpen,
-                  title: t('agriculturalKnowledgeHub'),
-                  subtitle: t('accessArticlesAndGuides')
+                  title: 'Agricultural Knowledge Hub',
+                  subtitle: 'Access articles and guides about farming best practices'
                 }
               ].map((tool, index) => (
                 <button
@@ -246,29 +231,29 @@ export default function SimpleSidebar() {
           {/* Marketplace & Finance Tools */}
           <div>
             <h3 className="text-2xl font-bold text-gray-900 mb-6 text-center text-green-700">
-              {t('marketplaceAndFinancialServices')}
+              Marketplace & Financial Services
             </h3>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
               {[
                 {
                   icon: Calculator,
-                  title: t('profitabilityCalculator'),
-                  subtitle: t('analyzeCostsAndProfits')
+                  title: 'Profitability Calculator',
+                  subtitle: 'Analyze costs and profits for different crops'
                 },
                 {
                   icon: ShoppingCart,
-                  title: t('farmingMarketplace'),
-                  subtitle: t('buyAndSellProducts')
+                  title: 'Farming Marketplace',
+                  subtitle: 'Buy and sell agricultural products'
                 },
                 {
                   icon: Users,
-                  title: t('communityCommerce'),
-                  subtitle: t('tradeWithNearbyFarmers')
+                  title: 'Community Commerce',
+                  subtitle: 'Trade with nearby farmers'
                 },
                 {
                   icon: BarChart3,
-                  title: t('realTimeMarketInsights'),
-                  subtitle: t('getLiveMarketPrices')
+                  title: 'Real-Time Market Insights',
+                  subtitle: 'Get live market prices and future price predictions'
                 }
               ].map((tool, index) => (
                 <button

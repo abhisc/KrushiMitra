@@ -10,6 +10,7 @@ import { useToast } from '@/hooks/use-toast';
 import { getWeatherAndIrrigationTips, WeatherAndIrrigationTipsInput } from '@/ai/flows/weather-and-irrigation-tips';
 import { Loader2, Cloud, Droplets, Sun, Calendar } from 'lucide-react';
 import AppLayout from '@/components/agrimitra/app-layout';
+import { TranslatableText } from '@/components/ui/translatable-text';
 
 // Remove all SunPathArc and its Card. Only render the Weather card in the left column and the Irrigation Tips card in the right column.
 
@@ -375,22 +376,22 @@ export default function WeatherPage() {
             <CardHeader className="relative z-10">
               <CardTitle className="flex items-center gap-2">
                 <Cloud className="w-5 h-5" />
-                Weather Analysis Parameters
+                <TranslatableText>Weather Analysis Parameters</TranslatableText>
               </CardTitle>
             </CardHeader>
             <CardContent className="relative z-10 space-y-4">
               <div className="flex justify-end">
                 <Button type="button" variant="outline" size="sm" onClick={handleUseMyLocation} disabled={geoLoading}>
-                  {geoLoading ? 'Locating...' : 'Use My Location'}
+                  {geoLoading ? <TranslatableText>Locating...</TranslatableText> : <TranslatableText>Use My Location</TranslatableText>}
                 </Button>
               </div>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div>
-                  <Label htmlFor="location">Location</Label>
-                  <Select value={location} onValueChange={handleLocationChange}>
-                    <SelectTrigger>
-                      <SelectValue placeholder="Select location" />
-                    </SelectTrigger>
+                  <Label htmlFor="location"><TranslatableText>Location</TranslatableText></Label>
+                  									<Select value={location} onValueChange={handleLocationChange}>
+										<SelectTrigger>
+											<SelectValue placeholder="Select location" />
+										</SelectTrigger>
                     <SelectContent>
                       {popularLocations.map((loc) => (
                         <SelectItem key={loc} value={loc}>
@@ -401,11 +402,11 @@ export default function WeatherPage() {
                   </Select>
                 </div>
                 <div>
-                  <Label htmlFor="crop">Crop</Label>
-                  <Select value={crop} onValueChange={setCrop}>
-                    <SelectTrigger>
-                      <SelectValue placeholder="Select crop" />
-                    </SelectTrigger>
+                  <Label htmlFor="crop"><TranslatableText>Crop</TranslatableText></Label>
+                  									<Select value={crop} onValueChange={setCrop}>
+										<SelectTrigger>
+											<SelectValue placeholder="Select crop" />
+										</SelectTrigger>
                     <SelectContent>
                       {popularCrops.map((cropName) => (
                         <SelectItem key={cropName} value={cropName}>
@@ -417,13 +418,13 @@ export default function WeatherPage() {
                 </div>
               </div>
               <div>
-                <Label htmlFor="custom-location">Custom Location (Optional)</Label>
-                <Input
-                  id="custom-location"
-                  placeholder="Enter custom location"
-                  value={location}
-                  onChange={(e) => setLocation(e.target.value)}
-                />
+                <Label htmlFor="custom-location"><TranslatableText>Custom Location (Optional)</TranslatableText></Label>
+                								<Input
+									id="custom-location"
+									placeholder="Enter custom location"
+									value={location}
+									onChange={(e) => setLocation(e.target.value)}
+								/>
               </div>
             </CardContent>
           </Card>
@@ -436,12 +437,12 @@ export default function WeatherPage() {
             {isLoading ? (
               <>
                 <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-                Analyzing Weather...
+                <TranslatableText>Analyzing Weather...</TranslatableText>
               </>
             ) : (
               <>
                 <Sun className="w-4 h-4 mr-2" />
-                Get Weather & Irrigation Tips
+                <TranslatableText>Get Weather & Irrigation Tips</TranslatableText>
               </>
             )}
           </Button>
