@@ -36,6 +36,7 @@ interface AppLayoutProps {
 	title?: string;
 	subtitle?: string;
 	handleHistoryChatClick?: (text: string) => void;
+	onBack?: () => void;
 }
 
 export default function AppLayout({
@@ -44,6 +45,7 @@ export default function AppLayout({
 	title,
 	subtitle,
 	handleHistoryChatClick,
+	onBack,
 }: AppLayoutProps) {
 	// React state for selected language
 	const [selectedLanguage, setSelectedLanguage] = useState("EN");
@@ -94,6 +96,12 @@ export default function AppLayout({
 			label: "History",
 			href: "/history",
 			active: pathname === "/history",
+		},
+		{
+			icon: Users, // or MessageCircle
+			label: "Expert Connect",
+			href: "/expert-connect",
+			active: pathname === "/expert-connect",
 		},
 		{
 			icon: UserIcon,
@@ -228,7 +236,7 @@ export default function AppLayout({
 
 						{showBackButton && (
 							<button
-								onClick={handleBack}
+								onClick={onBack ? onBack : handleBack}
 								className="ml-4 p-2 hover:bg-gray-100 rounded-lg transition-colors"
 							>
 								<ArrowLeft className="w-5 h-5 text-gray-600" />

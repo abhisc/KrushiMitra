@@ -77,7 +77,7 @@ const getCurrentWeather = ai.defineTool(
     const res = await fetch(url);
     const data = await res.json();
     console.log('WeatherAPI response for', location, ':', JSON.stringify(data));
-    if (data && data.current) {
+    image.png    if (data && data.current) {
       return {
         temperature: data.current.temp_c,
         condition: data.current.condition.text,
@@ -121,7 +121,7 @@ const weatherAndIrrigationTipsPrompt = ai.definePrompt({
   IMPORTANT: The 'irrigationTips' field MUST NOT repeat or paraphrase the weather summary. It MUST contain only actionable, practical irrigation advice for farmers in {{placeName}} growing {{cropType}}, based on the weather above.
 
   Return your response as a JSON object with these fields: weatherForecast, irrigationTips, remedialActions, recommendedCrops, notRecommendedCrops, recommendedCropsWithReasons, notRecommendedCropsWithReasons.
-
+  
   Also, suggest what types of vegetables and fruits should NOT be grown in these weather conditions.
   Include any recommended remedial actions based on the weather and crop conditions.
   Also, mention any crops that are unsuitable for the current weather conditions.
