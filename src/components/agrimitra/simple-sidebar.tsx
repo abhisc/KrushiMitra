@@ -34,6 +34,7 @@ export default function SimpleSidebar() {
     { icon: Home, label: t('home'), href: '/', active: true },
     { icon: Activity, label: t('diagnose'), href: '/diagnose' },
     { icon: TrendingUp, label: t('market'), href: '/market' },
+    { icon: ShoppingCart, label: 'Marketplace', href: '/marketplace' },
     { icon: FileText, label: t('schemes'), href: '/schemes' },
     { icon: Cloud, label: t('weather'), href: '/weather' },
     { icon: Calendar, label: t('history'), href: '/history' }

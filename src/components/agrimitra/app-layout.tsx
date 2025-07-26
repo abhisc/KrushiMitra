@@ -82,6 +82,12 @@ export default function AppLayout({
 			active: pathname === "/market",
 		},
 		{
+			icon: ShoppingCart,
+			label: "Marketplace",
+			href: "/marketplace",
+			active: pathname === "/marketplace",
+		},
+		{
 			icon: FileText,
 			label: "Schemes",
 			href: "/schemes",
