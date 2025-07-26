@@ -8,59 +8,65 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
   }
 
   if (req.method === 'POST') {
-    const { action, input } = req.body;
+    const { action, method, input, params } = req.body;
+    const actionName = action || method;
 
-    if (!action) {
-      return res.status(400).json({ error: 'Action is required' });
+    if (!actionName) {
+      return res.status(400).json({ error: 'Action or method is required' });
     }
 
     try {
       let result;
       
       // Handle flows
-      switch (action) {
+      switch (actionName) {
         case 'diagnoseCropDisease':
-          result = await server.diagnoseCropDisease(input);
+          result = await server.diagnoseCropDisease(input || params);
           break;
         case 'diagnoseFollowUp':
-          result = await server.diagnoseFollowUp(input);
+          result = await server.diagnoseFollowUp(input || params);
           break;
         case 'askAnything':
-          result = await server.askAnything(input);
+          result = await server.askAnything(input || params);
+          break;
+        case 'smartDiagnose':
+          result = await server.smartDiagnose(input || params);
+          // smartDiagnose returns a string directly, so we need to wrap it
+          result = { response: result };
           break;
         case 'getWeatherAndIrrigationTips':
-          result = await server.getWeatherAndIrrigationTips(input);
+          result = await server.getWeatherAndIrrigationTips(input || params);
           break;
         case 'getMarketplaceChatResponse':
-          result = await server.getMarketplaceChatResponse(input);
+          result = await server.getMarketplaceChatResponse(input || params);
           break;
         case 'getMarketplaceSearch':
-          result = await server.getMarketplaceSearch(input);
+          result = await server.getMarketplaceSearch(input || params);
           break;
         case 'getMarketAnalysis':
-          result = await server.getMarketAnalysis(input);
+          result = await server.getMarketAnalysis(input || params);
           break;
         case 'farmJournalExtract':
-          result = await server.farmJournalExtract(input);
+          result = await server.farmJournalExtract(input || params);
           break;
         case 'handleFarmerSchemeQuery':
-          result = await server.handleFarmerSchemeQuery(input);
+          result = await server.handleFarmerSchemeQuery(input || params);
           break;
         // Handle tools
         case 'getCurrentWeather':
-          result = await server.getCurrentWeather(input);
+          result = await server.getCurrentWeather(input || params);
           break;
         case 'getMarketplaceData':
-          result = await server.getMarketplaceData(input);
+          result = await server.getMarketplaceData(input || params);
           break;
         case 'getGovernmentSchemeInfo':
-          result = await server.getGovernmentSchemeInfo(input);
+          result = await server.getGovernmentSchemeInfo(input || params);
           break;
         case 'getDistrictsData':
-          result = await server.getDistrictsData(input);
+          result = await server.getDistrictsData(input || params);
           break;
         default:
-          return res.status(400).json({ error: `Unknown action: ${action}` });
+          return res.status(400).json({ error: `Unknown action: ${actionName}` });
       }
 
       return res.status(200).json({ result });
