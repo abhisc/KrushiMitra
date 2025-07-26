@@ -226,7 +226,11 @@ export default function FarmJournalPage() {
                   className="flex-1 border-none shadow-none bg-transparent focus:ring-0 focus:outline-none text-base min-w-0 text-gray-900 dark:text-gray-100 placeholder-gray-500 dark:placeholder-gray-400"
                   style={listening ? { color: '#4F46E5', fontWeight: 600 } : {}}
                 />
-                {textInput ? (
+                {loading ? (
+                  <div className="flex items-center justify-center w-10 h-10">
+                    <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-gray-900 dark:border-gray-100"></div>
+                  </div>
+                ) : textInput ? (
                   <button type="submit" className="flex items-center justify-center bg-[#4F46E5] hover:bg-[#3730A3] rounded-full w-10 h-10 transition-colors focus:outline-none shadow" title="Send">
                     <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="white" strokeWidth={2} className="h-6 w-6">
                       <path strokeLinecap="round" strokeLinejoin="round" d="M8 12h8m0 0l-4-4m4 4l-4 4" />
