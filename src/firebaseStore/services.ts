@@ -3,6 +3,7 @@ import {
 	BaseDocument,
 	DBCollectionKeys,
 } from "./firestore-service";
+import { SchemeService } from "./services/scheme-service";
 
 // Example interfaces for different collections
 export interface WeatherData extends BaseDocument {
@@ -161,3 +162,4 @@ export class NotificationService extends FirestoreService<UserNotification> {
 export const weatherService = new WeatherService();
 export const governmentSchemeService = new GovernmentSchemeService();
 export const notificationService = new NotificationService();
+export const schemeService = new SchemeService();

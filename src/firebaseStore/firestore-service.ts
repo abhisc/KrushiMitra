@@ -24,6 +24,7 @@ export enum DBCollectionKeys {
 	WeatherData = "weather_data",
 	GovernmentScheme = "government_schemes",
 	UserNotification = "user_notifications",
+	Schemes = "schemes",
 }
 
 export class FirestoreService<T extends BaseDocument> {

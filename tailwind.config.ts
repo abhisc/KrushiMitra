@@ -21,58 +21,55 @@ const config = {
       },
     },
     extend: {
-      // Custom color palette using CSS variables and HSL
+      // Custom color palette using CSS variables
       colors: {
-        border: "hsl(220, 13%, 91%)", // Light gray border for white background
-        input: "hsl(0, 0%, 100%)", // Input background matches white
-        ring: "hsl(213, 100%, 60%)", // Blue ring for focus
-        background: "hsl(0, 0%, 100%)", // Set main background to white
-        foreground: "hsl(222, 47%, 11%)", // Dark gray/black for text
+        border: "hsl(var(--border))",
+        input: "hsl(var(--input))",
+        ring: "hsl(var(--ring))",
+        background: "hsl(var(--background))",
+        foreground: "hsl(var(--foreground))",
         primary: {
-          // Using Google Blue as primary
-          DEFAULT: "hsl(113, 61.50%, 30.60%)", // Main primary color
-          foreground: "hsl(0, 0%, 100%)", // White text on primary
+          DEFAULT: "hsl(var(--primary))",
+          foreground: "hsl(var(--primary-foreground))",
         },
         secondary: {
-          // Using a lighter blue/cyan as secondary
-          DEFAULT: "hsl(200, 100%, 96%)", // Lighter blue for secondary
-          foreground: "hsl(222, 47%, 11%)", // Dark text on secondary
+          DEFAULT: "hsl(var(--secondary))",
+          foreground: "hsl(var(--secondary-foreground))",
         },
         destructive: {
-          DEFAULT: "hsl(0, 84%, 60%)", // Red for destructive actions
-          foreground: "hsl(0, 0%, 100%)", // White text on destructive
+          DEFAULT: "hsl(var(--destructive))",
+          foreground: "hsl(var(--destructive-foreground))",
         },
         muted: {
-          DEFAULT: "hsl(220, 13%, 96%)", // Very light gray for muted backgrounds
-          foreground: "hsl(220, 8%, 50%)", // Muted gray text
+          DEFAULT: "hsl(var(--muted))",
+          foreground: "hsl(var(--muted-foreground))",
         },
         accent: {
-          // Using a subtle gray/blue for accent
-          DEFAULT: "hsl(210, 20%, 98%)", // Very light blue/gray accent
-          foreground: "hsl(222, 47%, 11%)", // Dark text on accent
+          DEFAULT: "hsl(var(--accent))",
+          foreground: "hsl(var(--accent-foreground))",
         },
         popover: {
-          DEFAULT: "hsl(0, 0%, 100%)", // White popover background
-          foreground: "hsl(222, 47%, 11%)", // Dark text on popover
+          DEFAULT: "hsl(var(--popover))",
+          foreground: "hsl(var(--popover-foreground))",
         },
         card: {
-          DEFAULT: "hsl(0, 0%, 100%)", // White card background
-          foreground: "hsl(222, 47%, 11%)", // Dark text on card
+          DEFAULT: "hsl(var(--card))",
+          foreground: "hsl(var(--card-foreground))",
         },
         sidebar: {
-          DEFAULT: "hsl(220, 13%, 96%)", // Light gray sidebar
-          foreground: "hsl(222, 47%, 11%)", // Dark text on sidebar
-          border: "hsl(220, 13%, 91%)", // Sidebar border
-          ring: "hsl(213, 100%, 60%)", // Sidebar ring
-          accent: "hsl(210, 20%, 98%)", // Sidebar accent
-          "accent-foreground": "hsl(222, 47%, 11%)", // Text on sidebar accent
+          DEFAULT: "hsl(var(--sidebar-background))",
+          foreground: "hsl(var(--sidebar-foreground))",
+          border: "hsl(var(--sidebar-border))",
+          ring: "hsl(var(--sidebar-ring))",
+          accent: "hsl(var(--sidebar-accent))",
+          "accent-foreground": "hsl(var(--sidebar-accent-foreground))",
         },
       },
       // Custom border radius values
       borderRadius: {
-        lg: "var(--radius)", // Large radius
-        md: "calc(var(--radius) - 2px)", // Medium radius
-        sm: "calc(var(--radius) - 4px)", // Small radius
+        lg: "var(--radius)",
+        md: "calc(var(--radius) - 2px)",
+        sm: "calc(var(--radius) - 4px)",
       },
       // Custom keyframes for accordion animations
       keyframes: {

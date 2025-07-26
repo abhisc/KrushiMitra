@@ -10,14 +10,14 @@ export const MarkdownComponent = ({
 }) => {
 	return (
 		<div className={`max-w-full ${css}`}>
-			<div className="bg-green-50 rounded-xl p-6 border-l-4 border-green-500">
+			<div className="bg-primary/5 rounded-xl p-6 border-l-4 border-primary">
 				<div className="flex items-start">
-					<Bot className="w-6 h-6 text-green-600 mr-3 mt-1 flex-shrink-0" />
+					<Bot className="w-6 h-6 text-primary mr-3 mt-1 flex-shrink-0" />
 					<div className="flex-1">
-						<h4 className="font-semibold text-green-800 mb-2">
+						<h4 className="font-semibold text-primary mb-2">
 							KrushiMitra's Response:
 						</h4>
-						<p className="text-gray-700">
+						<p className="text-foreground">
 							<Markdown
 								children={text}
 								components={{
@@ -26,7 +26,7 @@ export const MarkdownComponent = ({
 										<li className="list-disc text-sm pb-2">{children}</li>
 									),
 									a: ({ node, ...props }) => (
-										<a {...props} className="text-blue-600 hover:underline" />
+										<a {...props} className="text-primary hover:underline" />
 									),
 								}}
 							/>
