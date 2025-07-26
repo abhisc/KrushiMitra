@@ -39,14 +39,25 @@ export async function fetchDataFromGovtAPI(
 				limit,
 				"filters[Arrival_Date]": date, // Add date filter
 			}).toString();
-			const apiUrl = `${baseUrl}?${queryString}&api-key=${"579b464db66ec23bdd0000010a0b007fd4fc40b34482a6c41d1447d7"}`;
+			const apiUrl = `${baseUrl}?${queryString}&api-key=579b464db66ec23bdd0000010a0b007fd4fc40b34482a6c41d1447d7}`;
 
 			try {
 				const response = await fetch(apiUrl, {
-					method: "GET",
 					headers: {
-						Accept: "application/json",
+						accept: "application/json",
+						"accept-language": "en-US,en;q=0.9,zh-CN;q=0.8,zh;q=0.7,hi;q=0.6",
+						"sec-ch-ua":
+							'"Opera";v="120", "Not-A.Brand";v="8", "Chromium";v="135"',
+						"sec-ch-ua-mobile": "?0",
+						"sec-ch-ua-platform": '"macOS"',
+						"sec-fetch-dest": "empty",
+						"sec-fetch-mode": "cors",
+						"sec-fetch-site": "same-site",
+						Referer: "https://www.data.gov.in/",
+						"Referrer-Policy": "strict-origin-when-cross-origin",
 					},
+					body: null,
+					method: "GET",
 				}).then((resp) => resp.json());
 
 				return response.records || [];
