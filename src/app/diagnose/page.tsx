@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useRef } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -8,15 +8,21 @@ import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { useToast } from '@/hooks/use-toast';
 import { diagnoseCropDisease, DiagnoseCropDiseaseInput } from '@/ai/flows/diagnose-crop-disease';
-import { Loader2, Upload, Camera } from 'lucide-react';
+import { Loader2, Upload, Camera, Mic, MicOff, FileImage, X } from 'lucide-react';
 import AppLayout from '@/components/agrimitra/app-layout';
+import ReactMarkdown from 'react-markdown';
+import remarkGfm from 'remark-gfm';
 
 export default function DiagnosePage() {
   const [isLoading, setIsLoading] = useState(false);
   const [photoDataUri, setPhotoDataUri] = useState<string>('');
   const [description, setDescription] = useState('');
   const [result, setResult] = useState<any>(null);
+  const [isRecording, setIsRecording] = useState(false);
+  const [isDragOver, setIsDragOver] = useState(false);
   const { toast } = useToast();
+  const fileInputRef = useRef<HTMLInputElement>(null);
+  const mediaRecorderRef = useRef<MediaRecorder | null>(null);
 
   const handlePhotoUpload = (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
@@ -26,6 +32,77 @@ export default function DiagnosePage() {
         setPhotoDataUri(e.target?.result as string);
       };
       reader.readAsDataURL(file);
+    }
+  };
+
+  const handleDragOver = (e: React.DragEvent) => {
+    e.preventDefault();
+    setIsDragOver(true);
+  };
+
+  const handleDragLeave = (e: React.DragEvent) => {
+    e.preventDefault();
+    setIsDragOver(false);
+  };
+
+  const handleDrop = (e: React.DragEvent) => {
+    e.preventDefault();
+    setIsDragOver(false);
+    
+    const files = e.dataTransfer.files;
+    if (files.length > 0) {
+      const file = files[0];
+      if (file.type.startsWith('image/')) {
+        const reader = new FileReader();
+        reader.onload = (e) => {
+          setPhotoDataUri(e.target?.result as string);
+        };
+        reader.readAsDataURL(file);
+      } else {
+        toast({
+          title: "Invalid file type",
+          description: "Please upload an image file.",
+          variant: "destructive",
+        });
+      }
+    }
+  };
+
+  const startVoiceRecording = async () => {
+    try {
+      const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+      const mediaRecorder = new MediaRecorder(stream);
+      const chunks: Blob[] = [];
+
+      mediaRecorder.ondataavailable = (e) => {
+        chunks.push(e.data);
+      };
+
+      mediaRecorder.onstop = () => {
+        const blob = new Blob(chunks, { type: 'audio/wav' });
+        toast({
+          title: "Voice recording completed",
+          description: "Voice input feature coming soon!",
+        });
+        stream.getTracks().forEach(track => track.stop());
+      };
+
+      mediaRecorder.start();
+      mediaRecorderRef.current = mediaRecorder;
+      setIsRecording(true);
+    } catch (error) {
+      toast({
+        title: "Microphone access denied",
+        description: "Please allow microphone access to use voice input.",
+        variant: "destructive",
+      });
+    }
+  };
+
+  const stopVoiceRecording = () => {
+    if (mediaRecorderRef.current && isRecording) {
+      mediaRecorderRef.current.stop();
+      setIsRecording(false);
     }
   };
 
@@ -65,6 +142,10 @@ export default function DiagnosePage() {
     }
   };
 
+  const removeImage = () => {
+    setPhotoDataUri('');
+  };
+
   return (
     <AppLayout 
       title="Crop Disease Diagnosis" 
@@ -72,88 +153,262 @@ export default function DiagnosePage() {
       showBackButton={true}
     >
       <div className="p-6">
-        <div className="max-w-4xl mx-auto space-y-6">
+        <div className="max-w-4xl mx-auto space-y-8">
+          
+          {/* Image Upload Section */}
           <Card>
             <CardHeader>
-              <CardTitle>Upload Photo</CardTitle>
+              <CardTitle className="flex items-center gap-2">
+                <FileImage className="w-5 h-5" />
+                Upload Crop Image
+              </CardTitle>
             </CardHeader>
-            <CardContent className="space-y-4">
-              <div className="flex items-center space-x-4">
-                <Button variant="outline" onClick={() => document.getElementById('photo-upload')?.click()}>
-                  <Upload className="w-4 h-4 mr-2" />
-                  Upload Photo
-                </Button>
-                <Button variant="outline">
-                  <Camera className="w-4 h-4 mr-2" />
-                  Take Photo
-                </Button>
+            <CardContent>
+              <div
+                className={`border-2 border-dashed rounded-lg p-8 text-center transition-colors ${
+                  isDragOver 
+                    ? 'border-blue-500 bg-blue-50' 
+                    : 'border-gray-300 hover:border-gray-400'
+                }`}
+                onDragOver={handleDragOver}
+                onDragLeave={handleDragLeave}
+                onDrop={handleDrop}
+              >
+                {photoDataUri ? (
+                  <div className="space-y-4">
+                    <div className="relative inline-block">
+                      <img 
+                        src={photoDataUri} 
+                        alt="Uploaded crop" 
+                        className="max-w-xs rounded-lg shadow-md" 
+                      />
+                      <Button
+                        size="sm"
+                        variant="destructive"
+                        className="absolute -top-2 -right-2 rounded-full w-6 h-6 p-0"
+                        onClick={removeImage}
+                      >
+                        <X className="w-3 h-3" />
+                      </Button>
+                    </div>
+                    <p className="text-sm text-gray-600">Image uploaded successfully</p>
+                  </div>
+                ) : (
+                  <div className="space-y-4">
+                    <div className="mx-auto w-16 h-16 bg-gray-100 rounded-full flex items-center justify-center">
+                      <Upload className="w-8 h-8 text-gray-400" />
+                    </div>
+                    <div>
+                      <p className="text-lg font-medium text-gray-700">
+                        Drop your image here, or click to browse
+                      </p>
+                      <p className="text-sm text-gray-500 mt-1">
+                        Supports JPG, PNG, GIF up to 10MB
+                      </p>
+                    </div>
+                    <div className="flex justify-center gap-3">
+                      <Button 
+                        variant="outline" 
+                        onClick={() => fileInputRef.current?.click()}
+                      >
+                        <Upload className="w-4 h-4 mr-2" />
+                        Choose File
+                      </Button>
+                      <Button variant="outline">
+                        <Camera className="w-4 h-4 mr-2" />
+                        Take Photo
+                      </Button>
+                    </div>
+                  </div>
+                )}
                 <input
-                  id="photo-upload"
+                  ref={fileInputRef}
                   type="file"
                   accept="image/*"
                   onChange={handlePhotoUpload}
                   className="hidden"
                 />
               </div>
-              {photoDataUri && (
-                <div className="mt-4">
-                  <img src={photoDataUri} alt="Uploaded crop" className="max-w-xs rounded-lg" />
-                </div>
-              )}
             </CardContent>
           </Card>
 
+          {/* Description Section */}
           <Card>
             <CardHeader>
-              <CardTitle>Describe Symptoms</CardTitle>
+              <CardTitle className="flex items-center gap-2">
+                <Mic className="w-5 h-5" />
+                Describe Symptoms
+              </CardTitle>
             </CardHeader>
-            <CardContent>
-              <div className="space-y-4">
-                <div>
-                  <Label htmlFor="description">Crop Symptoms Description</Label>
-                  <Textarea
-                    id="description"
-                    placeholder="Describe the symptoms you're seeing on your crop..."
-                    value={description}
-                    onChange={(e) => setDescription(e.target.value)}
-                    rows={4}
-                  />
-                </div>
+            <CardContent className="space-y-4">
+              <div className="space-y-2">
+                <Label htmlFor="description" className="text-sm font-medium">
+                  Crop Symptoms Description
+                </Label>
+                <Textarea
+                  id="description"
+                  placeholder="Describe the symptoms you're seeing on your crop... (e.g., yellow spots on leaves, wilting, brown patches)"
+                  value={description}
+                  onChange={(e) => setDescription(e.target.value)}
+                  rows={4}
+                  className="resize-none"
+                />
+              </div>
+              
+              <div className="flex items-center gap-3">
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={isRecording ? stopVoiceRecording : startVoiceRecording}
+                  className={isRecording ? 'bg-red-50 border-red-200 text-red-700' : ''}
+                >
+                  {isRecording ? (
+                    <>
+                      <MicOff className="w-4 h-4 mr-2" />
+                      Stop Recording
+                    </>
+                  ) : (
+                    <>
+                      <Mic className="w-4 h-4 mr-2" />
+                      Voice Input
+                    </>
+                  )}
+                </Button>
+                {isRecording && (
+                  <div className="flex items-center gap-2 text-sm text-red-600">
+                    <div className="w-2 h-2 bg-red-500 rounded-full animate-pulse"></div>
+                    Recording...
+                  </div>
+                )}
               </div>
             </CardContent>
           </Card>
 
+          {/* Diagnose Button */}
           <Button 
             onClick={handleDiagnose} 
             disabled={isLoading || (!photoDataUri && !description.trim())}
-            className="w-full"
+            className="w-full h-12 text-lg font-medium"
           >
             {isLoading ? (
               <>
-                <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-                Diagnosing...
+                <Loader2 className="w-5 h-5 mr-2 animate-spin" />
+                Analyzing Crop Disease...
               </>
             ) : (
               'Diagnose Crop Disease'
             )}
           </Button>
 
+          {/* Results Section */}
           {result && (
-            <Card>
+            <Card className="border-green-200 bg-green-50/30">
               <CardHeader>
-                <CardTitle>Diagnosis Result</CardTitle>
+                <CardTitle className="flex items-center gap-2 text-green-800">
+                  <div className="w-2 h-2 bg-green-500 rounded-full"></div>
+                  Diagnosis Results
+                </CardTitle>
               </CardHeader>
-              <CardContent className="space-y-4">
-                <div>
-                  <h3 className="font-semibold text-lg">Disease: {result.disease}</h3>
-                  <p className="text-sm text-gray-600">
-                    Confidence: {(result.confidence * 100).toFixed(1)}%
-                  </p>
+              <CardContent className="space-y-6">
+                
+                {/* Disease Name and Confidence */}
+                <div className="bg-white p-4 rounded-lg border border-green-200">
+                  <div className="flex items-center justify-between">
+                    <h3 className="font-bold text-xl text-green-700">{result.disease}</h3>
+                    <div className="text-right">
+                      <p className="text-sm text-gray-600">Confidence</p>
+                      <p className="text-lg font-semibold text-green-600">
+                        {(result.confidence * 100).toFixed(1)}%
+                      </p>
+                    </div>
+                  </div>
                 </div>
-                <div>
-                  <h4 className="font-medium mb-2">Recommendations:</h4>
-                  <p className="text-gray-700">{result.recommendations}</p>
-                </div>
+
+                {/* Symptoms */}
+                {result.symptoms && (
+                  <div className="bg-white p-4 rounded-lg border">
+                    <h4 className="font-semibold text-gray-800 mb-3 flex items-center gap-2">
+                      <div className="w-1.5 h-1.5 bg-blue-500 rounded-full"></div>
+                      Symptoms Observed
+                    </h4>
+                    <div className="text-gray-700 leading-relaxed">
+                      <ReactMarkdown remarkPlugins={[remarkGfm]}>
+                        {result.symptoms}
+                      </ReactMarkdown>
+                    </div>
+                  </div>
+                )}
+
+                {/* Cause */}
+                {result.cause && (
+                  <div className="bg-white p-4 rounded-lg border">
+                    <h4 className="font-semibold text-gray-800 mb-3 flex items-center gap-2">
+                      <div className="w-1.5 h-1.5 bg-orange-500 rounded-full"></div>
+                      Disease Cause
+                    </h4>
+                    <p className="text-gray-700 leading-relaxed">{result.cause}</p>
+                  </div>
+                )}
+
+                {/* Disease Cycle */}
+                {result.diseaseCycle && (
+                  <div className="bg-white p-4 rounded-lg border">
+                    <h4 className="font-semibold text-gray-800 mb-3 flex items-center gap-2">
+                      <div className="w-1.5 h-1.5 bg-purple-500 rounded-full"></div>
+                      Disease Cycle
+                    </h4>
+                    <p className="text-gray-700 leading-relaxed">{result.diseaseCycle}</p>
+                  </div>
+                )}
+
+                {/* Management Strategies */}
+                {result.management && (
+                  <div className="bg-white p-4 rounded-lg border">
+                    <h4 className="font-semibold text-gray-800 mb-4 flex items-center gap-2">
+                      <div className="w-1.5 h-1.5 bg-green-500 rounded-full"></div>
+                      Management Strategies
+                    </h4>
+                    <div className="space-y-4">
+                      {result.management.cultural && (
+                        <div className="bg-blue-50 p-4 rounded-lg border-l-4 border-blue-400">
+                          <h5 className="font-medium text-blue-800 mb-2">Cultural Control</h5>
+                          <p className="text-blue-700 text-sm leading-relaxed">
+                            {result.management.cultural}
+                          </p>
+                        </div>
+                      )}
+                      
+                      {result.management.chemical && (
+                        <div className="bg-orange-50 p-4 rounded-lg border-l-4 border-orange-400">
+                          <h5 className="font-medium text-orange-800 mb-2">Chemical Control</h5>
+                          <p className="text-orange-700 text-sm leading-relaxed">
+                            {result.management.chemical}
+                          </p>
+                        </div>
+                      )}
+                      
+                      {result.management.biological && (
+                        <div className="bg-green-50 p-4 rounded-lg border-l-4 border-green-400">
+                          <h5 className="font-medium text-green-800 mb-2">Biological Control</h5>
+                          <p className="text-green-700 text-sm leading-relaxed">
+                            {result.management.biological}
+                          </p>
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                )}
+
+                {/* Resistant Varieties */}
+                {result.resistantVarieties && (
+                  <div className="bg-white p-4 rounded-lg border">
+                    <h4 className="font-semibold text-gray-800 mb-3 flex items-center gap-2">
+                      <div className="w-1.5 h-1.5 bg-teal-500 rounded-full"></div>
+                      Resistant Varieties
+                    </h4>
+                    <p className="text-gray-700 leading-relaxed">{result.resistantVarieties}</p>
+                  </div>
+                )}
               </CardContent>
             </Card>
           )}

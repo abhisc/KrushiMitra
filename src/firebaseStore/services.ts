@@ -163,3 +163,12 @@ export const weatherService = new WeatherService();
 export const governmentSchemeService = new GovernmentSchemeService();
 export const notificationService = new NotificationService();
 export const schemeService = new SchemeService();
+
+// Export diagnosis services
+export { 
+  diagnosisChatService, 
+  diagnosisMessageService, 
+  storageService,
+  type DiagnosisChat,
+  type DiagnosisMessage
+} from './services/diagnosis-chat-service';
