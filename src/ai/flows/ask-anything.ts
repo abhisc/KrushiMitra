@@ -8,6 +8,7 @@ import {
 	getCurrentWeather,
 	getWeatherForecast,
 } from "./weather-and-irrigation-tips";
+import { marketplaceTool } from "../tools/marketplace-tool";
 
 const AskAnythingInputSchema = z.object({
 	text: z.string(),
@@ -40,6 +41,7 @@ const prompt = ai.definePrompt({
 		fetchDistrictsTool,
 		getCurrentWeather,
 		getWeatherForecast,
+		marketplaceTool,
 	],
 	prompt: `**Prompt: AI Assistant for Indian Farmers**
 
@@ -55,6 +57,7 @@ You are an AI assistant supporting Indian farmers with practical farming solutio
 2. **Response Guidelines**:
    - Provide **brief, actionable solutions** tailored to the farmer’s query (e.g., farming issues, crop management, or market strategies).
    - If the query involves **farming issues**, express empathy and address the specific problem.
+   - For marketplace queries (e.g., "I need a tractor", "Show me fertilizer prices"), use the **marketplaceSearch** tool to provide detailed product information.
    - For market trend requests, include:
      - Current prices (INR per unit, e.g., quintal/kg).
      - Price trends (e.g., increasing/decreasing/stable) over the past week/month.

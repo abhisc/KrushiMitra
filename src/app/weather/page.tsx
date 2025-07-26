@@ -401,7 +401,7 @@ export default function WeatherPage() {
                   </Select>
                 </div>
                 <div>
-                  <Label htmlFor="crop">Crop (Optional)</Label>
+                  <Label htmlFor="crop">Crop</Label>
                   <Select value={crop} onValueChange={setCrop}>
                     <SelectTrigger>
                       <SelectValue placeholder="Select crop" />
@@ -457,7 +457,7 @@ export default function WeatherPage() {
                     const { bg } = getWeatherCardStyleAndIcon(result.condition);
                     return (
                       <div className={`w-full max-w-xl h-full min-h-[220px] flex-1 rounded-xl shadow-lg p-4 text-white flex flex-col justify-between ${bg} font-sans`}>
-                        <div>
+                  <div>
                           <div className="text-base font-semibold mb-1 flex items-center gap-2 tracking-tight">Current weather</div>
                           <div className="flex flex-col items-center">
                             <div className="flex items-end mt-4">
@@ -494,9 +494,9 @@ export default function WeatherPage() {
                                 <span className="text-xs">Precip.</span>
                               </div>
                             </div>
-                          </div>
-                        </div>
-                      </div>
+                  </div>
+                  </div>
+                  </div>
                     );
                   })()}
 
@@ -552,23 +552,23 @@ export default function WeatherPage() {
                 {/* Right column: Irrigation Tips */}
                 <div className="h-full flex-1 max-w-xl w-full">
                   <Card className="w-full max-w-xl h-full min-h-[220px] flex-1 flex flex-col justify-between rounded-xl shadow-lg">
-                    <CardHeader>
-                      <CardTitle className="flex items-center gap-2">
-                        <Droplets className="w-5 h-5" />
-                        Irrigation Tips
-                      </CardTitle>
-                    </CardHeader>
+                <CardHeader>
+                  <CardTitle className="flex items-center gap-2">
+                    <Droplets className="w-5 h-5" />
+                    Irrigation Tips
+                  </CardTitle>
+                </CardHeader>
                     <CardContent className="space-y-4 flex-1 flex flex-col justify-center">
-                      <div>
+                  <div>
                         {result.irrigationTips && !result.irrigationTips.trim().startsWith('The weather in') ? (
                           <p className="text-gray-700">{result.irrigationTips}</p>
                         ) : (
                           <p className="text-gray-500 italic">No specific irrigation advice available for these conditions.</p>
                         )}
-                      </div>
-                    </CardContent>
-                  </Card>
-                </div>
+                  </div>
+                </CardContent>
+              </Card>
+            </div>
               </div>
               {/* Below: Crops and Remedy Section (full width) */}
               <div className="mt-6">
@@ -608,4 +608,4 @@ export default function WeatherPage() {
       </div>
     </AppLayout>
   );
-}
+} 

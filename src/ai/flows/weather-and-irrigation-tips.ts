@@ -198,7 +198,7 @@ const weatherAndIrrigationTipsPrompt = ai.definePrompt({
   IMPORTANT: The 'irrigationTips' field MUST NOT repeat or paraphrase the weather summary. It MUST contain only actionable, practical irrigation advice for farmers in {{placeName}} growing {{cropType}}, based on the weather above.
 
   Return your response as a JSON object with these fields: weatherForecast, irrigationTips, remedialActions, recommendedCrops, notRecommendedCrops, recommendedCropsWithReasons, notRecommendedCropsWithReasons.
-
+  
   Also, suggest what types of vegetables and fruits should NOT be grown in these weather conditions.
   Include any recommended remedial actions based on the weather and crop conditions.
   Also, mention any crops that are unsuitable for the current weather conditions.

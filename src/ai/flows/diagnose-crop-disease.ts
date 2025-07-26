@@ -24,7 +24,15 @@ export type DiagnoseCropDiseaseInput = z.infer<typeof DiagnoseCropDiseaseInputSc
 const DiagnoseCropDiseaseOutputSchema = z.object({
   disease: z.string().describe('The identified disease, if any.'),
   confidence: z.number().describe('The confidence level of the diagnosis (0-1).'),
-  recommendations: z.string().describe('Recommendations for treatment or prevention.'),
+  symptoms: z.string().describe('Detailed symptoms observed on the plant.'),
+  cause: z.string().describe('The causative agent of the disease and favorable conditions for its spread.'),
+  diseaseCycle: z.string().describe('Brief explanation of how the disease spreads and survives.'),
+  management: z.object({
+    cultural: z.string().describe('Cultural and physical control methods.'),
+    chemical: z.string().describe('Recommended fungicides or pesticides with usage notes.'),
+    biological: z.string().describe('Biological control methods or biopesticides, if available.'),
+  }).describe('Management strategies for the disease.'),
+  resistantVarieties: z.string().describe('Recommended disease-resistant crop varieties, if known.'),
 });
 export type DiagnoseCropDiseaseOutput = z.infer<typeof DiagnoseCropDiseaseOutputSchema>;
 
@@ -32,19 +40,11 @@ export async function diagnoseCropDisease(input: DiagnoseCropDiseaseInput): Prom
   return diagnoseCropDiseaseFlow(input);
 }
 
-const prompt = ai.definePrompt({
-  name: 'diagnoseCropDiseasePrompt',
-  input: {schema: DiagnoseCropDiseaseInputSchema},
-  output: {schema: DiagnoseCropDiseaseOutputSchema},
-  prompt: `You are an expert in plant pathology, specializing in diagnosing crop diseases in India.
+// Remove the inline prompt definition and use the dotprompt file
+// import the ai instance as before
 
-You will use the information provided to diagnose the crop disease, if any, and provide recommendations for treatment or prevention.
-
-Consider common diseases affecting crops in India.
-
-Description: {{{description}}}
-{{~#if photoDataUri}}Photo: {{media url=photoDataUri}}{{~/if}}`,
-});
+// Replace the inline prompt with the prompt loaded from the .prompt file
+const prompt = ai.prompt('diagnose-crop-disease');
 
 const diagnoseCropDiseaseFlow = ai.defineFlow(
   {

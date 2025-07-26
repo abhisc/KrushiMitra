@@ -27,9 +27,10 @@ import {
 import Link from "next/link";
 import { useRouter, usePathname } from "next/navigation";
 import RightSidebar from "./right-sidebar";
-import { getRecentInputs } from "@/utils/localStorage";
 import { toast } from "@/hooks/use-toast";
 import { UserMenu } from "@/components/auth/user-menu";
+import { useChat } from "@/hooks/use-chat";
+import { ChatType } from "@/firebaseStore/services/chat-service";
 
 interface AppLayoutProps {
 	children: React.ReactNode;
@@ -37,6 +38,7 @@ interface AppLayoutProps {
 	title?: string;
 	subtitle?: string;
 	handleHistoryChatClick?: (text: string) => void;
+	onBack?: () => void;
 }
 
 export default function AppLayout({
@@ -45,6 +47,7 @@ export default function AppLayout({
 	title,
 	subtitle,
 	handleHistoryChatClick,
+	onBack,
 }: AppLayoutProps) {
 	// React state for selected language
 	const [selectedLanguage, setSelectedLanguage] = useState("EN");
@@ -54,6 +57,9 @@ export default function AppLayout({
 	const [sidebarOpen, setSidebarOpen] = useState(false);
 	const router = useRouter();
 	const pathname = usePathname();
+
+	// Chat hook for recent chats
+	const { recentChats, loading: chatsLoading } = useChat();
 
 	// Supported languages
 	const languages = [
@@ -77,6 +83,12 @@ export default function AppLayout({
 			label: "Market",
 			href: "/market",
 			active: pathname === "/market",
+		},
+		{
+			icon: ShoppingCart,
+			label: "Marketplace",
+			href: "/marketplace",
+			active: pathname === "/marketplace",
 		},
 		{
 			icon: FileText,
@@ -113,6 +125,12 @@ export default function AppLayout({
 			label: "CropCashFlow",
 			href: "/crop-cash-flow",
 			active: pathname === "/crop-cash-flow",
+    },
+    {
+			icon: Users, // or MessageCircle
+			label: "Expert Connect",
+			href: "/expert-connect",
+			active: pathname === "/expert-connect",
 		},
 		{
 			icon: UserIcon,
@@ -189,27 +207,44 @@ export default function AppLayout({
 								Recent Chats
 							</h3>
 							<div className="space-y-2">
-								{getRecentInputs().map((chat, index) => (
-									<button
-										key={index}
-										onClick={() => {
-											if (handleHistoryChatClick) {
-												handleHistoryChatClick(chat);
-											} else {
-												toast({
-													title: "Action unavailable",
-													description:
-														"Cannot handle chat history click at this time.",
-													variant: "destructive",
-												});
-											}
-										}}
-										className="w-full text-left px-3 py-2 text-sm text-muted-foreground hover:bg-accent rounded-lg transition-colors line-clamp-2"
-									>
-										<MessageCircle className="w-4 h-4 inline mr-2 text-muted-foreground" />
-										<span className="text-xs">{chat}</span>
-									</button>
-								))}
+								{chatsLoading ? (
+									<div className="text-xs text-muted-foreground">
+										Loading chats...
+									</div>
+								) : recentChats.length > 0 ? (
+									recentChats.map((chat) => (
+										<button
+											key={chat.id}
+											onClick={() => {
+												if (handleHistoryChatClick) {
+													handleHistoryChatClick(chat.lastMessage);
+												} else {
+													toast({
+														title: "Action unavailable",
+														description:
+															"Cannot handle chat history click at this time.",
+														variant: "destructive",
+													});
+												}
+											}}
+											className="w-full text-left px-3 py-2 text-sm text-muted-foreground hover:bg-accent rounded-lg transition-colors line-clamp-2"
+										>
+											<MessageCircle className="w-4 h-4 inline mr-2 text-muted-foreground" />
+											<div className="text-xs">
+												<div className="font-medium text-foreground">
+													{chat.title}
+												</div>
+												<div className="text-muted-foreground line-clamp-1">
+													{chat.lastMessage}
+												</div>
+											</div>
+										</button>
+									))
+								) : (
+									<div className="text-xs text-muted-foreground">
+										No recent chats
+									</div>
+								)}
 							</div>
 						</div>
 					)}
@@ -247,8 +282,8 @@ export default function AppLayout({
 
 						{showBackButton && (
 							<button
-								onClick={handleBack}
-								className="ml-4 p-2 hover:bg-accent rounded-lg transition-colors"
+								onClick={onBack ? onBack : handleBack}
+								className="ml-4 p-2 hover:bg-gray-100 rounded-lg transition-colors"
 							>
 								<ArrowLeft className="w-5 h-5 text-muted-foreground" />
 							</button>
