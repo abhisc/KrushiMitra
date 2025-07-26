@@ -123,7 +123,7 @@ export default function AppLayout({
 	};
 
 	return (
-		<div className="max-h-screen bg-background flex">
+		<div className="h-screen bg-gray-50 flex">
 			{/* Left Sidebar */}
 			<div
 				onMouseEnter={() => setSidebarOpen(true)}
@@ -245,7 +245,9 @@ export default function AppLayout({
 							<h1 className="text-xl font-semibold text-primary">
 								{title || "Agrimitra"}
 							</h1>
-							{subtitle && <p className="text-sm text-muted-foreground">{subtitle}</p>}
+							{subtitle && (
+								<p className="text-sm text-muted-foreground">{subtitle}</p>
+							)}
 						</div>
 					</div>
 

@@ -2,6 +2,12 @@
 
 import { ai } from "@/ai/genkit";
 import { z } from "zod";
+import { fetchMarketDataTool } from "./real-time-market-analysis";
+import { fetchDistrictsTool } from "../tools/GovtApisTools";
+import {
+	getCurrentWeather,
+	getWeatherForecast,
+} from "./weather-and-irrigation-tips";
 
 const AskAnythingInputSchema = z.object({
 	text: z.string(),
@@ -29,20 +35,45 @@ const prompt = ai.definePrompt({
 	name: "askAnythingPrompt",
 	input: { schema: AskAnythingInputSchema },
 	output: { schema: AskAnythingOutputSchema },
-	prompt: `You are an AI assistant providing information to farmers of India. 
+	tools: [
+		fetchMarketDataTool,
+		fetchDistrictsTool,
+		getCurrentWeather,
+		getWeatherForecast,
+	],
+	prompt: `**Prompt: AI Assistant for Indian Farmers**
 
-You will provide solutions related to farming.
+You are an AI assistant supporting Indian farmers with practical farming solutions and market insights.
 
-You will empathize when they talk about their farming issues only.
+### Instructions:
+1. **Tool Usage**:
+   - Use the **fetchDistricts** tool to ensure accurate district name spellings for any mentioned location.
+	 - For queries about weather, use the **getCurrentWeather** tool to provide accurate weather forecasts.
+   - For queries about current market trends, use the **fetchMarketData** tool to retrieve real-time market data.
+   - Apply the **marketAnalysisTool** to generate detailed market analysis when market trends are requested.
 
-You will be brief about the solution.
+2. **Response Guidelines**:
+   - Provide **brief, actionable solutions** tailored to the farmer’s query (e.g., farming issues, crop management, or market strategies).
+   - If the query involves **farming issues**, express empathy and address the specific problem.
+   - For market trend requests, include:
+     - Current prices (INR per unit, e.g., quintal/kg).
+     - Price trends (e.g., increasing/decreasing/stable) over the past week/month.
+     - Key market insights (e.g., supply/demand, seasonal factors).
+     - Actionable recommendations (e.g., crops to sell/hold, alternative markets).
+   - If no specific crops or location are provided, analyze 3–5 common Indian crops (e.g., rice, wheat, onion) in a major market (e.g., Nashik, Delhi).
+   - Note any unavailable data and suggest alternatives.
 
-You will always wish them good luck at the end of your response.
+3. **Output Structure**:
+   - **Overview**: Summarize the query context, location, and crops (if applicable).
+   - **Solution/Analysis**: Provide the solution or market analysis with clear, concise details.
+   - **Recommendations**: Offer practical advice based on the solution or analysis.
+	 - End with “**Good luck with your farming!** if and when needed.”
+4. **Photo Handling**:
+   - If a photo is provided via {{{photoDataUri}}}, analyze it (e.g., for crop health, pest issues) and integrate findings into the solution.
 
-{{~#if photoDataUri}}Photo: {{media url=photoDataUri}}{{~/if}}
-
-{{text}}
-`,
+### Input Fields:
+- **Text**: {{text}}
+- **Photo**: {{~#if photoDataUri}}{{media url=photoDataUri}}{{~/if}}`,
 });
 
 const askAnythingFlow = ai.defineFlow(

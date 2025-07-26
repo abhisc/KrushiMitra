@@ -1,0 +1,90 @@
+export enum ResourcesEnum {
+	mandiPrices = "mandiPrices",
+	kvkFarmerQueries = "kvkFarmerQueries",
+	pincodes = "pincodes",
+	districts = "districts",
+}
+
+export const govtResources = {
+	mandiPrices: {
+		url: "/resource/35985678-0d79-46b4-9ed6-6f13308a1d24",
+		description: "Mandi prices for various crops",
+		sampleQuery: {
+			format: "json",
+			limit: "100",
+			offset: "0",
+			"filters[State]": "Karnataka",
+			"filters[District]": "Bangalore",
+			"filters[Arrival_Date]": "21-10-2023",
+		},
+		sampleOutput: {
+			State: "Karnataka",
+			District: "Bangalore",
+			Market: "Binny Mill (F&V), Bangalore",
+			Commodity: "Green Avare (W)",
+			Variety: "Green Avare (W)",
+			Grade: "Local",
+			Arrival_Date: "23/07/2025",
+			Min_Price: "3000",
+			Max_Price: "3800",
+			Modal_Price: "3400",
+			Commodity_Code: "165",
+		},
+	},
+	kvkFarmerQueries: {
+		url: "/resource/cef25fe2-9231-4128-8aec-2c948fedd43f",
+		description:
+			"Farmer queries and responses from Krishi Vigyan Kendras (KVKs)",
+		sampleQuery: {
+			format: "json",
+			limit: "100",
+			offset: "0",
+			"filters[State]": "Karnataka",
+			"filters[year]": "2023",
+			"filters[month]": "10",
+		},
+	},
+	pincodes: {
+		url: "/resource/5c2f62fe-5afa-4119-a499-fec9d604d5bd",
+		description: "Pincode data for various regions",
+		sampleQuery: {
+			format: "json",
+			limit: "100",
+			offset: "0",
+			"filters[district]": "Bangalore",
+			"filters[statename]": "Karnataka",
+			"filters[pincode]": "560001",
+			"filters[latitude]": "12.9716",
+			"filters[longitude]": "77.5946",
+		},
+		sampleOutput: {
+			circlename: "Andhra Pradesh Circle",
+			regionname: "Vijayawada Region",
+			divisionname: "Narasaraopet Division",
+			officename: "Chatragaddapadu B.O",
+			pincode: "522647",
+			officetype: "BO",
+			delivery: "Delivery",
+			district: "Palnadu",
+			statename: "ANDHRA PRADESH",
+			latitude: "16.0234000",
+			longitude: "79.7512000",
+		},
+	},
+	districts: {
+		url: "/resource/35985678-0d79-46b4-9ed6-6f13308a1d24",
+		description: "District data for various states",
+		sampleQuery: {
+			format: "json",
+			"filters[State]": "Karnataka",
+			"aggr[District][terms][field]": "District",
+			"aggr[District][terms][size]": "1000",
+			aggr_show: 1,
+		},
+		queryDefault: {
+			"aggr[District][terms][field]": "District",
+			"aggr[District][terms][size]": "1000",
+			aggr_show: "1",
+		},
+	},
+};
