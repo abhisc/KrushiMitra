@@ -40,33 +40,81 @@ function formatDate(dateStr: string | undefined, format: string = ''): string {
 }
 
 const TYPE_META: Record<string, { label: string; icon: React.ReactNode; color: string; darkColor: string }> = {
-  fertilizer: { 
-    label: "Fertilizer", 
-    icon: <span className="text-yellow-700 dark:text-yellow-400"><svg xmlns="http://www.w3.org/2000/svg" className="inline w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15.232 5.232l3.536 3.536M9 13h6m2 7a2 2 0 002-2v-5.586a1 1 0 00-.293-.707l-7-7a1 1 0 00-1.414 0l-7 7A1 1 0 004 12.414V18a2 2 0 002 2h12z" /></svg></span>, 
-    color: "bg-yellow-50 border-yellow-200 dark:bg-yellow-950/20 dark:border-yellow-800/30",
-    darkColor: "dark:bg-yellow-950/20 dark:border-yellow-800/30"
+  "land preparation": {
+    label: "Land Prep",
+    icon: <span className="text-orange-700 dark:text-orange-400"><svg xmlns="http://www.w3.org/2000/svg" className="inline w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 10h18M3 14h18m-9-4v8m-7 0h14a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2z" /></svg></span>,
+    color: "bg-orange-50 border-orange-200 dark:bg-orange-950/20 dark:border-orange-800/30",
+    darkColor: "dark:bg-orange-950/20 dark:border-orange-800/30"
   },
-  "crop activity": { 
-    label: "Crop Activity", 
-    icon: <Leaf className="w-5 h-5 text-green-700 dark:text-green-400" />, 
+  "sowing": {
+    label: "Sowing",
+    icon: <span className="text-lime-700 dark:text-lime-400"><svg xmlns="http://www.w3.org/2000/svg" className="inline w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" /></svg></span>,
+    color: "bg-lime-50 border-lime-200 dark:bg-lime-950/20 dark:border-lime-800/30",
+    darkColor: "dark:bg-lime-950/20 dark:border-lime-800/30"
+  },
+  "crop management": {
+    label: "Crop Mgmt",
+    icon: <Leaf className="w-5 h-5 text-green-700 dark:text-green-400" />,
     color: "bg-green-50 border-green-200 dark:bg-green-950/20 dark:border-green-800/30",
     darkColor: "dark:bg-green-950/20 dark:border-green-800/30"
   },
-  water: { 
-    label: "Water", 
-    icon: <Droplet className="w-5 h-5 text-blue-700 dark:text-blue-400" />, 
+  "irrigation": {
+    label: "Irrigation",
+    icon: <Droplet className="w-5 h-5 text-blue-700 dark:text-blue-400" />,
     color: "bg-blue-50 border-blue-200 dark:bg-blue-950/20 dark:border-blue-800/30",
     darkColor: "dark:bg-blue-950/20 dark:border-blue-800/30"
   },
-  weather: { 
-    label: "Weather", 
-    icon: <CloudSun className="w-5 h-5 text-sky-700 dark:text-sky-400" />, 
+  "fertilizer": {
+    label: "Fertilizer",
+    icon: <span className="text-yellow-700 dark:text-yellow-400"><svg xmlns="http://www.w3.org/2000/svg" className="inline w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15.232 5.232l3.536 3.536M9 13h6m2 7a2 2 0 002-2v-5.586a1 1 0 00-.293-.707l-7-7a1 1 0 00-1.414 0l-7 7A1 1 0 004 12.414V18a2 2 0 002 2h12z" /></svg></span>,
+    color: "bg-yellow-50 border-yellow-200 dark:bg-yellow-950/20 dark:border-yellow-800/30",
+    darkColor: "dark:bg-yellow-950/20 dark:border-yellow-800/30"
+  },
+  "pest control": {
+    label: "Pest Control",
+    icon: <span className="text-red-700 dark:text-red-400"><svg xmlns="http://www.w3.org/2000/svg" className="inline w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" /></svg></span>,
+    color: "bg-red-50 border-red-200 dark:bg-red-950/20 dark:border-red-800/30",
+    darkColor: "dark:bg-red-950/20 dark:border-red-800/30"
+  },
+  "weather": {
+    label: "Weather",
+    icon: <CloudSun className="w-5 h-5 text-sky-700 dark:text-sky-400" />,
     color: "bg-sky-50 border-sky-200 dark:bg-sky-950/20 dark:border-sky-800/30",
     darkColor: "dark:bg-sky-950/20 dark:border-sky-800/30"
   },
-  other: { 
-    label: "Other", 
-    icon: <span className="text-gray-600 dark:text-gray-400"><svg xmlns="http://www.w3.org/2000/svg" className="inline w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 12h16M4 18h16" /></svg></span>, 
+  "harvest": {
+    label: "Harvest",
+    icon: <span className="text-amber-700 dark:text-amber-400"><svg xmlns="http://www.w3.org/2000/svg" className="inline w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 12h14M12 5l7 7-7 7" /></svg></span>,
+    color: "bg-amber-50 border-amber-200 dark:bg-amber-950/20 dark:border-amber-800/30",
+    darkColor: "dark:bg-amber-950/20 dark:border-amber-800/30"
+  },
+  "post-harvest": {
+    label: "Post-Harvest",
+    icon: <span className="text-stone-700 dark:text-stone-400"><svg xmlns="http://www.w3.org/2000/svg" className="inline w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10" /></svg></span>,
+    color: "bg-stone-50 border-stone-200 dark:bg-stone-950/20 dark:border-stone-800/30",
+    darkColor: "dark:bg-stone-950/20 dark:border-stone-800/30"
+  },
+  "sales": {
+    label: "Sales",
+    icon: <BarChart3 className="w-5 h-5 text-teal-700 dark:text-teal-400" />,
+    color: "bg-teal-50 border-teal-200 dark:bg-teal-950/20 dark:border-teal-800/30",
+    darkColor: "dark:bg-teal-950/20 dark:border-teal-800/30"
+  },
+  "finance": {
+    label: "Finance",
+    icon: <span className="text-indigo-700 dark:text-indigo-400"><svg xmlns="http://www.w3.org/2000/svg" className="inline w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 17h8m0 0V9m0 8l-8-8-4 4-6-6" /></svg></span>,
+    color: "bg-indigo-50 border-indigo-200 dark:bg-indigo-950/20 dark:border-indigo-800/30",
+    darkColor: "dark:bg-indigo-950/20 dark:border-indigo-800/30"
+  },
+  "equipment": {
+    label: "Equipment",
+    icon: <span className="text-slate-700 dark:text-slate-400"><svg xmlns="http://www.w3.org/2000/svg" className="inline w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.096 2.572-1.065z" /><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" /></svg></span>,
+    color: "bg-slate-50 border-slate-200 dark:bg-slate-950/20 dark:border-slate-800/30",
+    darkColor: "dark:bg-slate-950/20 dark:border-slate-800/30"
+  },
+  "other": {
+    label: "Other",
+    icon: <List className="w-5 h-5 text-gray-600 dark:text-gray-400" />,
     color: "bg-gray-50 border-gray-200 dark:bg-gray-800/50 dark:border-gray-700/50",
     darkColor: "dark:bg-gray-800/50 dark:border-gray-700/50"
   },
@@ -140,18 +188,16 @@ export default function FarmJournalPage() {
       if (!res.ok) throw new Error("AI extraction failed");
       const aiResult = await res.json();
       console.log("AI extraction result:", aiResult);
-      await addEntry({ ...aiResult, rawText: textInput }, user.uid);
+      const newEntry = { ...aiResult, rawText: textInput };
+      await addEntry(newEntry, user.uid);
       toast({ title: "Entry saved!", description: "Your farm journal entry was logged successfully." });
       setTextInput("");
-      // Refresh entries
-      setTimelineLoading(true);
-      const updated = await getEntries(user.uid);
-      console.log("Fetched entries after save:", updated);
-      setEntries(updated);
-      setTimelineLoading(false);
+      
+      // Refresh entries by adding the new one to the top of the list
+      setEntries(prevEntries => [newEntry, ...prevEntries]);
+      
     } catch (err: any) {
       toast({ title: "Error", description: err.message || "Failed to log entry.", variant: "destructive" });
-      setTimelineLoading(false);
     } finally {
       setLoading(false);
     }
