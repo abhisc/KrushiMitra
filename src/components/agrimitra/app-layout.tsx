@@ -31,6 +31,7 @@ import { toast } from "@/hooks/use-toast";
 import { UserMenu } from "@/components/auth/user-menu";
 import { useChat } from "@/hooks/use-chat";
 import { ChatType } from "@/firebaseStore/services/chat-service";
+import { useNavigationHistory } from "@/hooks/use-navigation-history";
 
 interface AppLayoutProps {
 	children: React.ReactNode;
@@ -57,6 +58,7 @@ export default function AppLayout({
 	const [sidebarOpen, setSidebarOpen] = useState(false);
 	const router = useRouter();
 	const pathname = usePathname();
+	const { getPreviousPath } = useNavigationHistory();
 
 	// Chat hook for recent chats
 	const { recentChats, loading: chatsLoading } = useChat();
@@ -150,7 +152,21 @@ export default function AppLayout({
 	];
 
 	const handleBack = () => {
-		router.push("/");
+		if (onBack) {
+			// Use custom onBack function if provided
+			onBack();
+		} else {
+			// Get the previous path from our navigation history
+			const previousPath = getPreviousPath();
+			
+			if (previousPath && previousPath !== pathname) {
+				// Navigate to the previous path
+				router.push(previousPath);
+			} else {
+				// Fallback to home page if no previous path or same page
+				router.push("/");
+			}
+		}
 	};
 
 	return (

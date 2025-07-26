@@ -2,6 +2,8 @@
 import React, { useState } from "react";
 import AppLayout from '@/components/agrimitra/app-layout';
 import { useRouter } from "next/navigation";
+import ErrorBoundary from '@/components/error-boundary';
+import { useNavigationHistory } from '@/hooks/use-navigation-history';
 
 type Forum = {
   id: string;
@@ -127,6 +129,7 @@ function levenshtein(a: string, b: string): number {
 
 export default function CommunityForumPage() {
   const router = useRouter();
+  const { getPreviousPath } = useNavigationHistory();
   const [location, setLocation] = useState<Location|null>(null);
   const [forums, setForums] = useState<Forum[]>([]);
   const [selectedForum, setSelectedForum] = useState<Forum|null>(null);
@@ -136,11 +139,16 @@ export default function CommunityForumPage() {
   const [showManualInput, setShowManualInput] = useState(false);
   const [manualLocation, setManualLocation] = useState("");
   const [locationError, setLocationError] = useState("");
+  const [isDetectingLocation, setIsDetectingLocation] = useState(false);
 
   const handleDetectLocation = () => {
+    setIsDetectingLocation(true);
     // Mock location detection for demo
-    setLocation({ district: "Bengaluru", state: "Karnataka" });
-    setForums(sampleForums.filter(f => f.region === "Karnataka" || f.region === "All India"));
+    setTimeout(() => {
+      setLocation({ district: "Bengaluru", state: "Karnataka" });
+      setForums(sampleForums.filter(f => f.region === "Karnataka" || f.region === "All India"));
+      setIsDetectingLocation(false);
+    }, 2000);
   };
 
   const handleForumSelect = (forum: Forum) => {
@@ -155,30 +163,51 @@ export default function CommunityForumPage() {
   };
 
   return (
-    <AppLayout
-      title="Community Forum"
-      subtitle="Connect with other farmers and experts in your region."
-      showBackButton={true}
-      onBack={() => router.back()}
-    >
-      <div className="w-full max-w-xl mx-auto mt-8 p-4 flex flex-col items-center">
-        <h2 className="text-2xl font-bold text-green-700 mb-4 flex items-center gap-2">
-          <span>Community Forum</span>
-        </h2>
+    <ErrorBoundary>
+      <AppLayout
+        title="Community Forum"
+        subtitle="Connect with other farmers and experts in your region."
+        showBackButton={true}
+        onBack={() => {
+          const previousPath = getPreviousPath();
+          if (previousPath) {
+            router.push(previousPath);
+          } else {
+            router.push('/expert-connect');
+          }
+        }}
+      >
+      <div className="w-full max-w-4xl mx-auto mt-8 p-4">
+        <h2 className="text-2xl font-bold text-green-700 mb-6 text-center">Community Forum</h2>
+        
         {!location && (
-          <>
+          <div className="flex flex-col items-center space-y-6">
             <button
-              className="px-10 py-5 bg-green-600 text-white rounded-lg font-bold text-2xl shadow hover:bg-green-700 mb-4"
+              className="px-10 py-5 bg-green-600 text-white rounded-lg font-bold text-2xl shadow hover:bg-green-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
               onClick={handleDetectLocation}
+              disabled={isDetectingLocation}
             >
-              Detect My Location
+              {isDetectingLocation ? (
+                <div className="flex items-center gap-2">
+                  <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-white"></div>
+                  Detecting Location...
+                </div>
+              ) : (
+                'Detect My Location'
+              )}
             </button>
+            
+            <div className="text-center">
+              <span className="text-gray-500">or</span>
+            </div>
+            
             <button
-              className="px-10 py-5 bg-blue-600 text-white rounded-lg font-bold text-2xl shadow hover:bg-blue-700 mb-4"
+              className="px-10 py-5 bg-blue-600 text-white rounded-lg font-bold text-2xl shadow hover:bg-blue-700 transition-colors"
               onClick={() => setShowManualInput(true)}
             >
               Enter My Location
             </button>
+            
             {showManualInput && (
               <form
                 className="bg-white rounded-xl shadow p-6 flex flex-col gap-4 items-center w-full max-w-md mt-2"
@@ -254,72 +283,122 @@ export default function CommunityForumPage() {
                 </button>
               </form>
             )}
-          </>
+          </div>
         )}
-        {location && !selectedForum && (
-          <>
-            <div className="mb-4 text-gray-700">Showing forums for <b>{location.district}, {location.state}</b>:</div>
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              {forums.map(forum => (
-                <div
-                  key={forum.id}
-                  className="p-4 rounded-xl shadow bg-white flex flex-col items-center cursor-pointer border border-green-100 hover:border-green-400"
-                  onClick={() => handleForumSelect(forum)}
-                >
-                  {forumIcons[forum.type]}
-                  <div className="font-bold mt-2 text-green-800 text-lg">{forum.name}</div>
-                  <div className="text-xs text-gray-500 mt-1">{forum.languages.join(", ")}</div>
-                  <div className="flex gap-1 mt-1 flex-wrap">
-                    {forum.categories.map(cat => (
-                      <span key={cat} className="bg-green-100 text-green-700 px-2 py-1 rounded text-xs">{cat}</span>
-                    ))}
-                  </div>
+        
+        {location && (
+          <div className="space-y-8">
+            {/* Location Info */}
+            <div className="bg-green-50 rounded-xl p-6 border border-green-200">
+              <div className="flex items-center justify-between">
+                <div>
+                  <h3 className="text-lg font-bold text-green-800 mb-2">📍 Location Detected</h3>
+                  <p className="text-green-700">Showing forums for <strong>{location.district}, {location.state}</strong></p>
+                  <p className="text-sm text-green-600 mt-1">Found {forums.length} available forums</p>
                 </div>
-              ))}
+                <button
+                  onClick={() => {
+                    setLocation(null);
+                    setForums([]);
+                    setSelectedForum(null);
+                    setShowManualInput(false);
+                  }}
+                  className="text-sm text-green-600 hover:text-green-800 underline"
+                >
+                  Change Location
+                </button>
+              </div>
             </div>
-          </>
-        )}
-        {selectedForum && (
-          <div className="mt-6 bg-white rounded-xl shadow p-6">
-            <div className="flex items-center gap-2 mb-2">
-              {forumIcons[selectedForum.type]}
-              <div className="font-bold text-green-800 text-lg">{selectedForum.name}</div>
-            </div>
-            <div className="mb-2">
-              <label className="block text-sm font-medium text-gray-700 mb-1">Select Language:</label>
-              <select
-                value={language}
-                onChange={e => setLanguage(e.target.value)}
-                className="p-2 border rounded w-full bg-white text-gray-900 border-gray-300 focus:ring-green-500 focus:border-green-500"
-              >
-                {selectedForum.languages.map(lang => (
-                  <option key={lang} value={lang}>{lang}</option>
-                ))}
-              </select>
-            </div>
-            <div className="mb-2">
-              <label className="block text-sm font-medium text-gray-700 mb-1">Your Question or Suggestion:</label>
-              <textarea
-                value={question}
-                onChange={e => setQuestion(e.target.value)}
-                className="p-2 border rounded w-full min-h-[80px] bg-white text-gray-900 border-gray-300 focus:ring-green-500 focus:border-green-500"
-                placeholder="Type or use voice input..."
-              />
-            </div>
-            <div className="mb-2">
-              <label className="block text-sm font-medium text-gray-700 mb-1">Upload Image (optional):</label>
-              <input type="file" accept="image/*" onChange={handleImageChange} />
-              {image && <div className="mt-2 text-xs text-gray-600">Selected: {image.name}</div>}
-            </div>
-            <button
-              className="mt-4 px-6 py-2 bg-green-600 text-white rounded-lg font-bold shadow hover:bg-green-700"
-              onClick={() => alert('Posted! (demo only)')}
-            >
-              Post
-            </button>
+
+            {/* Forums Grid */}
+            {!selectedForum && (
+              <div>
+                <h3 className="text-xl font-bold text-gray-900 mb-4">Available Forums</h3>
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                  {forums.map(forum => (
+                    <div
+                      key={forum.id}
+                      className="p-4 rounded-xl shadow bg-white flex flex-col items-center cursor-pointer border border-green-100 hover:border-green-400 transition-all duration-200"
+                      onClick={() => handleForumSelect(forum)}
+                    >
+                      {forumIcons[forum.type]}
+                      <div className="font-bold mt-2 text-green-800 text-lg text-center">{forum.name}</div>
+                      <div className="text-xs text-gray-500 mt-1 text-center">{forum.languages.join(", ")}</div>
+                      <div className="flex gap-1 mt-2 flex-wrap justify-center">
+                        {forum.categories.map(cat => (
+                          <span key={cat} className="bg-green-100 text-green-700 px-2 py-1 rounded text-xs">{cat}</span>
+                        ))}
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            {/* Selected Forum */}
+            {selectedForum && (
+              <div className="bg-white rounded-xl shadow p-6">
+                <div className="flex items-center justify-between mb-4">
+                  <div className="flex items-center gap-2">
+                    {forumIcons[selectedForum.type]}
+                    <div className="font-bold text-green-800 text-lg">{selectedForum.name}</div>
+                  </div>
+                  <button
+                    onClick={() => setSelectedForum(null)}
+                    className="text-sm text-gray-600 hover:text-gray-800 underline"
+                  >
+                    Back to Forums
+                  </button>
+                </div>
+                
+                <div className="space-y-4">
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">Select Language:</label>
+                    <select
+                      value={language}
+                      onChange={e => setLanguage(e.target.value)}
+                      className="p-2 border rounded w-full bg-white text-gray-900 border-gray-300 focus:ring-green-500 focus:border-green-500"
+                    >
+                      {selectedForum.languages.map(lang => (
+                        <option key={lang} value={lang}>{lang}</option>
+                      ))}
+                    </select>
+                  </div>
+                  
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">Your Question or Suggestion:</label>
+                    <textarea
+                      value={question}
+                      onChange={e => setQuestion(e.target.value)}
+                      className="p-2 border rounded w-full min-h-[80px] bg-white text-gray-900 border-gray-300 focus:ring-green-500 focus:border-green-500"
+                      placeholder="Type your question or share your experience..."
+                    />
+                  </div>
+                  
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">Upload Image (optional):</label>
+                    <input type="file" accept="image/*" onChange={handleImageChange} />
+                    {image && <div className="mt-2 text-xs text-gray-600">Selected: {image.name}</div>}
+                  </div>
+                  
+                  <button
+                    className="w-full px-6 py-3 bg-green-600 text-white rounded-lg font-bold shadow hover:bg-green-700 transition-colors"
+                    onClick={() => {
+                      alert('Posted! (demo only)');
+                      setQuestion("");
+                      setImage(null);
+                      setSelectedForum(null);
+                    }}
+                  >
+                    Post to Forum
+                  </button>
+                </div>
+              </div>
+            )}
           </div>
         )}
       </div>
     </AppLayout>
+    </ErrorBoundary>
   );
 } 
