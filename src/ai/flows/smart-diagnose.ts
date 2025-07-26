@@ -120,4 +120,19 @@ export async function smartDiagnose(
       return "I'm having trouble processing your request. Please try again later.";
     }
   }
-} 
+}
+
+// Define the flow using ai.defineFlow
+const smartDiagnoseFlow = ai.defineFlow(
+  {
+    name: "smartDiagnoseFlow",
+    inputSchema: SmartDiagnoseInputSchema,
+    outputSchema: SmartDiagnoseOutputSchema,
+  },
+  async (input) => {
+    const response = await smartDiagnose(input);
+    return { response };
+  },
+);
+
+export { smartDiagnoseFlow }; 

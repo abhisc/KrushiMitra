@@ -213,4 +213,6 @@ const marketplaceChatFlow = ai.defineFlow(
 
 		return output!;
 	},
-); 
+);
+
+export { marketplaceChatFlow }; 
