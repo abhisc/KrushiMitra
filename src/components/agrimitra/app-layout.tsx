@@ -103,12 +103,6 @@ export default function AppLayout({
 			active: pathname === "/plan",
 		},
 		{
-			icon: Calendar,
-			label: "History",
-			href: "/history",
-			active: pathname === "/history",
-		},
-		{
 			icon: BookOpen,
 			label: "Farm Journal",
 			href: "/journal",

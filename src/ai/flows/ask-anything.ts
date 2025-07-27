@@ -99,7 +99,9 @@ Suggest moving the user to a specialized page only when their query requires ext
 /schemes: For queries about government farming schemes or subsidies.
 /plantationFlow: For creating detailed cropping or plantation plans.
 /journal: For recording or reviewing farming activities.
-
+/plan: To create short plan, like a reminder for farming tasks or activities.
+/expert-connect: For connecting with agricultural experts or specialists.
+/profile: For managing user profile and preferences.
 
 Clearly explain why the page is recommended. When user confirms navigation, set confirmed: true and specify the page in the output.
 
