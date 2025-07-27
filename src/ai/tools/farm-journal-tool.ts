@@ -1,4 +1,4 @@
-import { defineTool } from "@genkit-ai/ai";
+import { ai } from "@/ai/genkit";
 import { z } from "zod";
 import { db } from "@/firebaseStore/firebase";
 import { 
@@ -49,72 +49,95 @@ interface JournalAnalysis {
   productivityTrends: any[];
 }
 
-export const farmJournalTool = defineTool({
-  name: "farm_journal_tool",
-  description: "Farm journal management tool for creating, categorizing, and analyzing farm activities and observations",
-  inputSchema: z.object({
-    action: z.enum([
-      "create_entry",
-      "get_entry",
-      "update_entry",
-      "delete_entry",
-      "get_user_entries",
-      "get_entries_by_type",
-      "get_entries_by_date_range",
-      "get_entries_by_crop",
-      "search_entries",
-      "analyze_journal",
-      "extract_from_text",
-      "categorize_entry",
-      "get_statistics",
-      "export_journal",
-      "import_journal",
-      "get_recent_entries",
-      "get_entries_by_weather",
-      "get_cost_analysis",
-      "get_productivity_trends",
-      "generate_summary"
-    ]),
-    userId: z.string().optional(),
-    entryId: z.string().optional(),
-    entryData: z.object({
-      rawText: z.string().optional(),
-      type: z.enum(['land preparation', 'sowing', 'crop management', 'irrigation', 'fertilizer', 'pest control', 'weather', 'harvest', 'post-harvest', 'sales', 'finance', 'equipment', 'other']).optional(),
-      date: z.string().optional(), // ISO date string
-      location: z.string().optional(),
+export const farmJournalTool = ai.defineTool(
+  {
+    name: "farm_journal_tool",
+    description: "Farm journal management tool for creating, categorizing, and analyzing farm activities and observations",
+    inputSchema: z.object({
+      action: z.enum([
+        "create_entry",
+        "get_entry",
+        "update_entry",
+        "delete_entry",
+        "get_user_entries",
+        "get_entries_by_type",
+        "get_entries_by_date_range",
+        "get_entries_by_crop",
+        "search_entries",
+        "analyze_journal",
+        "extract_from_text",
+        "categorize_entry",
+        "get_statistics",
+        "export_journal",
+        "import_journal",
+        "get_recent_entries",
+        "get_entries_by_weather",
+        "get_cost_analysis",
+        "get_productivity_trends",
+        "generate_summary"
+      ]),
+      userId: z.string().optional(),
+      entryId: z.string().optional(),
+      entryData: z.object({
+        rawText: z.string().optional(),
+        type: z.enum(['land preparation', 'sowing', 'crop management', 'irrigation', 'fertilizer', 'pest control', 'weather', 'harvest', 'post-harvest', 'sales', 'finance', 'equipment', 'other']).optional(),
+        date: z.string().optional(), // ISO date string
+        location: z.string().optional(),
+        crop: z.string().optional(),
+        quantity: z.string().optional(),
+        cost: z.number().optional(),
+        weather: z.string().optional(),
+        notes: z.string().optional(),
+        tags: z.array(z.string()).optional(),
+        photos: z.array(z.string()).optional()
+      }).optional(),
+      searchQuery: z.string().optional(),
+      startDate: z.string().optional(), // ISO date string
+      endDate: z.string().optional(), // ISO date string
+      entryType: z.enum(['land preparation', 'sowing', 'crop management', 'irrigation', 'fertilizer', 'pest control', 'weather', 'harvest', 'post-harvest', 'sales', 'finance', 'equipment', 'other']).optional(),
       crop: z.string().optional(),
-      quantity: z.string().optional(),
-      cost: z.number().optional(),
-      weather: z.string().optional(),
-      notes: z.string().optional(),
-      tags: z.array(z.string()).optional(),
-      photos: z.array(z.string()).optional()
-    }).optional(),
-    searchQuery: z.string().optional(),
-    startDate: z.string().optional(), // ISO date string
-    endDate: z.string().optional(), // ISO date string
-    entryType: z.enum(['land preparation', 'sowing', 'crop management', 'irrigation', 'fertilizer', 'pest control', 'weather', 'harvest', 'post-harvest', 'sales', 'finance', 'equipment', 'other']).optional(),
-    crop: z.string().optional(),
-    limit: z.number().optional(),
-    rawText: z.string().optional(), // For AI extraction
-    exportFormat: z.enum(['json', 'csv', 'pdf']).optional(),
-    importData: z.array(z.record(z.any())).optional()
-  }),
-  handler: async ({ 
-    action, 
-    userId, 
-    entryId, 
-    entryData, 
-    searchQuery, 
-    startDate, 
-    endDate, 
-    entryType, 
-    crop,
-    limit: limitCount,
-    rawText,
-    exportFormat,
-    importData
-  }) => {
+      limit: z.number().optional(),
+      rawText: z.string().optional(), // For AI extraction
+      exportFormat: z.enum(['json', 'csv', 'pdf']).optional(),
+      importData: z.array(z.record(z.any())).optional()
+    }),
+    outputSchema: z.object({
+      success: z.boolean(),
+      error: z.string().optional(),
+      message: z.string().optional(),
+      entryId: z.string().optional(),
+      entry: z.any().optional(),
+      entries: z.array(z.any()).optional(),
+      count: z.number().optional(),
+      analysis: z.any().optional(),
+      extractedEntry: z.any().optional(),
+      category: z.string().optional(),
+      confidence: z.number().optional(),
+      statistics: z.any().optional(),
+      export: z.any().optional(),
+      results: z.array(z.any()).optional(),
+      costAnalysis: z.any().optional(),
+      productivityTrends: z.array(z.any()).optional(),
+      summary: z.any().optional()
+    })
+  },
+  async (input) => {
+    const { 
+      action, 
+      userId, 
+      entryId, 
+      entryData, 
+      searchQuery, 
+      startDate, 
+      endDate, 
+      entryType, 
+      crop,
+      limit: limitCount,
+      rawText,
+      exportFormat,
+      importData
+    } = input;
+
     try {
       if (!userId && action !== "extract_from_text" && action !== "categorize_entry") {
         throw new Error("userId is required for most operations");
@@ -207,7 +230,7 @@ export const farmJournalTool = defineTool({
           const userEntries = userEntriesSnap.docs.map(doc => ({
             id: doc.id,
             ...doc.data()
-          }));
+          })) as FarmJournalEntry[];
           
           return { success: true, entries: userEntries, count: userEntries.length };
 
@@ -226,7 +249,7 @@ export const farmJournalTool = defineTool({
           const typeEntries = typeEntriesSnap.docs.map(doc => ({
             id: doc.id,
             ...doc.data()
-          }));
+          })) as FarmJournalEntry[];
           
           return { success: true, entries: typeEntries, count: typeEntries.length };
 
@@ -246,7 +269,7 @@ export const farmJournalTool = defineTool({
           const dateEntries = dateEntriesSnap.docs.map(doc => ({
             id: doc.id,
             ...doc.data()
-          }));
+          })) as FarmJournalEntry[];
           
           return { success: true, entries: dateEntries, count: dateEntries.length };
 
@@ -265,7 +288,7 @@ export const farmJournalTool = defineTool({
           const cropEntries = cropEntriesSnap.docs.map(doc => ({
             id: doc.id,
             ...doc.data()
-          }));
+          })) as FarmJournalEntry[];
           
           return { success: true, entries: cropEntries, count: cropEntries.length };
 
@@ -283,7 +306,7 @@ export const farmJournalTool = defineTool({
           const allEntries = allEntriesSnap.docs.map(doc => ({
             id: doc.id,
             ...doc.data()
-          }));
+          })) as FarmJournalEntry[];
           
           // Simple text search (in production, consider using Algolia or similar)
           const searchResults = allEntries.filter(entry => 
@@ -305,7 +328,7 @@ export const farmJournalTool = defineTool({
           const analysisEntries = analysisSnap.docs.map(doc => ({
             id: doc.id,
             ...doc.data()
-          }));
+          })) as FarmJournalEntry[];
           
           // Perform analysis
           const analysis: JournalAnalysis = {
@@ -326,7 +349,7 @@ export const farmJournalTool = defineTool({
           const cropCount: Record<string, number> = {};
           const weatherCount: Record<string, number> = {};
           let totalCost = 0;
-          let costEntries = 0;
+          let costEntriesCount = 0;
           
           analysisEntries.forEach(entry => {
             // Count by type
@@ -352,14 +375,14 @@ export const farmJournalTool = defineTool({
             // Sum costs
             if (entry.cost) {
               totalCost += entry.cost;
-              costEntries++;
+              costEntriesCount++;
             }
           });
           
           analysis.entriesByType = typeCount;
           analysis.entriesByMonth = monthCount;
           analysis.totalCost = totalCost;
-          analysis.averageCostPerEntry = costEntries > 0 ? totalCost / costEntries : 0;
+          analysis.averageCostPerEntry = costEntriesCount > 0 ? totalCost / costEntriesCount : 0;
           analysis.weatherPatterns = weatherCount;
           
           // Find most active day
@@ -378,7 +401,7 @@ export const farmJournalTool = defineTool({
           }
           
           // AI-powered extraction logic
-          const lowerText = rawText.toLowerCase();
+          const lowerTextForExtraction = rawText.toLowerCase();
           let extractedType: FarmJournalEntry['type'] = 'other';
           let extractedCrop: string | undefined;
           let extractedQuantity: string | undefined;
@@ -386,28 +409,28 @@ export const farmJournalTool = defineTool({
           let extractedWeather: string | undefined;
           
           // Extract type
-          if (lowerText.includes('plant') || lowerText.includes('sow') || lowerText.includes('seed')) {
+          if (lowerTextForExtraction.includes('plant') || lowerTextForExtraction.includes('sow') || lowerTextForExtraction.includes('seed')) {
             extractedType = 'sowing';
-          } else if (lowerText.includes('water') || lowerText.includes('irrigat')) {
+          } else if (lowerTextForExtraction.includes('water') || lowerTextForExtraction.includes('irrigat')) {
             extractedType = 'irrigation';
-          } else if (lowerText.includes('fertiliz') || lowerText.includes('npk') || lowerText.includes('manure')) {
+          } else if (lowerTextForExtraction.includes('fertiliz') || lowerTextForExtraction.includes('npk') || lowerTextForExtraction.includes('manure')) {
             extractedType = 'fertilizer';
-          } else if (lowerText.includes('pest') || lowerText.includes('spray') || lowerText.includes('insecticide')) {
+          } else if (lowerTextForExtraction.includes('pest') || lowerTextForExtraction.includes('spray') || lowerTextForExtraction.includes('insecticide')) {
             extractedType = 'pest control';
-          } else if (lowerText.includes('harvest') || lowerText.includes('pick') || lowerText.includes('collect')) {
+          } else if (lowerTextForExtraction.includes('harvest') || lowerTextForExtraction.includes('pick') || lowerTextForExtraction.includes('collect')) {
             extractedType = 'harvest';
-          } else if (lowerText.includes('weather') || lowerText.includes('rain') || lowerText.includes('sun') || lowerText.includes('wind')) {
+          } else if (lowerTextForExtraction.includes('weather') || lowerTextForExtraction.includes('rain') || lowerTextForExtraction.includes('sun') || lowerTextForExtraction.includes('wind')) {
             extractedType = 'weather';
-          } else if (lowerText.includes('sell') || lowerText.includes('market') || lowerText.includes('price')) {
+          } else if (lowerTextForExtraction.includes('sell') || lowerTextForExtraction.includes('market') || lowerTextForExtraction.includes('price')) {
             extractedType = 'sales';
-          } else if (lowerText.includes('cost') || lowerText.includes('money') || lowerText.includes('expense') || lowerText.includes('rs') || lowerText.includes('₹')) {
+          } else if (lowerTextForExtraction.includes('cost') || lowerTextForExtraction.includes('money') || lowerTextForExtraction.includes('expense') || lowerTextForExtraction.includes('rs') || lowerTextForExtraction.includes('₹')) {
             extractedType = 'finance';
           }
           
           // Extract crop
           const crops = ['tomato', 'wheat', 'rice', 'maize', 'cotton', 'potato', 'onion', 'pepper', 'cucumber', 'lettuce', 'corn', 'soybean'];
           for (const cropName of crops) {
-            if (lowerText.includes(cropName)) {
+            if (lowerTextForExtraction.includes(cropName)) {
               extractedCrop = cropName;
               break;
             }
@@ -426,13 +449,13 @@ export const farmJournalTool = defineTool({
           }
           
           // Extract weather
-          if (lowerText.includes('rain') || lowerText.includes('rainy')) {
+          if (lowerTextForExtraction.includes('rain') || lowerTextForExtraction.includes('rainy')) {
             extractedWeather = 'rainy';
-          } else if (lowerText.includes('sunny') || lowerText.includes('hot')) {
+          } else if (lowerTextForExtraction.includes('sunny') || lowerTextForExtraction.includes('hot')) {
             extractedWeather = 'sunny';
-          } else if (lowerText.includes('cloudy')) {
+          } else if (lowerTextForExtraction.includes('cloudy')) {
             extractedWeather = 'cloudy';
-          } else if (lowerText.includes('windy')) {
+          } else if (lowerTextForExtraction.includes('windy')) {
             extractedWeather = 'windy';
           }
           
@@ -454,32 +477,32 @@ export const farmJournalTool = defineTool({
           }
           
           // Simple categorization logic
-          const lowerText = rawText.toLowerCase();
+          const lowerTextForCategorization = rawText.toLowerCase();
           let category: FarmJournalEntry['type'] = 'other';
           
-          if (lowerText.includes('plant') || lowerText.includes('sow') || lowerText.includes('seed')) {
+          if (lowerTextForCategorization.includes('plant') || lowerTextForCategorization.includes('sow') || lowerTextForCategorization.includes('seed')) {
             category = 'sowing';
-          } else if (lowerText.includes('water') || lowerText.includes('irrigat')) {
+          } else if (lowerTextForCategorization.includes('water') || lowerTextForCategorization.includes('irrigat')) {
             category = 'irrigation';
-          } else if (lowerText.includes('fertiliz') || lowerText.includes('npk') || lowerText.includes('manure')) {
+          } else if (lowerTextForCategorization.includes('fertiliz') || lowerTextForCategorization.includes('npk') || lowerTextForCategorization.includes('manure')) {
             category = 'fertilizer';
-          } else if (lowerText.includes('pest') || lowerText.includes('spray') || lowerText.includes('insecticide')) {
+          } else if (lowerTextForCategorization.includes('pest') || lowerTextForCategorization.includes('spray') || lowerTextForCategorization.includes('insecticide')) {
             category = 'pest control';
-          } else if (lowerText.includes('harvest') || lowerText.includes('pick') || lowerText.includes('collect')) {
+          } else if (lowerTextForCategorization.includes('harvest') || lowerTextForCategorization.includes('pick') || lowerTextForCategorization.includes('collect')) {
             category = 'harvest';
-          } else if (lowerText.includes('weather') || lowerText.includes('rain') || lowerText.includes('sun') || lowerText.includes('wind')) {
+          } else if (lowerTextForCategorization.includes('weather') || lowerTextForCategorization.includes('rain') || lowerTextForCategorization.includes('sun') || lowerTextForCategorization.includes('wind')) {
             category = 'weather';
-          } else if (lowerText.includes('sell') || lowerText.includes('market') || lowerText.includes('price')) {
+          } else if (lowerTextForCategorization.includes('sell') || lowerTextForCategorization.includes('market') || lowerTextForCategorization.includes('price')) {
             category = 'sales';
-          } else if (lowerText.includes('cost') || lowerText.includes('money') || lowerText.includes('expense')) {
+          } else if (lowerTextForCategorization.includes('cost') || lowerTextForCategorization.includes('money') || lowerTextForCategorization.includes('expense')) {
             category = 'finance';
-          } else if (lowerText.includes('equipment') || lowerText.includes('machine') || lowerText.includes('tool')) {
+          } else if (lowerTextForCategorization.includes('equipment') || lowerTextForCategorization.includes('machine') || lowerTextForCategorization.includes('tool')) {
             category = 'equipment';
-          } else if (lowerText.includes('land') || lowerText.includes('soil') || lowerText.includes('prepare')) {
+          } else if (lowerTextForCategorization.includes('land') || lowerTextForCategorization.includes('soil') || lowerTextForCategorization.includes('prepare')) {
             category = 'land preparation';
-          } else if (lowerText.includes('manage') || lowerText.includes('care') || lowerText.includes('maintain')) {
+          } else if (lowerTextForCategorization.includes('manage') || lowerTextForCategorization.includes('care') || lowerTextForCategorization.includes('maintain')) {
             category = 'crop management';
-          } else if (lowerText.includes('post') || lowerText.includes('after') || lowerText.includes('storage')) {
+          } else if (lowerTextForCategorization.includes('post') || lowerTextForCategorization.includes('after') || lowerTextForCategorization.includes('storage')) {
             category = 'post-harvest';
           }
           
@@ -495,7 +518,7 @@ export const farmJournalTool = defineTool({
           const statsEntries = statsSnap.docs.map(doc => ({
             id: doc.id,
             ...doc.data()
-          }));
+          })) as FarmJournalEntry[];
           
           const stats = {
             totalEntries: statsEntries.length,
@@ -537,7 +560,7 @@ export const farmJournalTool = defineTool({
           const exportEntries = exportSnap.docs.map(doc => ({
             id: doc.id,
             ...doc.data()
-          }));
+          })) as FarmJournalEntry[];
           
           let formattedData;
           switch (exportFormat) {
@@ -617,7 +640,7 @@ export const farmJournalTool = defineTool({
           const recentEntries = recentSnap.docs.map(doc => ({
             id: doc.id,
             ...doc.data()
-          }));
+          })) as FarmJournalEntry[];
           
           return { success: true, entries: recentEntries, count: recentEntries.length };
 
@@ -636,7 +659,7 @@ export const farmJournalTool = defineTool({
           const weatherEntries = weatherEntriesSnap.docs.map(doc => ({
             id: doc.id,
             ...doc.data()
-          }));
+          })) as FarmJournalEntry[];
           
           return { success: true, entries: weatherEntries, count: weatherEntries.length };
 
@@ -650,7 +673,7 @@ export const farmJournalTool = defineTool({
           const costEntries = costSnap.docs.map(doc => ({
             id: doc.id,
             ...doc.data()
-          }));
+          })) as FarmJournalEntry[];
           
           const costAnalysis = {
             totalCost: costEntries.reduce((sum, entry) => sum + (entry.cost || 0), 0),
@@ -684,7 +707,7 @@ export const farmJournalTool = defineTool({
           const productivityEntries = productivitySnap.docs.map(doc => ({
             id: doc.id,
             ...doc.data()
-          }));
+          })) as FarmJournalEntry[];
           
           // Group by month and calculate productivity metrics
           const monthlyProductivity = productivityEntries.reduce((acc, entry) => {
@@ -722,7 +745,7 @@ export const farmJournalTool = defineTool({
           const summaryEntries = summarySnap.docs.map(doc => ({
             id: doc.id,
             ...doc.data()
-          }));
+          })) as FarmJournalEntry[];
           
           const summary = {
             totalEntries: summaryEntries.length,
@@ -751,4 +774,4 @@ export const farmJournalTool = defineTool({
       };
     }
   }
-}); 
+); 
