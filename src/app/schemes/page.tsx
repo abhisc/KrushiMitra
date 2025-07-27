@@ -20,6 +20,8 @@ import {
 } from "lucide-react";
 import AppLayout from "@/components/agrimitra/app-layout";
 import { useAuth } from "@/contexts/auth-context";
+import { SchemeService, SchemeInformation } from "@/firebaseStore/services/scheme-service";
+import { SchemeSearchTool } from "@/ai/tools/scheme-search-tool";
 
 interface Scheme {
 	id: string;
@@ -48,36 +50,164 @@ export default function SchemesPage() {
 
 	// Fetch schemes on component mount
 	useEffect(() => {
-		fetchAllSchemes();
+		loadSchemesFromFirestore();
 	}, []);
+
+	// Function to load schemes from Firestore as fallback
+	const loadSchemesFromFirestore = async () => {
+		try {
+			const schemeService = new SchemeService();
+			const storedSchemes = await schemeService.getAllSchemes();
+			
+			if (storedSchemes.length > 0) {
+				// Transform back to Scheme format for display
+				const transformedSchemes: Scheme[] = storedSchemes.map((scheme) => ({
+					id: scheme.schemeId,
+					fields: {
+						schemeName: scheme.schemeName,
+						schemeShortTitle: scheme.schemeShortTitle || "",
+						briefDescription: scheme.briefDescription,
+						schemeCategory: scheme.schemeCategory,
+						beneficiaryState: scheme.beneficiaryState,
+						level: scheme.level,
+						schemeFor: scheme.schemeFor,
+						nodalMinistryName: scheme.nodalMinistryName,
+						tags: scheme.tags,
+						slug: scheme.slug,
+					},
+				}));
+
+				setSchemes(transformedSchemes);
+				setFilteredSchemes(transformedSchemes);
+				
+				toast({
+					title: "Schemes Loaded from Database",
+					description: `Loaded ${transformedSchemes.length} schemes from local database.`,
+				});
+			}
+		} catch (error) {
+			console.error("Error loading schemes from Firestore:", error);
+		}
+	};
 
 	// Filter schemes when search query changes
 	useEffect(() => {
-		if (searchQuery.trim()) {
-			const filtered = schemes.filter(
-				(scheme) =>
-					scheme.fields.schemeName
-						.toLowerCase()
-						.includes(searchQuery.toLowerCase()) ||
-					scheme.fields.briefDescription
-						.toLowerCase()
-						.includes(searchQuery.toLowerCase()) ||
-					scheme.fields.tags.some((tag) =>
-						tag.toLowerCase().includes(searchQuery.toLowerCase()),
-					),
-			);
-			setFilteredSchemes(filtered);
-		} else {
-			setFilteredSchemes(schemes);
-		}
+		const performSearch = async () => {
+			if (searchQuery.trim()) {
+				try {
+					const searchTool = new SchemeSearchTool();
+					const searchResult = await searchTool.searchSchemes({
+						query: searchQuery,
+						limit: 100
+					});
+					
+					// Transform back to Scheme format for display
+					const transformedSchemes: Scheme[] = searchResult.schemes.map((scheme) => ({
+						id: scheme.schemeId,
+						fields: {
+							schemeName: scheme.schemeName,
+							schemeShortTitle: scheme.schemeShortTitle || "",
+							briefDescription: scheme.briefDescription,
+							schemeCategory: scheme.schemeCategory,
+							beneficiaryState: scheme.beneficiaryState,
+							level: scheme.level,
+							schemeFor: scheme.schemeFor,
+							nodalMinistryName: scheme.nodalMinistryName,
+							tags: scheme.tags,
+							slug: scheme.slug,
+						},
+					}));
+					
+					setFilteredSchemes(transformedSchemes);
+				} catch (error) {
+					console.error("Error performing search:", error);
+					// Fallback to simple filter
+					const filtered = schemes.filter(
+						(scheme) =>
+							scheme.fields.schemeName
+								.toLowerCase()
+								.includes(searchQuery.toLowerCase()) ||
+							scheme.fields.briefDescription
+								.toLowerCase()
+								.includes(searchQuery.toLowerCase()) ||
+							scheme.fields.tags.some((tag) =>
+								tag.toLowerCase().includes(searchQuery.toLowerCase()),
+							),
+					);
+					setFilteredSchemes(filtered);
+				}
+			} else {
+				setFilteredSchemes(schemes);
+			}
+		};
+
+		performSearch();
 	}, [searchQuery, schemes]);
 
-	const fetchAllSchemes = async () => {
+	// const fetchAllSchemes = async () => {
+	// 	setIsLoading(true);
+	// 	try {
+	// 		// Try using a CORS proxy or different approach
+	// 		const response = await fetch(
+	// 			`https://api.myscheme.gov.in/search/v5/schemes?lang=en&q=%5B%7B%22identifier%22%3A%22schemeCategory%22%2C%22value%22%3A%22Agriculture%2CRural%20%26%20Environment%22%7D%5D&keyword=${searchQuery}&sort=&from=0&size=10`,
+	// 			{
+	// 				method: "GET",
+	// 				headers: {
+	// 					Accept: "application/json",
+	// 					"Content-Type": "application/json",
+	// 					"x-api-key": "tYTy5eEhlu9rFjyxuCr7ra7ACp4dv1RH8gWuHTDc",
+	// 				},
+	// 				mode: "cors",
+	// 			},
+	// 		);
+
+	// 		if (!response.ok) {
+	// 			throw new Error(`HTTP error! status: ${response.status}`);
+	// 		}
+
+	// 		const data = await response.json();
+
+	// 		// Extract schemes from the response - based on the actual API response structure
+	// 		let schemesData: Scheme[] = [];
+	// 		if (data.data && data.data.hits && data.data.hits.items) {
+	// 			schemesData = data.data.hits.items;
+	// 		} else if (data.hits && data.hits.items) {
+	// 			schemesData = data.hits.items;
+	// 		} else if (data.data && Array.isArray(data.data)) {
+	// 			schemesData = data.data;
+	// 		} else if (data.schemes && Array.isArray(data.schemes)) {
+	// 			schemesData = data.schemes;
+	// 		} else if (Array.isArray(data)) {
+	// 			schemesData = data;
+	// 		}
+
+	// 		setSchemes(schemesData);
+	// 		setFilteredSchemes(schemesData);
+
+	// 		toast({
+	// 			title: "Schemes Loaded",
+	// 			description: `Successfully loaded ${schemesData.length} government schemes.`,
+	// 		});
+	// 	} catch (error) {
+	// 		console.error("Error fetching schemes:", error);
+	// 		toast({
+	// 			title: "Error",
+	// 			description: "Failed to load schemes. Please try again.",
+	// 			variant: "destructive",
+	// 		});
+	// 	} finally {
+	// 		setIsLoading(false);
+	// 	}
+	// };
+
+
+
+	const fetchAllSchemesAndStoreInFireStore = async () => {
 		setIsLoading(true);
 		try {
 			// Try using a CORS proxy or different approach
 			const response = await fetch(
-				`https://api.myscheme.gov.in/search/v5/schemes?lang=en&q=%5B%7B%22identifier%22%3A%22schemeCategory%22%2C%22value%22%3A%22Agriculture%2CRural%20%26%20Environment%22%7D%5D&keyword=${searchQuery}&sort=&from=0&size=10`,
+				`https://api.myscheme.gov.in/search/v5/schemes?lang=en&q=%5B%7B%22identifier%22%3A%22schemeCategory%22%2C%22value%22%3A%22Agriculture%2CRural%20%26%20Environment%22%7D%5D&keyword=${searchQuery}&sort=&from=0&size=100`,
 				{
 					method: "GET",
 					headers: {
@@ -109,26 +239,48 @@ export default function SchemesPage() {
 				schemesData = data;
 			}
 
+			// Transform schemes to SchemeInformation format and store in Firestore
+			const schemeService = new SchemeService();
+			const schemesToStore: SchemeInformation[] = schemesData.map((scheme) => ({
+				schemeId: scheme.id,
+				schemeName: scheme.fields.schemeName,
+				schemeShortTitle: scheme.fields.schemeShortTitle,
+				briefDescription: scheme.fields.briefDescription,
+				schemeCategory: scheme.fields.schemeCategory,
+				beneficiaryState: scheme.fields.beneficiaryState,
+				level: scheme.fields.level,
+				schemeFor: scheme.fields.schemeFor,
+				nodalMinistryName: scheme.fields.nodalMinistryName,
+				tags: scheme.fields.tags,
+				slug: scheme.fields.slug,
+			}));
+
+			// Store schemes in Firestore (only if they don't already exist)
+			await schemeService.storeSchemesIfNotExist(schemesToStore);
+
 			setSchemes(schemesData);
 			setFilteredSchemes(schemesData);
 
 			toast({
-				title: "Schemes Loaded",
-				description: `Successfully loaded ${schemesData.length} government schemes.`,
+				title: "Schemes Loaded and Stored",
+				description: `Successfully loaded ${schemesData.length} government schemes and stored in database.`,
 			});
 		} catch (error) {
-			console.error("Error fetching schemes:", error);
+			console.error("Error fetching schemes from API:", error);
+			
+			// Try to load from Firestore as fallback
 			toast({
-				title: "Error",
-				description: "Failed to load schemes. Please try again.",
-				variant: "destructive",
+				title: "API Error",
+				description: "Failed to fetch from API. Trying to load from database...",
 			});
+			
+			await loadSchemesFromFirestore();
 		} finally {
 			setIsLoading(false);
 		}
 	};
 
-	const filterBasedOnUserData = () => {
+	const filterBasedOnUserData = async () => {
 		if (!userProfile) {
 			toast({
 				title: "No Profile Data",
@@ -138,53 +290,42 @@ export default function SchemesPage() {
 			return;
 		}
 
-		const userFilters: string[] = [];
+		try {
+			const searchTool = new SchemeSearchTool();
+			const searchResult = await searchTool.searchSchemesForUser(userProfile, 50);
+			
+			// Transform back to Scheme format for display
+			const transformedSchemes: Scheme[] = searchResult.schemes.map((scheme) => ({
+				id: scheme.schemeId,
+				fields: {
+					schemeName: scheme.schemeName,
+					schemeShortTitle: scheme.schemeShortTitle || "",
+					briefDescription: scheme.briefDescription,
+					schemeCategory: scheme.schemeCategory,
+					beneficiaryState: scheme.beneficiaryState,
+					level: scheme.level,
+					schemeFor: scheme.schemeFor,
+					nodalMinistryName: scheme.nodalMinistryName,
+					tags: scheme.tags,
+					slug: scheme.slug,
+				},
+			}));
 
-		// Filter based on user location
-		if (userProfile.location?.state) {
-			userFilters.push(userProfile.location.state);
+			setFilteredSchemes(transformedSchemes);
+			setActiveTab("user-data");
+
+			toast({
+				title: "Filtered by Profile",
+				description: `Found ${transformedSchemes.length} schemes matching your profile.`,
+			});
+		} catch (error) {
+			console.error("Error filtering by user data:", error);
+			toast({
+				title: "Error",
+				description: "Failed to filter schemes. Please try again.",
+				variant: "destructive",
+			});
 		}
-
-		// Filter based on user characteristics
-		if (userProfile.caste) {
-			userFilters.push(userProfile.caste);
-		}
-		if (userProfile.residence) {
-			userFilters.push(userProfile.residence);
-		}
-		if (userProfile.gender) {
-			userFilters.push(userProfile.gender);
-		}
-
-		const filtered = schemes.filter((scheme) => {
-			// Check if scheme is applicable to user's state
-			const isStateApplicable =
-				scheme.fields.beneficiaryState.includes("All") ||
-				scheme.fields.beneficiaryState.some(
-					(state) =>
-						userProfile.location?.state &&
-						state
-							.toLowerCase()
-							.includes(userProfile.location.state.toLowerCase()),
-				);
-
-			// Check if scheme tags match user characteristics
-			const hasMatchingTags = scheme.fields.tags.some((tag) =>
-				userFilters.some((filter) =>
-					tag.toLowerCase().includes(filter.toLowerCase()),
-				),
-			);
-
-			return isStateApplicable || hasMatchingTags;
-		});
-
-		setFilteredSchemes(filtered);
-		setActiveTab("user-data");
-
-		toast({
-			title: "Filtered by Profile",
-			description: `Found ${filtered.length} schemes matching your profile.`,
-		});
 	};
 
 	const filterBasedOnPrompt = async (prompt: string) => {
@@ -197,23 +338,45 @@ export default function SchemesPage() {
 			return;
 		}
 
-		const filtered = schemes.filter((scheme) => {
-			const searchText =
-				`${scheme.fields.schemeName} ${scheme.fields.briefDescription} ${scheme.fields.tags.join(" ")}`.toLowerCase();
-			const promptLower = prompt.toLowerCase();
+		try {
+			const searchTool = new SchemeSearchTool();
+			const searchResult = await searchTool.searchSchemes({
+				query: prompt,
+				limit: 50
+			});
+			
+			// Transform back to Scheme format for display
+			const transformedSchemes: Scheme[] = searchResult.schemes.map((scheme) => ({
+				id: scheme.schemeId,
+				fields: {
+					schemeName: scheme.schemeName,
+					schemeShortTitle: scheme.schemeShortTitle || "",
+					briefDescription: scheme.briefDescription,
+					schemeCategory: scheme.schemeCategory,
+					beneficiaryState: scheme.beneficiaryState,
+					level: scheme.level,
+					schemeFor: scheme.schemeFor,
+					nodalMinistryName: scheme.nodalMinistryName,
+					tags: scheme.tags,
+					slug: scheme.slug,
+				},
+			}));
 
-			// Simple keyword matching - in a real app, you might use AI for semantic search
-			const keywords = promptLower.split(" ").filter((word) => word.length > 2);
-			return keywords.some((keyword) => searchText.includes(keyword));
-		});
+			setFilteredSchemes(transformedSchemes);
+			setActiveTab("prompt");
 
-		setFilteredSchemes(filtered);
-		setActiveTab("prompt");
-
-		toast({
-			title: "Filtered by Prompt",
-			description: `Found ${filtered.length} schemes matching "${prompt}".`,
-		});
+			toast({
+				title: "Filtered by Prompt",
+				description: `Found ${transformedSchemes.length} schemes matching "${prompt}".`,
+			});
+		} catch (error) {
+			console.error("Error filtering by prompt:", error);
+			toast({
+				title: "Error",
+				description: "Failed to filter schemes. Please try again.",
+				variant: "destructive",
+			});
+		}
 	};
 
 	const resetFilters = () => {
@@ -251,7 +414,10 @@ export default function SchemesPage() {
 								<Button
 									disabled={!searchQuery}
 									className="w-[10vw] text-lg"
-									onClick={() => fetchAllSchemes()}
+									onClick={() => {
+										// Local search is already handled by useEffect
+										// This button can be used to trigger additional actions if needed
+									}}
 								>
 									Search
 								</Button>

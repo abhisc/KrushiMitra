@@ -15,6 +15,7 @@ import {
 	WeatherForecastSchema,
 	ForecastDaySchema,
 } from "@/helpers/govtData/weatherApis/weatherApi";
+import { getCurrentWeather } from "@/ai/tools/weather-tool";
 import { z } from "zod";
 
 const WeatherAndIrrigationTipsInputSchema = z.object({
@@ -86,44 +87,7 @@ export async function getWeatherAndIrrigationTips(
 	return weatherAndIrrigationTipsFlow(input);
 }
 
-export const getCurrentWeather = ai.defineTool(
-	{
-		name: "getCurrentWeather",
-		description: "Get the current weather for a given location.",
-		inputSchema: z.object({
-			location: z
-				.string()
-				.describe("The city and state, e.g. San Francisco, CA"),
-		}),
-		outputSchema: z.object({
-			temperature: z.number().describe("The current temperature in Celsius."),
-			condition: z
-				.string()
-				.describe(
-					'A brief description of the weather conditions (e.g., "Clear sky", "Light rain").',
-				),
-			humidity: z.number().describe("The humidity percentage."),
-			wind_speed: z.number().describe("The wind speed in km/h."),
-			precipitation: z.number().describe("The precipitation in mm."),
-		}),
-	},
-	async ({ location }) => {
-		// Fetch real weather from WeatherAPI
-		const data: any = await getCurrentWeatherAPI(location);
-		console.log("WeatherAPI response for", location);
-		if (data && data.temperature !== undefined) {
-			return {
-				temperature: data.temperature,
-				condition: data.condition,
-				humidity: data.humidity,
-				wind_speed: data.wind_speed,
-				precipitation: data.precipitation || 0,
-			};
-		} else {
-			throw new Error("Could not fetch weather data for the given location.");
-		}
-	},
-);
+
 
 /**
  * AI tool to get weather forecasts for a given location

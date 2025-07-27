@@ -3,12 +3,17 @@
 import { ai } from "@/ai/genkit";
 import { z } from "zod";
 import { fetchMarketDataTool } from "./real-time-market-analysis";
-import { fetchDistrictsTool } from "../tools/GovtApisTools";
-import {
-	getCurrentWeather,
-	getWeatherForecast,
-} from "./weather-and-irrigation-tips";
-import { marketplaceTool } from "../tools/marketplace-tool";
+import { 
+	fetchDistrictsTool, 
+	getCurrentWeather, 
+	marketplaceTool,
+	farmJournalTool,
+	journalAnalyticsTool,
+	farmPlanningTool,
+	retrieveAdditionalInfoOfUser,
+	getFarmerSchemes
+} from "../tools";
+import { getWeatherForecast } from "./weather-and-irrigation-tips";
 
 const AskAnythingInputSchema = z.object({
 	text: z.string(),
@@ -164,6 +169,12 @@ const prompt = (messages: any) => {
 			fetchDistrictsTool,
 			getCurrentWeather,
 			getWeatherForecast,
+			marketplaceTool,
+			farmJournalTool,
+			journalAnalyticsTool,
+			farmPlanningTool,
+			getFarmerSchemes,
+			retrieveAdditionalInfoOfUser,
 		],
 		prompt: promptText,
 	});

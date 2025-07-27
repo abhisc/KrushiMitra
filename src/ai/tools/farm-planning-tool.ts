@@ -1,4 +1,4 @@
-import { defineTool } from "@genkit-ai/ai";
+import { ai } from "@/ai/genkit";
 import { z } from "zod";
 import { db } from "@/firebaseStore/firebase";
 import { 
@@ -74,78 +74,80 @@ interface ScheduledTask {
   updatedAt: Date;
 }
 
-export const farmPlanningTool = defineTool({
-  name: "farm_planning_tool",
-  description: "Farm planning and task management tool for creating, managing, and tracking farm activities",
-  inputSchema: z.object({
-    action: z.enum([
-      "create_task",
-      "get_task",
-      "update_task",
-      "delete_task",
-      "get_user_tasks",
-      "get_tasks_by_date",
-      "get_tasks_by_crop",
-      "mark_task_completed",
-      "create_plan",
-      "get_plan",
-      "update_plan",
-      "delete_plan",
-      "get_user_plans",
-      "create_scheduled_task",
-      "get_scheduled_task",
-      "update_scheduled_task",
-      "delete_scheduled_task",
-      "get_user_scheduled_tasks",
-      "get_today_tasks",
-      "get_pending_tasks",
-      "get_completed_tasks",
-      "get_task_statistics"
-    ]),
-    userId: z.string().optional(),
-    taskId: z.string().optional(),
-    planId: z.string().optional(),
-    scheduledTaskId: z.string().optional(),
-    taskData: z.object({
-      name: z.string().optional(),
-      type: z.enum(['irrigation', 'fertilization', 'pest-control', 'weeding', 'harvesting', 'custom']).optional(),
+export const farmPlanningTool = ai.defineTool(
+  {
+    name: "farm_planning_tool",
+    description: "Farm planning and task management tool for creating, managing, and tracking farm activities",
+    inputSchema: z.object({
+      action: z.enum([
+        "create_task",
+        "get_task",
+        "update_task",
+        "delete_task",
+        "get_user_tasks",
+        "get_tasks_by_date",
+        "get_tasks_by_crop",
+        "mark_task_completed",
+        "create_plan",
+        "get_plan",
+        "update_plan",
+        "delete_plan",
+        "get_user_plans",
+        "create_scheduled_task",
+        "get_scheduled_task",
+        "update_scheduled_task",
+        "delete_scheduled_task",
+        "get_user_scheduled_tasks",
+        "get_today_tasks",
+        "get_pending_tasks",
+        "get_completed_tasks",
+        "get_task_statistics"
+      ]),
+      userId: z.string().optional(),
+      taskId: z.string().optional(),
+      planId: z.string().optional(),
+      scheduledTaskId: z.string().optional(),
+      taskData: z.object({
+        name: z.string().optional(),
+        type: z.enum(['irrigation', 'fertilization', 'pest-control', 'weeding', 'harvesting', 'custom']).optional(),
+        date: z.string().optional(), // ISO date string
+        time: z.string().optional(),
+        notes: z.string().optional(),
+        quantity: z.string().optional(),
+        priority: z.enum(['low', 'medium', 'high']).optional(),
+        crop: z.string().optional(),
+        stage: z.string().optional(),
+        completed: z.boolean().optional()
+      }).optional(),
+      planData: z.object({
+        name: z.string().optional(),
+        period: z.enum(['daily', 'weekly', 'monthly', 'custom']).optional(),
+        startDate: z.string().optional(), // ISO date string
+        endDate: z.string().optional(), // ISO date string
+        crop: z.string().optional(),
+        stage: z.string().optional(),
+        autoAdjust: z.boolean().optional()
+      }).optional(),
+      scheduledTaskData: z.object({
+        name: z.string().optional(),
+        type: z.enum(['irrigation', 'fertilization', 'pest-control', 'weeding', 'harvesting', 'custom']).optional(),
+        startDate: z.string().optional(), // ISO date string
+        scheduleType: z.enum(['daily', 'every-few-days', 'custom']).optional(),
+        interval: z.number().optional(),
+        totalDays: z.number().optional(),
+        notes: z.string().optional(),
+        quantity: z.string().optional(),
+        priority: z.enum(['low', 'medium', 'high']).optional(),
+        crop: z.string().optional(),
+        stage: z.string().optional(),
+        isActive: z.boolean().optional()
+      }).optional(),
       date: z.string().optional(), // ISO date string
-      time: z.string().optional(),
-      notes: z.string().optional(),
-      quantity: z.string().optional(),
-      priority: z.enum(['low', 'medium', 'high']).optional(),
       crop: z.string().optional(),
-      stage: z.string().optional(),
-      completed: z.boolean().optional()
-    }).optional(),
-    planData: z.object({
-      name: z.string().optional(),
-      period: z.enum(['daily', 'weekly', 'monthly', 'custom']).optional(),
-      startDate: z.string().optional(), // ISO date string
-      endDate: z.string().optional(), // ISO date string
-      crop: z.string().optional(),
-      stage: z.string().optional(),
-      autoAdjust: z.boolean().optional()
-    }).optional(),
-    scheduledTaskData: z.object({
-      name: z.string().optional(),
-      type: z.enum(['irrigation', 'fertilization', 'pest-control', 'weeding', 'harvesting', 'custom']).optional(),
-      startDate: z.string().optional(), // ISO date string
-      scheduleType: z.enum(['daily', 'every-few-days', 'custom']).optional(),
-      interval: z.number().optional(),
-      totalDays: z.number().optional(),
-      notes: z.string().optional(),
-      quantity: z.string().optional(),
-      priority: z.enum(['low', 'medium', 'high']).optional(),
-      crop: z.string().optional(),
-      stage: z.string().optional(),
-      isActive: z.boolean().optional()
-    }).optional(),
-    date: z.string().optional(), // ISO date string
-    crop: z.string().optional(),
-    limit: z.number().optional()
-  }),
-  handler: async ({ 
+      limit: z.number().optional()
+    }),
+  },
+  async ({ 
     action, 
     userId, 
     taskId, 
@@ -523,8 +525,8 @@ export const farmPlanningTool = defineTool({
           const allTasks = allTasksSnap.docs.map(doc => doc.data());
           
           const totalTasks = allTasks.length;
-          const completedTasks = allTasks.filter(task => task.completed).length;
-          const pendingTasks = totalTasks - completedTasks;
+          const completedTasksCount = allTasks.filter(task => task.completed).length;
+          const pendingTasksCount = totalTasks - completedTasksCount;
           
           const taskTypes = allTasks.reduce((acc: any, task) => {
             acc[task.type] = (acc[task.type] || 0) + 1;
@@ -542,9 +544,9 @@ export const farmPlanningTool = defineTool({
             success: true,
             statistics: {
               totalTasks,
-              completedTasks,
-              pendingTasks,
-              completionRate: totalTasks > 0 ? (completedTasks / totalTasks) * 100 : 0,
+              completedTasks: completedTasksCount,
+              pendingTasks: pendingTasksCount,
+              completionRate: totalTasks > 0 ? (completedTasksCount / totalTasks) * 100 : 0,
               taskTypes,
               cropStats
             }
@@ -560,4 +562,4 @@ export const farmPlanningTool = defineTool({
       };
     }
   }
-}); 
+);

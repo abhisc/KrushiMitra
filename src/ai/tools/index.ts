@@ -10,10 +10,15 @@ export { journalAnalyticsTool } from './journal-analytics-tool';
 
 // Existing Tools
 export { marketplaceTool } from './marketplace-tool';
-export { getGovernmentSchemeInfo } from './government-scheme-information';
+export { getGovernmentSchemeInfo, getFarmerSchemes } from './government-scheme-information';
 export type { GovernmentSchemeInfoInput, GovernmentSchemeInfoOutput } from './government-scheme-information';
 export { fetchDistrictsTool } from './GovtApisTools';
 export { getCurrentWeather } from './weather-tool';
+export { retrieveAdditionalInfoOfUser } from './user-additional-info-tool';
+
+// Scheme Tools
+export { SchemeRetrievalTool } from './scheme-retrieval-tool';
+export { SchemeSearchTool } from './scheme-search-tool';
 
 // Tool Registry for easy access
 export const firebaseTools = {
@@ -42,8 +47,14 @@ export const allTools = {
   // Existing Tools
   marketplace: 'marketplace_tool',
   governmentScheme: 'getGovernmentSchemeInfo',
+  farmerSchemes: 'getFarmerSchemes',
   govtApis: 'fetchDistricts',
-  weather: 'getCurrentWeather'
+  weather: 'getCurrentWeather',
+  userAdditionalInfo: 'retrieve_additional_info_of_user',
+  
+  // Scheme Tools
+  schemeRetrieval: 'scheme_retrieval_tool',
+  schemeSearch: 'scheme_search_tool'
 } as const;
 
 // Tool Descriptions for AI System
@@ -56,6 +67,10 @@ export const toolDescriptions = {
   journal_analytics_tool: "Advanced analytics and insights for farm journal data analysis",
   marketplace_tool: "Marketplace operations and data management",
   getGovernmentSchemeInfo: "Government scheme information and eligibility checking",
+  getFarmerSchemes: "Fetch government schemes specifically for farmers from MyScheme API",
   fetchDistricts: "Government API integrations and data fetching",
-  getCurrentWeather: "Weather data and forecasting services"
+  getCurrentWeather: "Weather data and forecasting services",
+  retrieve_additional_info_of_user: "Retrieve additional user information including age, gender, location, and other profile data",
+  scheme_retrieval_tool: "Retrieve government schemes from Firestore database with filtering and statistics",
+  scheme_search_tool: "Advanced search functionality for government schemes with multiple criteria and user profile matching"
 } as const; 

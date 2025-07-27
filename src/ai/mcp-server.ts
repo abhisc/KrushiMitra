@@ -12,12 +12,14 @@ import { getMarketplaceSearch } from './flows/farming-marketplace';
 import { getMarketAnalysis } from './flows/real-time-market-analysis';
 import { farmJournalExtractFlow } from './flows/farm-journal-extract';
 import { handleFarmerSchemeQuery } from './flows/farmer-schemes-chat';
+import { GetPlantationFlow } from './flows/plantation-flow';
 
 // Import all tools
 import { getCurrentWeather } from './tools/weather-tool';
 import { marketplaceTool } from './tools/marketplace-tool';
-import { getGovernmentSchemeInfo } from './tools/government-scheme-information';
+import { getGovernmentSchemeInfo, getFarmerSchemes } from './tools/government-scheme-information';
 import { fetchDistrictsTool } from './tools/GovtApisTools';
+import { retrieveAdditionalInfoOfUser } from './tools/user-additional-info-tool';
 
 // Create a simple MCP-like server interface
 export class KrushiMitraMCPServer {
@@ -65,6 +67,10 @@ export class KrushiMitraMCPServer {
     return await handleFarmerSchemeQuery(input);
   }
 
+  async getPlantationFlow(input: any) {
+    return await GetPlantationFlow(input);
+  }
+
   // Expose tools as methods
   async getCurrentWeather(input: any) {
     return await getCurrentWeather(input);
@@ -82,6 +88,14 @@ export class KrushiMitraMCPServer {
     return await fetchDistrictsTool(input);
   }
 
+  async getFarmerSchemes(input: any) {
+    return await getFarmerSchemes(input);
+  }
+
+  async getUserAdditionalInfo(input: any) {
+    return await retrieveAdditionalInfoOfUser(input);
+  }
+
   // Get server info
   getInfo() {
     return {
@@ -97,13 +111,16 @@ export class KrushiMitraMCPServer {
         'getMarketplaceSearch',
         'getMarketAnalysis',
         'farmJournalExtract',
-        'handleFarmerSchemeQuery'
+        'handleFarmerSchemeQuery',
+        'getPlantationFlow'
       ],
       tools: [
         'getCurrentWeather',
         'getMarketplaceData',
         'getGovernmentSchemeInfo',
-        'getDistrictsData'
+        'getDistrictsData',
+        'getFarmerSchemes',
+        'getUserAdditionalInfo'
       ]
     };
   }
