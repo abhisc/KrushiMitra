@@ -28,6 +28,7 @@ export enum DBCollectionKeys {
 	DiagnosisChat = "diagnosis_chats",
 	ChatSessions = "chat_sessions",
 	ChatMessages = "chat_messages",
+	PlantationFlows = "plantation_flows",
 }
 
 export class FirestoreService<T extends BaseDocument> {
@@ -281,6 +282,60 @@ export class FirestoreService<T extends BaseDocument> {
 				`Error getting ordered documents from ${this.collectionName}:`,
 				error,
 			);
+			throw error;
+		}
+	}
+
+	/**
+	 * Get documents by a specific field value
+	 */
+	async getByField<T>(
+		collectionName: DBCollectionKeys,
+		fieldName: string,
+		value: any,
+		limit?: number,
+	): Promise<T[]> {
+		try {
+			let q = query(
+				collection(db, collectionName),
+				where(fieldName, "==", value),
+			);
+
+			const querySnapshot = await getDocs(q);
+			return querySnapshot.docs.map(
+				(doc) =>
+					({
+						id: doc.id,
+						...doc.data(),
+					}) as T,
+			);
+		} catch (error) {
+			console.error(`Error getting documents by ${fieldName}:`, error);
+			throw error;
+		}
+	}
+
+	/**
+	 * Get a single document by ID
+	 */
+	async getById<T>(
+		collectionName: string,
+		documentId: string,
+	): Promise<T | null> {
+		try {
+			const docRef = doc(db, collectionName, documentId);
+			const docSnap = await getDoc(docRef);
+
+			if (docSnap.exists()) {
+				return {
+					id: docSnap.id,
+					...docSnap.data(),
+				} as T;
+			} else {
+				return null;
+			}
+		} catch (error) {
+			console.error(`Error getting document by ID ${documentId}:`, error);
 			throw error;
 		}
 	}
