@@ -59,11 +59,29 @@ export async function getCurrentWeatherAPI(
 ): Promise<WeatherData> {
 	const url = `https://api.weatherapi.com/v1/current.json?key=${WEATHERAPI_KEY}&q=${encodeURIComponent(location)}`;
 	const res = await fetch(url);
-	const data = await res.json();
 
+	if (!res.ok) {
+		throw new Error(
+			`Weather API error: ${res.status} ${res.statusText}`,
+		);
+	}
+
+	const data = await res.json();
 	console.log("WeatherAPI response for", location, ":", JSON.stringify(data));
 
-	return data;
+	// Check if the response contains the expected data
+	if (!data || !data.current) {
+		throw new Error("Invalid weather data received from API");
+	}
+
+	// Validate and return the weather data
+	return {
+		temperature: data.current.temp_c,
+		condition: data.current.condition?.text || "Unknown",
+		humidity: data.current.humidity || 0,
+		wind_speed: data.current.wind_kph || 0,
+		precipitation: data.current.precip_mm || 0,
+	};
 }
 
 /**

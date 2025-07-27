@@ -8,10 +8,8 @@ import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { useToast } from '@/hooks/use-toast';
 import { getWeatherAndIrrigationTips, WeatherAndIrrigationTipsInput } from '@/ai/flows/weather-and-irrigation-tips';
-import { Loader2, Cloud, Droplets, Sun, Calendar } from 'lucide-react';
+import { Loader2, Cloud, Droplets, Sun, Calendar, Search, MapPin } from 'lucide-react';
 import AppLayout from '@/components/agrimitra/app-layout';
-
-// Remove all SunPathArc and its Card. Only render the Weather card in the left column and the Irrigation Tips card in the right column.
 
 export default function WeatherPage() {
   const [isLoading, setIsLoading] = useState(false);
@@ -20,39 +18,39 @@ export default function WeatherPage() {
   const [result, setResult] = useState<any>(null);
   const [forecastData, setForecastData] = useState<any>(null);
   const { toast } = useToast();
-  const [selectedCrop, setSelectedCrop] = useState<{ name: string; reason: string; emoji: string } | null>(null);
-  const [bestCropIndex, setBestCropIndex] = useState(0);
-  const [avoidCropIndex, setAvoidCropIndex] = useState(0);
   const [geoLoading, setGeoLoading] = useState(false);
   const [locationName, setLocationName] = useState('');
   const [locationCoords, setLocationCoords] = useState('');
+  const [customLocation, setCustomLocation] = useState('');
+  const [locationSuggestions, setLocationSuggestions] = useState<string[]>([]);
+  const [showSuggestions, setShowSuggestions] = useState(false);
+  const [searchingLocation, setSearchingLocation] = useState(false);
 
-  // Reset indexes when new data arrives
+  // Debounced location search
   useEffect(() => {
-    setBestCropIndex(0);
-  }, [result?.recommendedCropsWithReasons?.length]);
+    if (!customLocation || customLocation.length < 2) {
+      setLocationSuggestions([]);
+      setShowSuggestions(false);
+      return;
+    }
 
-  useEffect(() => {
-    setAvoidCropIndex(0);
-  }, [result?.notRecommendedCropsWithReasons?.length]);
+    const timeoutId = setTimeout(async () => {
+      setSearchingLocation(true);
+      try {
+        const suggestions = await searchLocation(customLocation);
+        setLocationSuggestions(suggestions);
+        setShowSuggestions(suggestions.length > 0);
+      } catch (error) {
+        console.error('Location search error:', error);
+        setLocationSuggestions([]);
+        setShowSuggestions(false);
+      } finally {
+        setSearchingLocation(false);
+      }
+    }, 500);
 
-  // Auto-slide for Best Crops
-  useEffect(() => {
-    if (!result?.recommendedCropsWithReasons || result.recommendedCropsWithReasons.length === 0) return;
-    const interval = setInterval(() => {
-      setBestCropIndex(idx => (idx + 1) % result.recommendedCropsWithReasons.length);
-    }, 2000);
-    return () => clearInterval(interval);
-  }, [result?.recommendedCropsWithReasons]);
-
-  // Auto-slide for Avoid Crops
-  useEffect(() => {
-    if (!result?.notRecommendedCropsWithReasons || result.notRecommendedCropsWithReasons.length === 0) return;
-    const interval = setInterval(() => {
-      setAvoidCropIndex(idx => (idx + 1) % result.notRecommendedCropsWithReasons.length);
-    }, 2000);
-    return () => clearInterval(interval);
-  }, [result?.notRecommendedCropsWithReasons]);
+    return () => clearTimeout(timeoutId);
+  }, [customLocation]);
 
   const popularLocations = [
     'Mumbai', 'Delhi', 'Bangalore', 'Hyderabad', 'Chennai',
@@ -64,11 +62,48 @@ export default function WeatherPage() {
     'Potato', 'Tomato', 'Onion', 'Chilli', 'Pulses', 'Oilseeds'
   ];
 
+  // Location search function
+  const searchLocation = async (query: string): Promise<string[]> => {
+    try {
+      const response = await fetch(
+        `https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(query)}&countrycodes=in&limit=5`
+      );
+      const data = await response.json();
+      return data.map((item: any) => item.display_name.split(',')[0]).filter(Boolean);
+    } catch (error) {
+      console.error('Location search failed:', error);
+      return [];
+    }
+  };
+
   // When user selects a city manually, set locationName to the selected city and clear coords
   const handleLocationChange = (val: string) => {
     setLocation(val);
     setLocationName(val); // Use the selected city as the display name
     setLocationCoords(''); // Clear coords so backend uses city name only
+    setCustomLocation(''); // Clear custom location
+    setShowSuggestions(false);
+  };
+
+  // Handle custom location input
+  const handleCustomLocationChange = (value: string) => {
+    setCustomLocation(value);
+    setLocation(value);
+    setLocationName(value);
+    setLocationCoords('');
+  };
+
+  // Handle suggestion selection
+  const handleSuggestionSelect = (suggestion: string) => {
+    setCustomLocation(suggestion);
+    setLocation(suggestion);
+    setLocationName(suggestion);
+    setLocationCoords('');
+    setShowSuggestions(false);
+    toast({
+      title: "Location Selected",
+      description: `Using: ${suggestion}`,
+    });
   };
 
   const handleWeatherAnalysis = async () => {
@@ -113,9 +148,21 @@ export default function WeatherPage() {
       });
     } catch (error) {
       console.error('Weather analysis error:', error);
+      let errorMessage = "Unable to get weather analysis. Please try again.";
+      
+      if (error instanceof Error) {
+        if (error.message.includes("Weather API error")) {
+          errorMessage = "Weather service temporarily unavailable. Please try again later.";
+        } else if (error.message.includes("Invalid weather data")) {
+          errorMessage = "Unable to get weather data for this location. Please try a different location.";
+        } else if (error.message.includes("Could not fetch weather data")) {
+          errorMessage = "Location not found. Please check the spelling or try a nearby city.";
+        }
+      }
+      
       toast({
         title: "Analysis Failed",
-        description: "Unable to get weather analysis. Please try again.",
+        description: errorMessage,
         variant: "destructive",
       });
     } finally {
@@ -363,27 +410,39 @@ export default function WeatherPage() {
       <div className="p-6">
         <div className="max-w-6xl mx-auto">
           {/* Weather Analysis Parameters */}
-          <div className="bg-card rounded-lg border border-border p-6 mb-8">
-            <h2 className="text-xl font-semibold text-foreground mb-4">
+          <div className="mb-8 relative">
+            {/* Find My Location Button - Corner Position */}
+            <Button
+              onClick={handleUseMyLocation}
+              disabled={geoLoading}
+              variant="outline"
+              size="sm"
+              className="absolute top-0 right-0 font-medium bg-white/80 backdrop-blur-sm border-blue-200 hover:border-blue-300 hover:bg-blue-50 transition-all duration-200 text-xs"
+            >
+              {geoLoading ? (
+                <>
+                  <Loader2 className="w-3 h-3 mr-1 animate-spin" />
+                  Locating...
+                </>
+              ) : (
+                "📍 My Location"
+              )}
+            </Button>
+
+            <h2 className="text-2xl font-bold text-gray-900 mb-6 flex items-center">
+              <Sun className="w-6 h-6 mr-3 text-blue-600" />
               Weather Analysis Parameters
             </h2>
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
               {/* Location */}
-              <div className="space-y-2">
-                <div className="flex items-center space-x-2">
-                  <button
-                    onClick={handleUseMyLocation}
-                    disabled={geoLoading}
-                    className="text-xs text-primary hover:text-primary/80 underline"
-                  >
-                    {geoLoading ? "Locating..." : "Use My Location"}
-                  </button>
-                </div>
-                <Label htmlFor="location">Location</Label>
-                <Select value={locationName || location} onValueChange={handleLocationChange}>
-                  <SelectTrigger>
-                    <SelectValue placeholder="Select location" />
-                  </SelectTrigger>
+              <div className="space-y-3">
+                <Label htmlFor="location" className="font-semibold text-gray-700">Location</Label>
+                <Select value={location} onValueChange={handleLocationChange}>
+                <SelectTrigger className="font-medium bg-white/80 backdrop-blur-sm border-blue-200 hover:border-blue-300 transition-colors">
+                  <SelectValue placeholder="Select location">
+                    {locationName || location}
+                  </SelectValue>
+                </SelectTrigger>
                   <SelectContent>
                     {/* If locationName is set by geolocation and not in the list, show it as the first option */}
                     {locationName && !popularLocations.includes(locationName) && (
@@ -401,10 +460,10 @@ export default function WeatherPage() {
               </div>
 
               {/* Crop */}
-              <div className="space-y-2">
-                <Label htmlFor="crop">Crop</Label>
+              <div className="space-y-3">
+                <Label htmlFor="crop" className="font-semibold text-gray-700">Crop</Label>
                 <Select value={crop} onValueChange={setCrop}>
-                  <SelectTrigger>
+                  <SelectTrigger className="font-medium bg-white/80 backdrop-blur-sm border-blue-200 hover:border-blue-300 transition-colors">
                     <SelectValue placeholder="Select crop" />
                   </SelectTrigger>
                   <SelectContent>
@@ -417,15 +476,46 @@ export default function WeatherPage() {
                 </Select>
               </div>
 
-              {/* Custom Location removed as per request */}
+              {/* Custom Location */}
+              <div className="space-y-3">
+                <Label htmlFor="custom-location" className="font-semibold text-gray-700">Custom Location (Type)</Label>
+                <div className="relative">
+                  <Input
+                    id="custom-location"
+                    placeholder="Enter custom location"
+                    value={customLocation}
+                    onChange={(e) => handleCustomLocationChange(e.target.value)}
+                    className="font-medium bg-white/80 backdrop-blur-sm border-blue-200 hover:border-blue-300 focus:border-blue-400 transition-colors"
+                  />
+                  {searchingLocation && (
+                    <div className="absolute right-3 top-1/2 transform -translate-y-1/2">
+                      <Loader2 className="w-4 h-4 animate-spin text-blue-500" />
+                    </div>
+                  )}
+                </div>
+                {showSuggestions && locationSuggestions.length > 0 && (
+                  <div className="absolute z-10 w-full mt-1 bg-white/95 backdrop-blur-sm border border-blue-200 rounded-lg shadow-xl max-h-40 overflow-y-auto">
+                    {locationSuggestions.map((suggestion, index) => (
+                      <div
+                        key={index}
+                        className="px-3 py-2 hover:bg-blue-50 cursor-pointer flex items-center space-x-2 transition-colors"
+                        onClick={() => handleSuggestionSelect(suggestion)}
+                      >
+                        <MapPin className="w-4 h-4 text-blue-500" />
+                        <span className="text-sm font-medium">{suggestion}</span>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
 
               {/* Analyze Button */}
-              <div className="space-y-2">
+              <div className="space-y-3 md:col-span-3">
                 <Label>&nbsp;</Label>
                 <Button
                   onClick={handleWeatherAnalysis}
                   disabled={isLoading}
-                  className="w-full"
+                  className="w-full font-semibold bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white shadow-lg hover:shadow-xl transition-all duration-200 transform hover:scale-105"
                 >
                   {isLoading ? (
                     <>
@@ -442,136 +532,149 @@ export default function WeatherPage() {
 
           {/* Results */}
           {result && (
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-8 items-start mb-8 h-full">
-              {/* Weather Card */}
-              <div className="bg-gradient-to-br from-blue-50 to-indigo-100 rounded-lg border border-blue-200 p-6">
-                <div className="flex items-center justify-between mb-4">
-                  <h3 className="text-lg font-semibold text-blue-900">Current Weather</h3>
-                  {getWeatherCardStyleAndIcon(result.currentWeather?.condition || 'unknown').icon}
-                </div>
-                
-                {result.currentWeather && (
-                  <div className="space-y-3">
-                    <div className="flex items-center justify-between">
-                      <span className="text-2xl font-bold text-blue-900">
-                        {result.currentWeather.temperature}°C
-                      </span>
-                      <span className="text-blue-700">
-                        {result.currentWeather.condition}
-                      </span>
-                    </div>
-                    
-                    <div className="grid grid-cols-2 gap-4 text-sm">
-                      <div className="flex items-center space-x-2">
-                        <Droplets className="w-4 h-4 text-blue-600" />
-                        <span>Humidity: {result.currentWeather.humidity}%</span>
-                      </div>
-                      <div className="flex items-center space-x-2">
-                        <Cloud className="w-4 h-4 text-blue-600" />
-                        <span>Wind: {result.currentWeather.windSpeed} km/h</span>
-                      </div>
+            <div className="space-y-8 animate-fade-in">
+              {/* Weather and Irrigation Cards */}
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-8 items-stretch">
+                {/* Weather Card */}
+                <div className={`rounded-2xl border border-blue-200 p-8 flex flex-col h-full shadow-xl hover:shadow-2xl transition-all duration-300 transform hover:scale-105 ${getWeatherCardStyleAndIcon(result.condition || 'unknown').bg}`}>
+                  <div className="flex items-center justify-between mb-6">
+                    <h3 className="text-2xl font-bold text-gray-900 drop-shadow-sm">Current Weather</h3>
+                    <div className="transform hover:scale-110 transition-transform duration-200">
+                      {getWeatherCardStyleAndIcon(result.condition || 'unknown').icon}
                     </div>
                   </div>
-                )}
-              </div>
-
-              {/* Irrigation Tips Card */}
-              <div className="bg-gradient-to-br from-green-50 to-emerald-100 rounded-lg border border-green-200 p-6">
-                <div className="flex items-center space-x-2 mb-4">
-                  <Droplets className="w-6 h-6 text-green-600" />
-                  <h3 className="text-lg font-semibold text-green-900">Irrigation Tips</h3>
-                </div>
-                
-                {result.irrigationTips && (
-                  <div className="space-y-3">
-                    <div className="bg-white/50 rounded-lg p-3">
-                      <h4 className="font-medium text-green-800 mb-2">Recommendations</h4>
-                      <p className="text-sm text-green-700">{result.irrigationTips.recommendations}</p>
+                  
+                  {result.temperature !== undefined && (
+                    <div className="space-y-6 flex-1">
+                      <div className="flex items-center justify-between">
+                        <span className="text-5xl font-bold text-gray-900 drop-shadow-sm">
+                          {result.temperature}°C
+                        </span>
+                        <span className="text-xl font-semibold text-gray-800 drop-shadow-sm">
+                          {result.condition}
+                        </span>
+                      </div>
+                      
+                      <div className="grid grid-cols-2 gap-4 text-sm">
+                        <div className="flex items-center space-x-3 bg-white/40 backdrop-blur-sm rounded-xl p-4 shadow-lg">
+                          <Droplets className="w-5 h-5 text-blue-700" />
+                          <span className="font-semibold text-gray-800">Humidity: {result.humidity}%</span>
+                        </div>
+                        <div className="flex items-center space-x-3 bg-white/40 backdrop-blur-sm rounded-xl p-4 shadow-lg">
+                          <Cloud className="w-5 h-5 text-blue-700" />
+                          <span className="font-semibold text-gray-800">Wind: {result.wind_speed} km/h</span>
+                        </div>
+                      </div>
                     </div>
-                    
-                    {result.irrigationTips.schedule && (
-                      <div className="bg-white/50 rounded-lg p-3">
-                        <h4 className="font-medium text-green-800 mb-2">Schedule</h4>
-                        <p className="text-sm text-green-700">{result.irrigationTips.schedule}</p>
-                      </div>
-                    )}
-                    
-                    {result.irrigationTips.warnings && (
-                      <div className="bg-white/50 rounded-lg p-3">
-                        <h4 className="font-medium text-green-800 mb-2">Warnings</h4>
-                        <p className="text-sm text-green-700">{result.irrigationTips.warnings}</p>
-                      </div>
-                    )}
-                  </div>
-                )}
-              </div>
-            </div>
-          )}
+                  )}
+                </div>
 
-          {/* Additional Results */}
-          {result && (
-            <div className="space-y-6">
+                {/* Irrigation Tips Card */}
+                <div className="bg-gradient-to-br from-green-50 via-emerald-50 to-teal-50 rounded-2xl border border-green-200 p-8 flex flex-col h-full shadow-xl hover:shadow-2xl transition-all duration-300 transform hover:scale-105">
+                  <div className="flex items-center space-x-3 mb-6">
+                    <Droplets className="w-7 h-7 text-green-700" />
+                    <h3 className="text-2xl font-bold text-gray-900">Irrigation Tips</h3>
+                  </div>
+                  
+                  {result.irrigationTips && (
+                    <div className="space-y-4 flex-1">
+                      <div className="bg-white/70 backdrop-blur-sm rounded-xl p-6 h-full shadow-lg">
+                        <p className="text-sm font-medium text-gray-800 leading-relaxed">{result.irrigationTips}</p>
+                      </div>
+                    </div>
+                  )}
+                </div>
+              </div>
+
+              {/* Weather Forecast */}
+              {forecastData && forecastData.forecast && (
+                <div className="bg-gradient-to-br from-slate-50 via-white to-blue-50 rounded-2xl border border-slate-200 p-8 shadow-xl">
+                  <h3 className="text-2xl font-bold text-gray-900 mb-8 flex items-center">
+                    <Calendar className="w-6 h-6 mr-3 text-blue-600" />
+                    Weather Forecast
+                  </h3>
+                  <div className="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-5 gap-6">
+                    {forecastData.forecast.slice(0, 5).map((day: any, index: number) => (
+                      <div key={index} className="bg-white/80 backdrop-blur-sm rounded-xl p-6 text-center min-h-[180px] flex flex-col justify-center shadow-lg hover:shadow-xl border border-slate-200 transition-all duration-300 transform hover:scale-105">
+                        <div className="text-sm font-bold text-gray-700 mb-4">
+                          {formatDate(day.date)}
+                        </div>
+                        <div className="text-4xl my-4 flex justify-center">
+                          {getWeatherIcon(day.condition)}
+                        </div>
+                        <div className="text-xl font-bold text-gray-900 mb-3">
+                          {day.max_temp}°C
+                        </div>
+                        <div className="text-xs font-medium text-gray-600">
+                          {day.condition}
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+
               {/* Crop Recommendations */}
               {result.recommendedCropsWithReasons && result.recommendedCropsWithReasons.length > 0 && (
-                <div className="bg-card rounded-lg border border-border p-6">
-                  <h3 className="text-lg font-semibold text-foreground mb-4">Recommended Crops</h3>
-                  <div className="bg-gradient-to-r from-green-50 to-emerald-50 rounded-lg p-4">
-                    <div className="flex items-center space-x-3">
-                      <span className="text-2xl">{getCropEmoji(result.recommendedCropsWithReasons[bestCropIndex]?.name || '')}</span>
-                      <div>
-                        <h4 className="font-semibold text-green-800">
-                          {result.recommendedCropsWithReasons[bestCropIndex]?.name}
-                        </h4>
-                        <p className="text-sm text-green-700">
-                          {result.recommendedCropsWithReasons[bestCropIndex]?.reason}
+                <div className="bg-gradient-to-br from-green-50 via-white to-emerald-50 rounded-2xl border border-green-200 p-6 shadow-xl">
+                  <h3 className="text-xl font-bold text-gray-900 mb-6 flex items-center">
+                    <span className="text-xl mr-3">🌱</span>
+                    Recommended Crops
+                  </h3>
+                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                    {result.recommendedCropsWithReasons.map((crop: any, index: number) => (
+                      <div key={index} className="bg-gradient-to-r from-green-50 to-emerald-50 rounded-lg p-4 shadow-lg hover:shadow-xl border border-green-200 transition-all duration-300 transform hover:scale-105">
+                        <div className="flex items-center space-x-3 mb-3">
+                          <span className="text-2xl flex-shrink-0">{getCropEmoji(crop.name || '')}</span>
+                          <h4 className="font-bold text-gray-900 text-lg">{crop.name}</h4>
+                        </div>
+                        <p className="text-xs font-medium text-gray-700 leading-relaxed">
+                          {crop.reason}
                         </p>
                       </div>
-                    </div>
+                    ))}
                   </div>
                 </div>
               )}
 
               {/* Crops to Avoid */}
               {result.notRecommendedCropsWithReasons && result.notRecommendedCropsWithReasons.length > 0 && (
-                <div className="bg-card rounded-lg border border-border p-6">
-                  <h3 className="text-lg font-semibold text-foreground mb-4">Crops to Avoid</h3>
-                  <div className="bg-gradient-to-r from-red-50 to-pink-50 rounded-lg p-4">
-                    <div className="flex items-center space-x-3">
-                      <span className="text-2xl">{getCropEmoji(result.notRecommendedCropsWithReasons[avoidCropIndex]?.name || '')}</span>
-                      <div>
-                        <h4 className="font-semibold text-red-800">
-                          {result.notRecommendedCropsWithReasons[avoidCropIndex]?.name}
-                        </h4>
-                        <p className="text-sm text-red-700">
-                          {result.notRecommendedCropsWithReasons[avoidCropIndex]?.reason}
+                <div className="bg-gradient-to-br from-red-50 via-white to-pink-50 rounded-2xl border border-red-200 p-6 shadow-xl">
+                  <h3 className="text-xl font-bold text-gray-900 mb-6 flex items-center">
+                    <span className="text-xl mr-3">⚠️</span>
+                    Crops to Avoid
+                  </h3>
+                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                    {result.notRecommendedCropsWithReasons.map((crop: any, index: number) => (
+                      <div key={index} className="bg-gradient-to-r from-red-50 to-pink-50 rounded-lg p-4 shadow-lg hover:shadow-xl border border-red-200 transition-all duration-300 transform hover:scale-105">
+                        <div className="flex items-center space-x-3 mb-3">
+                          <span className="text-2xl flex-shrink-0">{getCropEmoji(crop.name || '')}</span>
+                          <h4 className="font-bold text-gray-900 text-lg">{crop.name}</h4>
+                        </div>
+                        <p className="text-xs font-medium text-gray-700 leading-relaxed">
+                          {crop.reason}
                         </p>
                       </div>
-                    </div>
+                    ))}
                   </div>
                 </div>
               )}
 
-              {/* Weather Forecast */}
-              {forecastData && (
-                <div className="bg-card rounded-lg border border-border p-6">
-                  <h3 className="text-lg font-semibold text-foreground mb-4">Weather Forecast</h3>
-                  <div className="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-5 gap-4">
-                    {forecastData.slice(0, 5).map((day: any, index: number) => (
-                      <div key={index} className="bg-muted rounded-lg p-3 text-center">
-                        <div className="text-sm font-medium text-muted-foreground">
-                          {formatDate(day.date)}
-                        </div>
-                        <div className="text-2xl my-2">
-                          {getWeatherIcon(day.condition)}
-                        </div>
-                        <div className="text-sm font-semibold">
-                          {day.temperature}°C
-                        </div>
-                        <div className="text-xs text-muted-foreground">
-                          {day.condition}
-                        </div>
-                      </div>
-                    ))}
+              {/* Remedial Actions */}
+              {result.remedialActions && (
+                <div className="mb-8">
+                  <h3 className="text-2xl font-bold text-gray-900 mb-6 flex items-center">
+                    <span className="text-2xl mr-3">🛠️</span>
+                    Remedial Actions
+                  </h3>
+                  <div className="space-y-4">
+                    <div className="flex items-center space-x-4 mb-4">
+                      <span className="text-3xl">🛠️</span>
+                      <h4 className="font-bold text-gray-900 text-xl">If You've Already Planted Not Recommended Crops</h4>
+                    </div>
+                    <p className="text-sm font-medium text-gray-700 leading-relaxed">
+                      {result.remedialActions}
+                    </p>
                   </div>
                 </div>
               )}

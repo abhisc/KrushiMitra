@@ -46,6 +46,11 @@ export default function SchemesPage() {
 	const { toast } = useToast();
 	const { userProfile } = useAuth();
 
+	// Fetch schemes on component mount
+	useEffect(() => {
+		fetchAllSchemes();
+	}, []);
+
 	// Filter schemes when search query changes
 	useEffect(() => {
 		if (searchQuery.trim()) {

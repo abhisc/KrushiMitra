@@ -111,13 +111,13 @@ export const getCurrentWeather = ai.defineTool(
 		// Fetch real weather from WeatherAPI
 		const data: any = await getCurrentWeatherAPI(location);
 		console.log("WeatherAPI response for", location);
-		if (data && data?.current) {
+		if (data && data.temperature !== undefined) {
 			return {
-				temperature: data.current?.temp_c,
-				condition: data.current?.condition?.text,
-				humidity: data.current?.humidity,
-				wind_speed: data.current?.wind_kph,
-				precipitation: data.current?.precip_mm || 0,
+				temperature: data.temperature,
+				condition: data.condition,
+				humidity: data.humidity,
+				wind_speed: data.wind_speed,
+				precipitation: data.precipitation || 0,
 			};
 		} else {
 			throw new Error("Could not fetch weather data for the given location.");
@@ -227,7 +227,7 @@ const weatherAndIrrigationTipsFlow = ai.defineFlow(
 		try {
 			forecastData = await getWeatherForecast({
 				location: input.location,
-				days: 3,
+				days: 5,
 			});
 			console.log("Fetched forecastData");
 		} catch (error) {
