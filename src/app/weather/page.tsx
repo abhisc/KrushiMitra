@@ -380,11 +380,17 @@ export default function WeatherPage() {
                   </button>
                 </div>
                 <Label htmlFor="location">Location</Label>
-                <Select value={location} onValueChange={handleLocationChange}>
+                <Select value={locationName || location} onValueChange={handleLocationChange}>
                   <SelectTrigger>
                     <SelectValue placeholder="Select location" />
                   </SelectTrigger>
                   <SelectContent>
+                    {/* If locationName is set by geolocation and not in the list, show it as the first option */}
+                    {locationName && !popularLocations.includes(locationName) && (
+                      <SelectItem key={locationName} value={locationName}>
+                        {locationName}
+                      </SelectItem>
+                    )}
                     {popularLocations.map((loc) => (
                       <SelectItem key={loc} value={loc}>
                         {loc}
@@ -411,16 +417,7 @@ export default function WeatherPage() {
                 </Select>
               </div>
 
-              {/* Custom Location */}
-              <div className="space-y-2">
-                <Label htmlFor="custom-location">Custom Location (Optional)</Label>
-                <Input
-                  id="custom-location"
-                  placeholder="Enter custom location"
-                  value={location}
-                  onChange={(e) => handleLocationChange(e.target.value)}
-                />
-              </div>
+              {/* Custom Location removed as per request */}
 
               {/* Analyze Button */}
               <div className="space-y-2">

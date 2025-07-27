@@ -181,7 +181,7 @@ export default function Home() {
 			// This will be handled by the ChatBox component internally
 		}}
 			title="KrushiMitra"
-			subtitle="AI-Powered Agricultural Assistant"
+			//subtitle="AI-Powered Agricultural Assistant"
 		>
 			<div className="p-4 h-full flex justify-center">
 				<div className="max-w-4xl flex-1 flex flex-col gap-4">
