@@ -42,14 +42,19 @@ export async function fetchDataFromGovtAPI(
 			const apiUrl = `${baseUrl}?${queryString}&api-key=579b464db66ec23bdd0000010a0b007fd4fc40b34482a6c41d1447d7}`;
 
 			try {
-				const { response } = await fetch(
-					`https://krushimitraproxy-537443643233.europe-west1.run.app/govtApis?apiUrl=${apiUrl}`,
-					{
-						body: JSON.stringify({ apiUrl }),
-						headers: { "Content-Type": "application/json" },
-						method: "POST",
-					},
-				).then((res) => res.json());
+				// const { response } = await fetch(
+				// 	`https://krushimitraproxy-537443643233.europe-west1.run.app/govtApis?apiUrl=${apiUrl}`,
+				// 	{
+				// 		body: JSON.stringify({ apiUrl }),
+				// 		headers: { "Content-Type": "application/json" },
+				// 		method: "POST",
+				// 	},
+				// ).then((res) => res.json());
+
+				const response = await fetch(apiUrl, {
+					headers: { "Content-Type": "application/json" },
+					method: "GET",
+				}).then((res) => res.json());
 
 				return response.records || [];
 			} catch (error) {
