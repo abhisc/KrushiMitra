@@ -69,7 +69,35 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
           return res.status(400).json({ error: `Unknown action: ${actionName}` });
       }
 
-      return res.status(200).json({ result });
+      // Ensure consistent response format
+      let formattedResult;
+      if (typeof result === 'string') {
+        formattedResult = { response: result };
+      } else if (result && typeof result === 'object') {
+        // If result already has a response property, use it
+        if ('response' in result && typeof result.response === 'string') {
+          formattedResult = result;
+        } else {
+          // Try to find a suitable response field
+          const responseField = 
+            ('text' in result && typeof result.text === 'string') ? result.text :
+            ('message' in result && typeof result.message === 'string') ? result.message :
+            ('content' in result && typeof result.content === 'string') ? result.content :
+            ('data' in result && typeof result.data === 'string') ? result.data :
+            null;
+          
+          if (responseField) {
+            formattedResult = { response: responseField };
+          } else {
+            // If no clear response field, stringify the whole object
+            formattedResult = { response: JSON.stringify(result, null, 2) };
+          }
+        }
+      } else {
+        formattedResult = { response: String(result) };
+      }
+
+      return res.status(200).json({ result: formattedResult });
     } catch (error) {
       console.error('MCP Server error:', error);
       return res.status(500).json({ 
