@@ -411,4 +411,6 @@ const marketplaceSearchFlow = ai.defineFlow(
 
 		return output!;
 	},
-); 
+);
+
+export { marketplaceSearchFlow }; 

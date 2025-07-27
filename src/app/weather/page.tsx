@@ -361,248 +361,224 @@ export default function WeatherPage() {
       showBackButton={true}
     >
       <div className="p-6">
-        <div className="max-w-4xl mx-auto space-y-6">
-          <Card
-            style={{
-              backgroundImage: `url("data:image/svg+xml;utf8,<svg width='100%' height='100%' xmlns='http://www.w3.org/2000/svg'><defs><linearGradient id='g1' x1='0' y1='0' x2='0' y2='1'><stop offset='0%' stop-color='%23e0f7fa'/><stop offset='100%' stop-color='%23e8f5e9'/></linearGradient></defs><rect width='100%' height='100%' fill='url(%23g1)'/><ellipse cx='80' cy='60' rx='60' ry='20' fill='%23b2dfdb' opacity='0.3'/><ellipse cx='220' cy='100' rx='80' ry='25' fill='%23a5d6a7' opacity='0.3'/><ellipse cx='350' cy='60' rx='60' ry='20' fill='%23b2dfdb' opacity='0.3'/><circle cx='60' cy='40' r='18' fill='%23fffde7' opacity='0.7'/><text x='30' y='50' font-size='24' fill='%23ffd600' opacity='0.5'>☀️</text><text x='200' y='80' font-size='24' fill='%2300bcd4' opacity='0.4'>☁️</text><text x='320' y='50' font-size='24' fill='%2300bcd4' opacity='0.4'>🌾</text></svg>")`,
-              backgroundSize: 'cover',
-              backgroundPosition: 'center',
-              backgroundRepeat: 'no-repeat'
-            }}
-            className="relative overflow-hidden"
-          >
-            <div className="absolute inset-0 bg-white/70 backdrop-blur-sm"></div>
-            <CardHeader className="relative z-10">
-              <CardTitle className="flex items-center gap-2">
-                <Cloud className="w-5 h-5" />
-                Weather Analysis Parameters
-              </CardTitle>
-            </CardHeader>
-            <CardContent className="relative z-10 space-y-4">
-              <div className="flex justify-end">
-                <Button type="button" variant="outline" size="sm" onClick={handleUseMyLocation} disabled={geoLoading}>
-                  {geoLoading ? 'Locating...' : 'Use My Location'}
-                </Button>
-              </div>
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div>
-                  <Label htmlFor="location">Location</Label>
-                  <Select value={location} onValueChange={handleLocationChange}>
-                    <SelectTrigger>
-                      <SelectValue placeholder="Select location" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {popularLocations.map((loc) => (
-                        <SelectItem key={loc} value={loc}>
-                          {loc}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
+        <div className="max-w-6xl mx-auto">
+          {/* Weather Analysis Parameters */}
+          <div className="bg-card rounded-lg border border-border p-6 mb-8">
+            <h2 className="text-xl font-semibold text-foreground mb-4">
+              Weather Analysis Parameters
+            </h2>
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+              {/* Location */}
+              <div className="space-y-2">
+                <div className="flex items-center space-x-2">
+                  <button
+                    onClick={handleUseMyLocation}
+                    disabled={geoLoading}
+                    className="text-xs text-primary hover:text-primary/80 underline"
+                  >
+                    {geoLoading ? "Locating..." : "Use My Location"}
+                  </button>
                 </div>
-                <div>
-                  <Label htmlFor="crop">Crop</Label>
-                  <Select value={crop} onValueChange={setCrop}>
-                    <SelectTrigger>
-                      <SelectValue placeholder="Select crop" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {popularCrops.map((cropName) => (
-                        <SelectItem key={cropName} value={cropName}>
-                          {cropName}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                </div>
+                <Label htmlFor="location">Location</Label>
+                <Select value={location} onValueChange={handleLocationChange}>
+                  <SelectTrigger>
+                    <SelectValue placeholder="Select location" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {popularLocations.map((loc) => (
+                      <SelectItem key={loc} value={loc}>
+                        {loc}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
               </div>
-              <div>
+
+              {/* Crop */}
+              <div className="space-y-2">
+                <Label htmlFor="crop">Crop</Label>
+                <Select value={crop} onValueChange={setCrop}>
+                  <SelectTrigger>
+                    <SelectValue placeholder="Select crop" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {popularCrops.map((cropName) => (
+                      <SelectItem key={cropName} value={cropName}>
+                        {cropName}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+
+              {/* Custom Location */}
+              <div className="space-y-2">
                 <Label htmlFor="custom-location">Custom Location (Optional)</Label>
                 <Input
                   id="custom-location"
                   placeholder="Enter custom location"
                   value={location}
-                  onChange={(e) => setLocation(e.target.value)}
+                  onChange={(e) => handleLocationChange(e.target.value)}
                 />
               </div>
-            </CardContent>
-          </Card>
 
-          <Button 
-            onClick={handleWeatherAnalysis} 
-            disabled={isLoading || !location.trim()}
-            className="w-full"
-          >
-            {isLoading ? (
-              <>
-                <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-                Analyzing Weather...
-              </>
-            ) : (
-              <>
-                <Sun className="w-4 h-4 mr-2" />
-                Get Weather & Irrigation Tips
-              </>
-            )}
-          </Button>
-
-          {result && (
-            <>
-              {/* Responsive grid: left column (Weather + Forecast), right column (Irrigation Tips) */}
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-8 items-start mb-8 h-full">
-                {/* Left column: Weather and Forecast */}
-                <div className="flex flex-col gap-6 max-w-xl w-full h-full flex-1">
-                  {/* Weather Card */}
-                  {(() => {
-                    const { bg } = getWeatherCardStyleAndIcon(result.condition);
-                    return (
-                      <div className={`w-full max-w-xl h-full min-h-[220px] flex-1 rounded-xl shadow-lg p-4 text-white flex flex-col justify-between ${bg} font-sans`}>
-                  <div>
-                          <div className="text-base font-semibold mb-1 flex items-center gap-2 tracking-tight">Current weather</div>
-                          <div className="flex flex-col items-center">
-                            <div className="flex items-end mt-4">
-                              <span className="text-4xl font-extrabold drop-shadow-sm" style={{textShadow:'0 2px 8px rgba(0,0,0,0.10)'}}>{result.temperature != null ? Math.round(result.temperature) : '--'}</span>
-                              <span className="text-xl font-semibold ml-1 drop-shadow-sm" style={{textShadow:'0 2px 8px rgba(0,0,0,0.10)'}}>°C</span>
-                            </div>
-                            <div className="text-lg font-semibold mt-1 capitalize drop-shadow-sm" style={{textShadow:'0 2px 8px rgba(0,0,0,0.10)'}}>{result.condition || '—'}</div>
-                            {/* Weather Metrics Row */}
-                            <div className="flex justify-center items-center gap-6 mt-4">
-                              {/* Humidity */}
-                              <div className="flex flex-col items-center">
-                                <svg width="20" height="20" fill="none" stroke="white" strokeWidth="2" className="mb-0.5">
-                                  <ellipse cx="10" cy="12" rx="5" ry="7" fill="#60A5FA" />
-                                  <path d="M10 4 Q10 10 15 12" stroke="#fff" />
-                                </svg>
-                                <span className="text-sm font-bold">{result.humidity != null ? `${result.humidity}%` : '--'}</span>
-                                <span className="text-xs">Humidity</span>
-                              </div>
-                              {/* Wind */}
-                              <div className="flex flex-col items-center">
-                                <svg width="20" height="20" fill="none" stroke="white" strokeWidth="2" className="mb-0.5">
-                                  <path d="M4 10h12M6 14h8M5 6h10" stroke="#A7F3D0" />
-                                </svg>
-                                <span className="text-sm font-bold">{result.wind_speed != null ? `${result.wind_speed} km/h` : '--'}</span>
-                                <span className="text-xs">Wind</span>
-                              </div>
-                              {/* Precipitation */}
-                              <div className="flex flex-col items-center">
-                                <svg width="20" height="20" fill="none" stroke="white" strokeWidth="2" className="mb-0.5">
-                                  <ellipse cx="10" cy="12" rx="6" ry="4" fill="#E0E7FF" />
-                                  <path d="M7 15v1M10 15v2M13 15v1" stroke="#fff" />
-                                </svg>
-                                <span className="text-sm font-bold">{result.precipitation != null ? `${result.precipitation} mm` : '--'}</span>
-                                <span className="text-xs">Precip.</span>
-                              </div>
-                            </div>
-                  </div>
-                  </div>
-                  </div>
-                    );
-                  })()}
-
-                  {/* Forecast Card */}
-                  {forecastData && forecastData.forecast && forecastData.forecast.length > 0 && (
-                    <Card className="w-full max-w-xl rounded-xl shadow-lg">
-                      <CardHeader className="pb-3">
-                        <CardTitle className="flex items-center gap-2 text-lg">
-                          <Calendar className="w-5 h-5" />
-                          3-Day Forecast
-                        </CardTitle>
-                      </CardHeader>
-                      <CardContent className="pt-0">
-                        <div className="grid grid-cols-3 gap-4">
-                          {forecastData.forecast.slice(0, 3).map((day: any, index: number) => (
-                            <div key={index} className="flex flex-col items-center p-3 bg-gradient-to-b from-blue-50 to-blue-100 rounded-lg border border-blue-200">
-                              <div className="text-sm font-semibold text-gray-700 mb-1">
-                                {formatDate(day.date)}
-                              </div>
-                              <div className="text-2xl mb-2">
-                                {getWeatherIcon(day.condition)}
-                              </div>
-                              <div className="text-center">
-                                <div className="flex items-center justify-center gap-1 mb-1">
-                                  <span className={`text-lg font-bold ${getTemperatureColor(day.max_temp)}`}>
-                                    {Math.round(day.max_temp)}°
-                                  </span>
-                                  <span className="text-sm text-gray-500">
-                                    {Math.round(day.min_temp)}°
-                                  </span>
-                                </div>
-                                <div className="text-xs text-gray-600 capitalize mb-2">
-                                  {day.condition}
-                                </div>
-                                <div className="flex flex-col items-center gap-1 text-xs">
-                                  <div className="flex items-center gap-1">
-                                    <span className="text-blue-600">💧</span>
-                                    <span>{day.chance_of_rain}%</span>
-                                  </div>
-                                  <div className="flex items-center gap-1">
-                                    <span className="text-gray-600">💨</span>
-                                    <span>{day.max_wind_kph} km/h</span>
-                                  </div>
-                                </div>
-                              </div>
-                            </div>
-                          ))}
-                        </div>
-                      </CardContent>
-                    </Card>
+              {/* Analyze Button */}
+              <div className="space-y-2">
+                <Label>&nbsp;</Label>
+                <Button
+                  onClick={handleWeatherAnalysis}
+                  disabled={isLoading}
+                  className="w-full"
+                >
+                  {isLoading ? (
+                    <>
+                      <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                      Analyzing Weather...
+                    </>
+                  ) : (
+                    "Get Weather & Irrigation Tips"
                   )}
-                </div>
-                {/* Right column: Irrigation Tips */}
-                <div className="h-full flex-1 max-w-xl w-full">
-                  <Card className="w-full max-w-xl h-full min-h-[220px] flex-1 flex flex-col justify-between rounded-xl shadow-lg">
-                <CardHeader>
-                  <CardTitle className="flex items-center gap-2">
-                    <Droplets className="w-5 h-5" />
-                    Irrigation Tips
-                  </CardTitle>
-                </CardHeader>
-                    <CardContent className="space-y-4 flex-1 flex flex-col justify-center">
-                  <div>
-                        {result.irrigationTips && !result.irrigationTips.trim().startsWith('The weather in') ? (
-                          <p className="text-gray-700">{result.irrigationTips}</p>
-                        ) : (
-                          <p className="text-gray-500 italic">No specific irrigation advice available for these conditions.</p>
-                        )}
-                  </div>
-                </CardContent>
-              </Card>
-            </div>
+                </Button>
               </div>
-              {/* Below: Crops and Remedy Section (full width) */}
-              <div className="mt-6">
-                <div className="font-bold text-green-800 mb-1">Recommended Crops</div>
-                <div className="flex flex-wrap gap-2 mb-2">
-                  {result.recommendedCropsWithReasons && result.recommendedCropsWithReasons.length > 0 ? (
-                    result.recommendedCropsWithReasons.map((crop: any, idx: number) => (
-                      <span key={idx} className="bg-green-100 text-green-900 px-3 py-1 rounded-full" title={crop.reason}>
-                        {getCropEmoji(crop.name)} {crop.name}
-                      </span>
-                    ))
-                  ) : (
-                    <span className="text-gray-500">Data not available</span>
-                  )}
+            </div>
+          </div>
+
+          {/* Results */}
+          {result && (
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-8 items-start mb-8 h-full">
+              {/* Weather Card */}
+              <div className="bg-gradient-to-br from-blue-50 to-indigo-100 rounded-lg border border-blue-200 p-6">
+                <div className="flex items-center justify-between mb-4">
+                  <h3 className="text-lg font-semibold text-blue-900">Current Weather</h3>
+                  {getWeatherCardStyleAndIcon(result.currentWeather?.condition || 'unknown').icon}
                 </div>
-                <div className="font-bold text-red-800 mb-1">Not Recommended Crops</div>
-                <div className="flex flex-wrap gap-2 mb-2">
-                  {result.notRecommendedCropsWithReasons && result.notRecommendedCropsWithReasons.length > 0 ? (
-                    result.notRecommendedCropsWithReasons.map((crop: any, idx: number) => (
-                      <span key={idx} className="bg-red-100 text-red-900 px-3 py-1 rounded-full" title={crop.reason}>
-                        {getCropEmoji(crop.name)} {crop.name}
+                
+                {result.currentWeather && (
+                  <div className="space-y-3">
+                    <div className="flex items-center justify-between">
+                      <span className="text-2xl font-bold text-blue-900">
+                        {result.currentWeather.temperature}°C
                       </span>
-                    ))
-                  ) : (
-                    <span className="text-gray-500">None</span>
-                  )}
-                </div>
-                {result.remedialActions && (
-                  <div className="mt-2 bg-yellow-50 border-l-4 border-yellow-400 p-3 text-yellow-900 rounded">
-                    <span className="font-semibold">Remedial Actions:</span> {result.remedialActions}
+                      <span className="text-blue-700">
+                        {result.currentWeather.condition}
+                      </span>
+                    </div>
+                    
+                    <div className="grid grid-cols-2 gap-4 text-sm">
+                      <div className="flex items-center space-x-2">
+                        <Droplets className="w-4 h-4 text-blue-600" />
+                        <span>Humidity: {result.currentWeather.humidity}%</span>
+                      </div>
+                      <div className="flex items-center space-x-2">
+                        <Cloud className="w-4 h-4 text-blue-600" />
+                        <span>Wind: {result.currentWeather.windSpeed} km/h</span>
+                      </div>
+                    </div>
                   </div>
                 )}
               </div>
-            </>
+
+              {/* Irrigation Tips Card */}
+              <div className="bg-gradient-to-br from-green-50 to-emerald-100 rounded-lg border border-green-200 p-6">
+                <div className="flex items-center space-x-2 mb-4">
+                  <Droplets className="w-6 h-6 text-green-600" />
+                  <h3 className="text-lg font-semibold text-green-900">Irrigation Tips</h3>
+                </div>
+                
+                {result.irrigationTips && (
+                  <div className="space-y-3">
+                    <div className="bg-white/50 rounded-lg p-3">
+                      <h4 className="font-medium text-green-800 mb-2">Recommendations</h4>
+                      <p className="text-sm text-green-700">{result.irrigationTips.recommendations}</p>
+                    </div>
+                    
+                    {result.irrigationTips.schedule && (
+                      <div className="bg-white/50 rounded-lg p-3">
+                        <h4 className="font-medium text-green-800 mb-2">Schedule</h4>
+                        <p className="text-sm text-green-700">{result.irrigationTips.schedule}</p>
+                      </div>
+                    )}
+                    
+                    {result.irrigationTips.warnings && (
+                      <div className="bg-white/50 rounded-lg p-3">
+                        <h4 className="font-medium text-green-800 mb-2">Warnings</h4>
+                        <p className="text-sm text-green-700">{result.irrigationTips.warnings}</p>
+                      </div>
+                    )}
+                  </div>
+                )}
+              </div>
+            </div>
+          )}
+
+          {/* Additional Results */}
+          {result && (
+            <div className="space-y-6">
+              {/* Crop Recommendations */}
+              {result.recommendedCropsWithReasons && result.recommendedCropsWithReasons.length > 0 && (
+                <div className="bg-card rounded-lg border border-border p-6">
+                  <h3 className="text-lg font-semibold text-foreground mb-4">Recommended Crops</h3>
+                  <div className="bg-gradient-to-r from-green-50 to-emerald-50 rounded-lg p-4">
+                    <div className="flex items-center space-x-3">
+                      <span className="text-2xl">{getCropEmoji(result.recommendedCropsWithReasons[bestCropIndex]?.name || '')}</span>
+                      <div>
+                        <h4 className="font-semibold text-green-800">
+                          {result.recommendedCropsWithReasons[bestCropIndex]?.name}
+                        </h4>
+                        <p className="text-sm text-green-700">
+                          {result.recommendedCropsWithReasons[bestCropIndex]?.reason}
+                        </p>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              )}
+
+              {/* Crops to Avoid */}
+              {result.notRecommendedCropsWithReasons && result.notRecommendedCropsWithReasons.length > 0 && (
+                <div className="bg-card rounded-lg border border-border p-6">
+                  <h3 className="text-lg font-semibold text-foreground mb-4">Crops to Avoid</h3>
+                  <div className="bg-gradient-to-r from-red-50 to-pink-50 rounded-lg p-4">
+                    <div className="flex items-center space-x-3">
+                      <span className="text-2xl">{getCropEmoji(result.notRecommendedCropsWithReasons[avoidCropIndex]?.name || '')}</span>
+                      <div>
+                        <h4 className="font-semibold text-red-800">
+                          {result.notRecommendedCropsWithReasons[avoidCropIndex]?.name}
+                        </h4>
+                        <p className="text-sm text-red-700">
+                          {result.notRecommendedCropsWithReasons[avoidCropIndex]?.reason}
+                        </p>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              )}
+
+              {/* Weather Forecast */}
+              {forecastData && (
+                <div className="bg-card rounded-lg border border-border p-6">
+                  <h3 className="text-lg font-semibold text-foreground mb-4">Weather Forecast</h3>
+                  <div className="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-5 gap-4">
+                    {forecastData.slice(0, 5).map((day: any, index: number) => (
+                      <div key={index} className="bg-muted rounded-lg p-3 text-center">
+                        <div className="text-sm font-medium text-muted-foreground">
+                          {formatDate(day.date)}
+                        </div>
+                        <div className="text-2xl my-2">
+                          {getWeatherIcon(day.condition)}
+                        </div>
+                        <div className="text-sm font-semibold">
+                          {day.temperature}°C
+                        </div>
+                        <div className="text-xs text-muted-foreground">
+                          {day.condition}
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+            </div>
           )}
         </div>
       </div>

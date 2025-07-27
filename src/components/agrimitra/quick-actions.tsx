@@ -46,9 +46,18 @@ import {
 	Droplets,
 	Loader2,
 	Wheat,
+	Brain,
 } from "lucide-react";
+import { useRouter } from 'next/navigation';
 
 const features = [
+	{
+		title: "Smart AI Diagnosis",
+		description: "Ask anything - AI routes intelligently",
+		icon: <Brain className="h-8 w-8 text-primary" />,
+		action: "navigate",
+		href: "/smart-diagnose",
+	},
 	{
 		title: "Diagnose Crop Disease",
 		description: "Upload image or describe symptoms",
@@ -514,6 +523,7 @@ export default function QuickActions({
 	onFocusChange: (isFocused: boolean) => void;
 	setInteractionMode: (mode: string) => void;
 }) {
+	const router = useRouter();
 	const [openDialog, setOpenDialog] = useState<string | null>(null);
 	const CurrentDialog = openDialog ? Dialogs[openDialog] : null;
 
@@ -521,6 +531,8 @@ export default function QuickActions({
 		if (feature.action === "focus-chat") {
 			setInteractionMode("diagnose");
 			onFocusChange(true);
+		} else if (feature.action === "navigate" && feature.href) {
+			router.push(feature.href);
 		} else if (feature.dialog) {
 			setInteractionMode("chat"); // Assuming other dialogs are general chat or don't involve image upload in the main chat area
 			setOpenDialog(feature.dialog);
@@ -531,7 +543,7 @@ export default function QuickActions({
 		<div className="space-y-8">
 			<div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
 				{features.map((feature) =>
-					feature.action === "focus-chat" ? (
+					feature.action === "focus-chat" || feature.action === "navigate" ? (
 						<Card
 							key={feature.title}
 							className="hover:bg-primary/10 cursor-pointer transition-colors duration-300 transform hover:scale-[1.02]"

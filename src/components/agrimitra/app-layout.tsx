@@ -31,13 +31,14 @@ import { toast } from "@/hooks/use-toast";
 import { UserMenu } from "@/components/auth/user-menu";
 import { useChat } from "@/hooks/use-chat";
 import { ChatType } from "@/firebaseStore/services/chat-service";
+
 import { useNavigationHistory } from "@/hooks/use-navigation-history";
 
 interface AppLayoutProps {
 	children: React.ReactNode;
 	showBackButton?: boolean;
-	title?: string;
-	subtitle?: string;
+	title?: React.ReactNode;
+	subtitle?: React.ReactNode;
 	handleHistoryChatClick?: (text: string) => void;
 	onBack?: () => void;
 }
@@ -50,8 +51,6 @@ export default function AppLayout({
 	handleHistoryChatClick,
 	onBack,
 }: AppLayoutProps) {
-	// React state for selected language
-	const [selectedLanguage, setSelectedLanguage] = useState("EN");
 	// Toggle between basic and advanced UI mode
 	const [isAdvanced, setIsAdvanced] = useState(false);
 	// Toggle sidebar visibility
@@ -62,14 +61,6 @@ export default function AppLayout({
 
 	// Chat hook for recent chats
 	const { recentChats, loading: chatsLoading } = useChat();
-
-	// Supported languages
-	const languages = [
-		{ code: "EN", name: "English" },
-		{ code: "HI", name: "हिन्दी" },
-		{ code: "KN", name: "ಕನ್ನಡ" },
-		{ code: "TA", name: "தமிழ்" },
-	];
 
 	// Sidebar quick navigation links
 	const quickLinks = [
@@ -140,6 +131,8 @@ export default function AppLayout({
 			href: "/profile",
 			active: pathname === "/profile",
 		},
+
+
 	];
 
 	// List of recent user chat prompts
@@ -219,7 +212,7 @@ export default function AppLayout({
 					{/* Recently used chat prompts */}
 					{sidebarOpen && (
 						<div className="p-4 border-t border-border">
-							<h3 className="text-xs font-semibold text-muted-foreground uppercase tracking-wide mb-3">
+																				<h3 className="text-xs font-semibold text-muted-foreground uppercase tracking-wide mb-3">
 								Recent Chats
 							</h3>
 							<div className="space-y-2">
@@ -307,7 +300,7 @@ export default function AppLayout({
 
 						<div className="ml-4 top-0 static">
 							<h1 className="text-xl font-semibold text-primary">
-								{title || "Agrimitra"}
+								{title ? title : "Agrimitra"}
 							</h1>
 							{subtitle && (
 								<p className="text-sm text-muted-foreground">{subtitle}</p>
@@ -315,24 +308,8 @@ export default function AppLayout({
 						</div>
 					</div>
 
-					{/* Language Selector and Settings */}
+					{/* User Menu and Settings */}
 					<div className="flex items-center space-x-4">
-						{/* Language Selector */}
-						<div className="relative">
-							<select
-								value={selectedLanguage}
-								onChange={(e) => setSelectedLanguage(e.target.value)}
-								className="appearance-none bg-background border border-border rounded-lg px-4 py-2 pr-8 text-sm font-medium text-foreground hover:border-ring focus:outline-none focus:ring-2 focus:ring-ring focus:border-ring"
-							>
-								{languages.map((lang) => (
-									<option key={lang.code} value={lang.code}>
-										{lang.name}
-									</option>
-								))}
-							</select>
-							<ChevronDown className="absolute right-2 top-1/2 transform -translate-y-1/2 w-4 h-4 text-muted-foreground pointer-events-none" />
-						</div>
-
 						{/* User Menu */}
 						<UserMenu />
 

@@ -3,6 +3,7 @@ import './globals.css';
 import { Toaster } from "@/components/ui/toaster"
 import { ThemeProvider } from '@/components/theme-provider';
 import { AuthProvider } from '@/contexts/auth-context';
+
 import Script from 'next/script';
 
 export const metadata: Metadata = {
@@ -98,8 +99,8 @@ export default function RootLayout({
         >
           <AuthProvider>
             {children}
-            <Toaster />
           </AuthProvider>
+          <Toaster />
         </ThemeProvider>
         
         {/* Service Worker Registration */}

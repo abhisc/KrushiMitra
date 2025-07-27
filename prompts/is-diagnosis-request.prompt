@@ -1,0 +1,21 @@
+{
+    "name": "is-diagnosis-request",
+    "model": {
+      "provider": "vertexAI",
+      "name": "gemini-1.0-pro-001"
+    },
+    "input": {
+      "schema": {
+        "type": "object",
+        "properties": {
+          "text": {
+            "type": "string"
+          }
+        }
+      }
+    },
+    "output": {
+        "format": "text"
+    },
+    "prompt": "You are an expert agricultural assistant.\nYour task is to determine if the user is asking to diagnose a crop disease based on their query and/or image.\n\nRULES:\n- If the user's query is explicitly asking for a diagnosis, or describes symptoms of a disease, or provides an image that looks like a diseased plant, respond with only the text \"DIAGNOSE\".\n- For any other query (e.g., asking for weather, market prices, general advice), respond with \"PASS\".\n\nUser query: {{{text}}}"
+} 

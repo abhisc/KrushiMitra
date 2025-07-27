@@ -5,6 +5,7 @@ import { ai } from './genkit';
 // Import all flows
 import { diagnoseCropDisease, diagnoseFollowUp } from './flows/diagnose-crop-disease';
 import { AskAnything } from './flows/ask-anything';
+import { smartDiagnose } from './flows/smart-diagnose';
 import { getWeatherAndIrrigationTips } from './flows/weather-and-irrigation-tips';
 import { getMarketplaceChatResponse } from './flows/marketplace-chat';
 import { getMarketplaceSearch } from './flows/farming-marketplace';
@@ -34,6 +35,10 @@ export class KrushiMitraMCPServer {
 
   async askAnything(input: any) {
     return await AskAnything(input);
+  }
+
+  async smartDiagnose(input: any) {
+    return await smartDiagnose(input);
   }
 
   async getWeatherAndIrrigationTips(input: any) {
@@ -86,6 +91,7 @@ export class KrushiMitraMCPServer {
         'diagnoseCropDisease',
         'diagnoseFollowUp', 
         'askAnything',
+        'smartDiagnose',
         'getWeatherAndIrrigationTips',
         'getMarketplaceChatResponse',
         'getMarketplaceSearch',
