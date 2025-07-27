@@ -47,6 +47,7 @@ const OPENAI_API_URL = "https://api.openai.com/v1/chat/completions";
 // AI Task Parsing Interface
 interface ParsedTask {
   taskType: 'irrigation' | 'fertilization' | 'pest-control' | 'weeding' | 'harvesting' | 'custom';
+  customType?: string; // For custom task types
   crop?: string;
   duration?: number;
   startDate?: Date;
@@ -66,13 +67,14 @@ declare global {
 }
 
 // Utility functions
-const getTaskTypeIcon = (type: string) => {
+const getTaskTypeIcon = (type: string, customType?: string) => {
   switch (type) {
     case 'irrigation': return '💧';
     case 'fertilization': return '🌱';
     case 'pest-control': return '🛡️';
     case 'weeding': return '🌿';
     case 'harvesting': return '🌾';
+    case 'custom': return customType ? '🔧' : '📝';
     default: return '📝';
   }
 };
@@ -90,6 +92,7 @@ interface Task {
   id: string;
   name: string;
   type: 'irrigation' | 'fertilization' | 'pest-control' | 'weeding' | 'harvesting' | 'custom';
+  customType?: string; // For custom task types
   date: Date;
   time: string;
   completed: boolean;
@@ -120,12 +123,14 @@ interface ScheduledTask {
   id: string;
   name: string;
   type: 'irrigation' | 'fertilization' | 'pest-control' | 'weeding' | 'harvesting' | 'custom';
+  customType?: string; // For custom task types
   startDate: Date;
   scheduleType: 'daily' | 'every-few-days' | 'custom';
   interval: number; // Days between tasks
   totalDays: number; // Total duration
   completedTasks: number;
   totalTasks: number;
+  completedDays: string[]; // Track completed dates as ISO strings
   notes?: string;
   quantity?: string;
   priority: 'low' | 'medium' | 'high';
@@ -174,6 +179,8 @@ export default function PlanPage() {
     
     // Extract task type
     let taskType: ParsedTask['taskType'] = 'custom';
+    let customType: string | undefined;
+    
     if (lowerInput.includes('fertiliz') || lowerInput.includes('fertiliser')) {
       taskType = 'fertilization';
     } else if (lowerInput.includes('water') || lowerInput.includes('irrigat')) {
@@ -184,6 +191,19 @@ export default function PlanPage() {
       taskType = 'weeding';
     } else if (lowerInput.includes('harvest')) {
       taskType = 'harvesting';
+    } else {
+      // For custom tasks, try to extract the custom type from the input
+      // Look for patterns like "do [task]", "perform [task]", "complete [task]"
+      const customMatch = input.match(/(?:do|perform|complete|finish|start|begin)\s+([a-zA-Z\s]+?)(?:\s+for|\s+on|\s+to|\s+with|\s+tomorrow|\s+next|\s+the|$)/i);
+      if (customMatch) {
+        customType = customMatch[1].trim();
+      } else {
+        // If no clear pattern, use the first few words as custom type
+        const words = input.split(' ').slice(0, 3).join(' ').trim();
+        if (words.length > 0) {
+          customType = words;
+        }
+      }
     }
 
     // Extract duration (number of days) - improved regex to catch more patterns
@@ -256,6 +276,7 @@ export default function PlanPage() {
 
     return {
       taskType,
+      customType,
       crop,
       duration,
       startDate,
@@ -306,11 +327,16 @@ export default function PlanPage() {
 
   // Create Task from Parsed Data
   const createTaskFromParsed = async (parsed: ParsedTask) => {
+    const taskName = parsed.taskType === 'custom' && parsed.customType 
+      ? `AI Generated: ${parsed.customType}`
+      : `AI Generated: ${parsed.taskType} task`;
+    
     if (parsed.duration && parsed.duration > 1) {
       // Create scheduled task for multi-day tasks
       const scheduledData: Partial<ScheduledTask> = {
-        name: `AI Generated: ${parsed.taskType} task`,
+        name: taskName,
         type: parsed.taskType,
+        customType: parsed.customType,
         startDate: parsed.startDate || new Date(),
         scheduleType: 'daily',
         interval: 1,
@@ -325,8 +351,9 @@ export default function PlanPage() {
     } else {
       // Create single task
       const taskData: Partial<Task> = {
-        name: `AI Generated: ${parsed.taskType} task`,
+        name: taskName,
         type: parsed.taskType,
+        customType: parsed.customType,
         date: parsed.startDate || new Date(),
         time: '09:00',
         completed: false, // Always set to false for new tasks
@@ -380,22 +407,28 @@ export default function PlanPage() {
     const taskDates = generateTaskDates(scheduled);
     return taskDates
       .filter(date => isSameDay(date, selectedDate))
-      .map((date, index) => ({
-        id: `${scheduled.id}-${index}`,
-        name: scheduled.name,
-        type: scheduled.type,
-        date: date,
-        time: '09:00',
-        completed: false,
-        notes: scheduled.notes,
-        quantity: scheduled.quantity,
-        priority: scheduled.priority,
-        crop: scheduled.crop,
-        stage: scheduled.stage,
-        scheduleId: scheduled.id,
-        isRecurring: true,
-        originalDate: date
-      }));
+      .map((date, index) => {
+        const dateString = format(date, 'yyyy-MM-dd');
+        const isCompleted = scheduled.completedDays?.includes(dateString) || false;
+        
+        return {
+          id: `${scheduled.id}-${dateString}`, // Use date string for unique ID
+          name: scheduled.name,
+          type: scheduled.type,
+          customType: scheduled.customType,
+          date: date,
+          time: '09:00',
+          completed: isCompleted,
+          notes: scheduled.notes,
+          quantity: scheduled.quantity,
+          priority: scheduled.priority,
+          crop: scheduled.crop,
+          stage: scheduled.stage,
+          scheduleId: scheduled.id,
+          isRecurring: true,
+          originalDate: date
+        };
+      });
   });
 
   // Combine regular tasks and scheduled tasks for today
@@ -410,17 +443,30 @@ export default function PlanPage() {
   );
 
   const handleTaskToggle = (taskId: string) => {
+    // Find the task to determine its current state
+    const taskToToggle = allTodayTasks.find(t => t.id === taskId);
+    const isCurrentlyCompleted = taskToToggle?.completed || false;
+    
     setTasks(prev => prev.map(task => 
       task.id === taskId ? { ...task, completed: !task.completed } : task
     ));
     
     // If it's a scheduled task, update the scheduled task progress
-    const task = allTodayTasks.find(t => t.id === taskId);
-    if (task?.scheduleId) {
+    if (taskToToggle?.scheduleId) {
+      const taskDateString = format(taskToToggle.date, 'yyyy-MM-dd');
+      
       setScheduledTasks(prevScheduled =>
         prevScheduled.map(scheduled =>
-          scheduled.id === task.scheduleId
-            ? { ...scheduled, completedTasks: scheduled.completedTasks + 1 }
+          scheduled.id === taskToToggle.scheduleId
+            ? { 
+                ...scheduled, 
+                completedDays: isCurrentlyCompleted 
+                  ? scheduled.completedDays?.filter(date => date !== taskDateString) || [] // Remove date if unchecking
+                  : [...(scheduled.completedDays || []), taskDateString], // Add date if checking
+                completedTasks: isCurrentlyCompleted 
+                  ? Math.max(0, (scheduled.completedDays?.length || 0) - 1) // Calculate based on completedDays
+                  : (scheduled.completedDays?.length || 0) + 1 // Calculate based on completedDays
+              }
             : scheduled
         )
       );
@@ -428,7 +474,9 @@ export default function PlanPage() {
     
     toast({
       title: "Task Updated",
-      description: "Task status has been updated successfully.",
+      description: isCurrentlyCompleted 
+        ? "Task marked as incomplete." 
+        : "Task marked as complete.",
     });
   };
 
@@ -467,6 +515,7 @@ export default function PlanPage() {
       totalDays: scheduledData.totalDays || 7,
       totalTasks: Math.ceil((scheduledData.totalDays || 7) / (scheduledData.interval || 1)),
       completedTasks: 0,
+      completedDays: [], // Initialize empty array for completed days
       notes: scheduledData.notes,
       quantity: scheduledData.quantity,
       priority: scheduledData.priority || "medium",
@@ -588,6 +637,7 @@ export default function PlanPage() {
                     <SelectItem value="pest-control">Pest Control</SelectItem>
                     <SelectItem value="weeding">Weeding</SelectItem>
                     <SelectItem value="harvesting">Harvesting</SelectItem>
+                    <SelectItem value="custom">Custom</SelectItem>
                   </SelectContent>
                 </Select>
               </div>
@@ -691,10 +741,15 @@ function TaskCard({ task, onToggle }: { task: Task; onToggle: (id: string) => vo
           <div className="flex-1 min-w-0">
             <div className="flex items-center justify-between mb-3">
               <div className="flex items-center gap-3">
-                <span className="text-2xl">{getTaskTypeIcon(task.type)}</span>
+                <span className="text-2xl">{getTaskTypeIcon(task.type, task.customType)}</span>
                 <h3 className={`text-lg font-semibold ${task.completed ? 'line-through text-gray-500' : 'text-gray-800'}`}>
                   {task.name}
                 </h3>
+                {task.type === 'custom' && task.customType && (
+                  <Badge variant="outline" className="text-xs">
+                    {task.customType}
+                  </Badge>
+                )}
               </div>
               <div className="flex items-center gap-3">
                 <Badge className={`${getPriorityColor(task.priority)} text-sm font-medium px-3 py-1`}>
@@ -712,10 +767,6 @@ function TaskCard({ task, onToggle }: { task: Task; onToggle: (id: string) => vo
             </div>
             
             <div className="flex items-center gap-6 text-base text-gray-600 mb-3">
-              <div className="flex items-center gap-2">
-                <Clock className="w-4 h-4" />
-                <span className="font-medium">{task.time}</span>
-              </div>
               {task.crop && (
                 <Badge variant="outline" className="text-sm font-medium px-3 py-1">
                   {task.crop}
@@ -754,6 +805,7 @@ function AddTaskForm({ onSubmit, onCancel }: { onSubmit: (data: Partial<Task>) =
   const [parsedData, setParsedData] = useState<Partial<Task>>({
     name: '',
     type: 'custom',
+    customType: '',
     time: '09:00',
     priority: 'medium',
     crop: '',
@@ -860,11 +912,26 @@ function AddTaskForm({ onSubmit, onCancel }: { onSubmit: (data: Partial<Task>) =
     
     // Extract task type
     let type: Task['type'] = 'custom';
+    let customType: string | undefined;
+    
     if (lowerInput.includes('water') || lowerInput.includes('irrigation')) type = 'irrigation';
     else if (lowerInput.includes('fertilizer') || lowerInput.includes('fertilize')) type = 'fertilization';
     else if (lowerInput.includes('pest') || lowerInput.includes('spray')) type = 'pest-control';
     else if (lowerInput.includes('weed')) type = 'weeding';
     else if (lowerInput.includes('harvest')) type = 'harvesting';
+    else {
+      // For custom tasks, try to extract the custom type from the input
+      const customMatch = input.match(/(?:do|perform|complete|finish|start|begin)\s+([a-zA-Z\s]+?)(?:\s+for|\s+on|\s+to|\s+with|\s+tomorrow|\s+next|\s+the|$)/i);
+      if (customMatch) {
+        customType = customMatch[1].trim();
+      } else {
+        // If no clear pattern, use the first few words as custom type
+        const words = input.split(' ').slice(0, 3).join(' ').trim();
+        if (words.length > 0) {
+          customType = words;
+        }
+      }
+    }
 
     // Extract time
     let time = '09:00';
@@ -904,11 +971,14 @@ function AddTaskForm({ onSubmit, onCancel }: { onSubmit: (data: Partial<Task>) =
         'harvesting': 'Harvesting'
       };
       name = typeNames[type];
+    } else if (customType) {
+      name = customType;
     }
 
     setParsedData({
       name,
       type,
+      customType,
       time,
       priority,
       crop,
@@ -1055,6 +1125,17 @@ function AddTaskForm({ onSubmit, onCancel }: { onSubmit: (data: Partial<Task>) =
                 </SelectContent>
               </Select>
             </div>
+            {parsedData.type === 'custom' && (
+              <div>
+                <label className="text-xs text-muted-foreground">Custom Type</label>
+                <Input
+                  value={parsedData.customType || ''}
+                  onChange={(e) => setParsedData({ ...parsedData, customType: e.target.value })}
+                  placeholder="e.g., Soil testing, Equipment repair"
+                  className="mt-1"
+                />
+              </div>
+            )}
             <div>
               <label className="text-xs text-muted-foreground">Time</label>
               <Input
@@ -1476,9 +1557,10 @@ function ScheduleTaskForm({ onSubmit, onCancel }: { onSubmit: (data: Partial<Sch
 
     // Scheduled Task Card Component
     function ScheduledTaskCard({ scheduled }: { scheduled: ScheduledTask }) {
-      const progressPercentage = (scheduled.completedTasks / scheduled.totalTasks) * 100;
-      const remainingDays = scheduled.totalDays - (scheduled.completedTasks * scheduled.interval);
-      const nextTaskDate = addDays(scheduled.startDate, scheduled.completedTasks * scheduled.interval);
+      const actualCompletedTasks = scheduled.completedDays?.length || 0;
+      const progressPercentage = (actualCompletedTasks / scheduled.totalTasks) * 100;
+      const remainingDays = scheduled.totalDays - (actualCompletedTasks * scheduled.interval);
+      const nextTaskDate = addDays(scheduled.startDate, actualCompletedTasks * scheduled.interval);
 
       return (
         <Card>
@@ -1486,7 +1568,7 @@ function ScheduleTaskForm({ onSubmit, onCancel }: { onSubmit: (data: Partial<Sch
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-3">
                 <div className="w-10 h-10 bg-blue-100 rounded-lg flex items-center justify-center">
-                  <span className="text-lg">{getTaskTypeIcon(scheduled.type)}</span>
+                  <span className="text-lg">{getTaskTypeIcon(scheduled.type, scheduled.customType)}</span>
                 </div>
                 <div>
                   <CardTitle className="text-lg">{scheduled.name}</CardTitle>
@@ -1510,11 +1592,11 @@ function ScheduleTaskForm({ onSubmit, onCancel }: { onSubmit: (data: Partial<Sch
                   <div className="text-xs text-gray-600">Total Tasks</div>
                 </div>
                 <div className="bg-green-50 rounded-lg p-3">
-                  <div className="text-2xl font-bold text-green-600">{scheduled.completedTasks}</div>
+                  <div className="text-2xl font-bold text-green-600">{actualCompletedTasks}</div>
                   <div className="text-xs text-green-600">Completed</div>
                 </div>
                 <div className="bg-orange-50 rounded-lg p-3">
-                  <div className="text-2xl font-bold text-orange-600">{scheduled.totalTasks - scheduled.completedTasks}</div>
+                  <div className="text-2xl font-bold text-orange-600">{scheduled.totalTasks - actualCompletedTasks}</div>
                   <div className="text-xs text-orange-600">Remaining</div>
                 </div>
               </div>
