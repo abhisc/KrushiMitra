@@ -8,7 +8,7 @@ import { Textarea } from '@/components/ui/textarea';
 import { Badge } from '@/components/ui/badge';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Separator } from '@/components/ui/separator';
-import { Loader2, Send, Bot, User, Zap, Wrench, MessageSquare } from 'lucide-react';
+import { Loader2, Send, Bot, User, Zap, Wrench, MessageSquare, Mic, MicOff } from 'lucide-react';
 import AppLayout from '@/components/agrimitra/app-layout';
 
 interface Message {
@@ -37,7 +37,9 @@ export default function GeneralMCPChatPage() {
   const [loading, setLoading] = useState(false);
   const [serverInfo, setServerInfo] = useState<ServerInfo | null>(null);
   const [isConnected, setIsConnected] = useState(false);
+  const [listening, setListening] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
+  const recognitionRef = useRef<any>(null);
 
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
@@ -68,6 +70,34 @@ export default function GeneralMCPChatPage() {
         timestamp: new Date()
       }]);
     }
+  };
+
+  // Speech-to-text handler
+  const handleMicClick = () => {
+    if (listening) {
+      recognitionRef.current?.stop();
+      setListening(false);
+      return;
+    }
+    const SpeechRecognition = (window as any).SpeechRecognition || (window as any).webkitSpeechRecognition;
+    if (!SpeechRecognition) {
+      alert("Speech recognition is not supported in this browser.");
+      return;
+    }
+    const recognition = new SpeechRecognition();
+    recognition.lang = "en-US";
+    recognition.interimResults = false;
+    recognition.maxAlternatives = 1;
+    recognition.onresult = (event: any) => {
+      const transcript = event.results[0][0].transcript;
+      setInput(prev => prev ? prev + ' ' + transcript : transcript);
+      setListening(false);
+    };
+    recognition.onerror = () => setListening(false);
+    recognition.onend = () => setListening(false);
+    recognitionRef.current = recognition;
+    setListening(true);
+    recognition.start();
   };
 
   const analyzeUserIntent = (userInput: string): { type: 'flow' | 'tool', name: string, confidence: number } => {
@@ -344,26 +374,50 @@ export default function GeneralMCPChatPage() {
             </ScrollArea>
 
             <Separator className="mb-4" />
-            <div className="flex gap-2">
+            
+            {/* Modern Voice-Enabled Input Field */}
+            <div className="flex items-center gap-2 bg-white dark:bg-gray-800 rounded-full shadow-lg px-4 py-2 border border-gray-200 dark:border-gray-600 focus-within:ring-2 focus-within:ring-green-200 dark:focus-within:ring-green-600 relative transition-all duration-300">
               <Textarea
                 value={input}
                 onChange={(e) => setInput(e.target.value)}
                 onKeyPress={handleKeyPress}
-                placeholder="Ask me anything about farming, weather, market prices, government schemes, or crop diseases..."
-                className="flex-1 min-h-[60px]"
+                placeholder={listening ? "Listening..." : "Ask me anything about farming, weather, market prices, government schemes, or crop diseases..."}
+                className="flex-1 border-none shadow-none bg-transparent focus:ring-0 focus:outline-none text-base min-w-0 text-gray-900 dark:text-gray-100 placeholder-gray-500 dark:placeholder-gray-400 resize-none"
+                style={listening ? { color: '#4F46E5', fontWeight: 600 } : {}}
                 disabled={loading || !isConnected}
+                rows={1}
               />
-              <Button
-                onClick={handleSendMessage}
-                disabled={loading || !input.trim() || !isConnected}
-                className="px-4"
-              >
-                {loading ? (
-                  <Loader2 className="w-4 h-4 animate-spin" />
-                ) : (
-                  <Send className="w-4 h-4" />
-                )}
-              </Button>
+              {loading ? (
+                <div className="flex items-center justify-center w-10 h-10">
+                  <Loader2 className="w-5 h-5 animate-spin" />
+                </div>
+              ) : input ? (
+                <Button
+                  onClick={handleSendMessage}
+                  disabled={loading || !input.trim() || !isConnected}
+                  className="flex items-center justify-center bg-[#4F46E5] hover:bg-[#3730A3] rounded-full w-10 h-10 transition-colors focus:outline-none shadow"
+                  title="Send"
+                >
+                  <Send className="w-5 h-5 text-white" />
+                </Button>
+              ) : (
+                <Button
+                  onClick={handleMicClick}
+                  disabled={loading || !isConnected}
+                  className={`flex items-center justify-center rounded-full w-10 h-10 transition-colors focus:outline-none shadow relative ${
+                    listening 
+                      ? 'bg-[#4F46E5] animate-pulse' 
+                      : 'bg-gray-100 hover:bg-gray-200 dark:bg-gray-700 dark:hover:bg-gray-600'
+                  }`}
+                  title="Voice input"
+                >
+                  {listening ? (
+                    <MicOff className="w-5 h-5 text-white" />
+                  ) : (
+                    <Mic className="w-5 h-5 text-[#4F46E5] dark:text-indigo-400" />
+                  )}
+                </Button>
+              )}
             </div>
           </CardContent>
         </Card>
