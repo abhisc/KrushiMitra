@@ -31,10 +31,12 @@ export default function DiagnosePage() {
   const [followUpQuestion, setFollowUpQuestion] = useState('');
   const [isFollowUpLoading, setIsFollowUpLoading] = useState(false);
   const [chatMessages, setChatMessages] = useState<ChatMessage[]>([]);
+  const [listening, setListening] = useState(false);
   const { toast } = useToast();
   const fileInputRef = useRef<HTMLInputElement>(null);
   const mediaRecorderRef = useRef<MediaRecorder | null>(null);
   const chatContainerRef = useRef<HTMLDivElement>(null);
+  const recognitionRef = useRef<any>(null);
 
   const handlePhotoUpload = (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
@@ -116,6 +118,34 @@ export default function DiagnosePage() {
       mediaRecorderRef.current.stop();
       setIsRecording(false);
     }
+  };
+
+  // Speech-to-text handler
+  const handleMicClick = () => {
+    if (listening) {
+      recognitionRef.current?.stop();
+      setListening(false);
+      return;
+    }
+    const SpeechRecognition = (window as any).SpeechRecognition || (window as any).webkitSpeechRecognition;
+    if (!SpeechRecognition) {
+      alert("Speech recognition is not supported in this browser.");
+      return;
+    }
+    const recognition = new SpeechRecognition();
+    recognition.lang = "en-US";
+    recognition.interimResults = false;
+    recognition.maxAlternatives = 1;
+    recognition.onresult = (event: any) => {
+      const transcript = event.results[0][0].transcript;
+      setDescription(prev => prev ? prev + ' ' + transcript : transcript);
+      setListening(false);
+    };
+    recognition.onerror = () => setListening(false);
+    recognition.onend = () => setListening(false);
+    recognitionRef.current = recognition;
+    setListening(true);
+    recognition.start();
   };
 
   const handleDiagnose = async () => {
@@ -315,72 +345,71 @@ export default function DiagnosePage() {
           </Card>
 
           {/* Description Section */}
-          <Card>
+          <Card className="shadow-xl rounded-2xl bg-gradient-to-br from-white to-gray-50 dark:from-gray-900 dark:to-gray-800 border border-gray-200 dark:border-gray-700">
             <CardHeader>
               <CardTitle className="flex items-center gap-2">
-                <Mic className="w-5 h-5" />
-                Describe Symptoms
+                <Mic className="w-6 h-6 text-green-700 dark:text-green-400" />
+                Describe Crop Symptoms
               </CardTitle>
             </CardHeader>
-            <CardContent className="space-y-4">
-              <div className="space-y-2">
-                <Label htmlFor="description" className="text-sm font-medium">
-                  Crop Symptoms Description
-                </Label>
-                <Textarea
-                  id="description"
-                  placeholder="Describe the symptoms you're seeing on your crop... (e.g., yellow spots on leaves, wilting, brown patches)"
-                  value={description}
-                  onChange={(e) => setDescription(e.target.value)}
-                  rows={4}
-                  className="resize-none"
-                />
-              </div>
-              
-              <div className="flex items-center gap-3">
-                <Button
-                  variant="outline"
-                  size="sm"
-                  onClick={isRecording ? stopVoiceRecording : startVoiceRecording}
-                  className={isRecording ? 'bg-red-50 border-red-200 text-red-700' : ''}
-                >
-                  {isRecording ? (
-                    <>
-                      <MicOff className="w-4 h-4 mr-2" />
-                      Stop Recording
-                    </>
+            <CardContent>
+              <form onSubmit={(e) => { e.preventDefault(); handleDiagnose(); }} className="space-y-4">
+                <Label>Describe the symptoms you're seeing on your crop</Label>
+                <div className="flex items-center gap-2 bg-white dark:bg-gray-800 rounded-full shadow-lg px-4 py-2 border border-gray-200 dark:border-gray-600 focus-within:ring-2 focus-within:ring-green-200 dark:focus-within:ring-green-600 relative transition-all duration-300">
+                  <input
+                    type="text"
+                    value={description}
+                    onChange={e => setDescription(e.target.value)}
+                    placeholder={listening ? "Listening..." : "E.g. Yellow spots on leaves, wilting, brown patches, leaf spots, powdery mildew..."}
+                    disabled={isLoading}
+                    className="flex-1 border-none shadow-none bg-transparent focus:ring-0 focus:outline-none text-base min-w-0 text-gray-900 dark:text-gray-100 placeholder-gray-500 dark:placeholder-gray-400"
+                    style={listening ? { color: '#4F46E5', fontWeight: 600 } : {}}
+                    onKeyPress={(e) => {
+                      if (e.key === 'Enter' && !isLoading && description.trim()) {
+                        e.preventDefault();
+                        handleDiagnose();
+                      }
+                    }}
+                  />
+                  {isLoading ? (
+                    <div className="flex items-center justify-center w-10 h-10">
+                      <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-gray-900 dark:border-gray-100"></div>
+                    </div>
+                  ) : description ? (
+                    <button 
+                      type="submit"
+                      className="flex items-center justify-center bg-[#4F46E5] hover:bg-[#3730A3] rounded-full w-10 h-10 transition-colors focus:outline-none shadow" 
+                      title="Diagnose"
+                    >
+                      <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="white" strokeWidth={2} className="h-6 w-6">
+                        <path strokeLinecap="round" strokeLinejoin="round" d="M8 12h8m0 0l-4-4m4 4l-4 4" />
+                      </svg>
+                    </button>
                   ) : (
-                    <>
-                      <Mic className="w-4 h-4 mr-2" />
-                      Voice Input
-                    </>
+                    <button
+                      type="button"
+                      onClick={handleMicClick}
+                      className={`flex items-center justify-center rounded-full w-10 h-10 transition-colors focus:outline-none shadow relative ${listening ? 'bg-[#4F46E5] animate-pulse' : 'bg-gray-100 hover:bg-gray-200 dark:bg-gray-700 dark:hover:bg-gray-600'}`}
+                      title="Voice input"
+                    >
+                      <svg
+                        xmlns="http://www.w3.org/2000/svg"
+                        className={`h-6 w-6 transition-all duration-200 ${listening ? 'text-white' : 'text-[#4F46E5] dark:text-indigo-400'}`}
+                        fill="none"
+                        viewBox="0 0 24 24"
+                        stroke="currentColor"
+                        strokeWidth={2}
+                      >
+                        <path strokeLinecap="round" strokeLinejoin="round" d="M12 18v2m0 0a4 4 0 01-4-4h0a4 4 0 018 0h0a4 4 0 01-4 4zm0-6v2m0-2a4 4 0 00-4 4h0a4 4 0 008 0h0a4 4 0 00-4-4zm0 0V6a4 4 0 00-8 0v6a4 4 0 008 0z" />
+                      </svg>
+                    </button>
                   )}
-                </Button>
-                {isRecording && (
-                  <div className="flex items-center gap-2 text-sm text-red-600">
-                    <div className="w-2 h-2 bg-red-500 rounded-full animate-pulse"></div>
-                    Recording...
-                  </div>
-                )}
-              </div>
+                </div>
+              </form>
             </CardContent>
           </Card>
 
-          {/* Diagnose Button */}
-          <Button 
-            onClick={handleDiagnose} 
-            disabled={isLoading || (!photoDataUri && !description.trim())}
-            className="w-full h-12 text-lg font-medium"
-          >
-            {isLoading ? (
-              <>
-                <Loader2 className="w-5 h-5 mr-2 animate-spin" />
-                Analyzing Crop Disease...
-              </>
-            ) : (
-              'Diagnose Crop Disease'
-            )}
-          </Button>
+
 
           {/* Smart Diagnosis Button */}
           <Button 

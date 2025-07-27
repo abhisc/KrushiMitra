@@ -204,13 +204,13 @@ export default function FarmJournalPage() {
   };
 
   return (
-    <AppLayout title="Farm Journal" subtitle="Log and track your farm activities, inputs, and weather events.">
+    <AppLayout title="My Journal" subtitle="Log and track your farm activities, inputs, and weather events.">
       <div className="max-w-4xl mx-auto p-4 space-y-8">
         {/* Modernized Input Bar */}
         <Card className="shadow-xl rounded-2xl bg-gradient-to-br from-white to-gray-50 dark:from-gray-900 dark:to-gray-800 border border-gray-200 dark:border-gray-700">
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
-              <BookOpen className="w-6 h-6 text-green-700 dark:text-green-400" /> Farm Journal Entry
+              <BookOpen className="w-6 h-6 text-green-700 dark:text-green-400" /> My Journal Entry
             </CardTitle>
           </CardHeader>
           <CardContent>

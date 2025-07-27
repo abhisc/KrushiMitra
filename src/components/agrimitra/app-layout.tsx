@@ -104,7 +104,7 @@ export default function AppLayout({
 		},
 		{
 			icon: BookOpen,
-			label: "Farm Journal",
+			label: "My Journal",
 			href: "/journal",
 			active: pathname === "/journal",
 		},

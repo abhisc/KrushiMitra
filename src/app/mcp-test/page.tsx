@@ -7,6 +7,9 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { Label } from '@/components/ui/label';
+import { Badge } from '@/components/ui/badge';
+import ReactMarkdown from 'react-markdown';
+import remarkGfm from 'remark-gfm';
 
 export default function MCPTestPage() {
   const [serverInfo, setServerInfo] = useState<any>(null);
@@ -15,6 +18,13 @@ export default function MCPTestPage() {
   const [input, setInput] = useState<string>('');
   const [result, setResult] = useState<any>(null);
   const [loading, setLoading] = useState(false);
+  const [testQueries] = useState([
+    "What's the weather today in Mumbai?",
+    "My tomato plants have yellow leaves, what's wrong?",
+    "What are the current market prices for wheat?",
+    "Tell me about government schemes for farmers",
+    "Get weather data for Pune"
+  ]);
 
   const getServerInfo = async () => {
     setLoading(true);
@@ -35,7 +45,8 @@ export default function MCPTestPage() {
     try {
       const parsedInput = JSON.parse(input);
       const response = await mcpClient.callFlow(selectedFlow, parsedInput);
-      setResult(response);
+      const parsedResponse = mcpClient.parseResponse(response);
+      setResult({ raw: response, parsed: parsedResponse });
     } catch (error) {
       console.error('Error calling flow:', error);
       setResult({ error: error instanceof Error ? error.message : 'Unknown error' });
@@ -51,13 +62,20 @@ export default function MCPTestPage() {
     try {
       const parsedInput = JSON.parse(input);
       const response = await mcpClient.callTool(selectedTool, parsedInput);
-      setResult(response);
+      const parsedResponse = mcpClient.parseResponse(response);
+      setResult({ raw: response, parsed: parsedResponse });
     } catch (error) {
       console.error('Error calling tool:', error);
       setResult({ error: error instanceof Error ? error.message : 'Unknown error' });
     } finally {
       setLoading(false);
     }
+  };
+
+  const testQuery = async (query: string) => {
+    setInput(JSON.stringify({ text: query }));
+    setSelectedFlow('askAnything');
+    await callFlow();
   };
 
   return (
@@ -76,19 +94,41 @@ export default function MCPTestPage() {
           {serverInfo && (
             <div className="mt-4">
               <h3 className="font-semibold">Available Flows:</h3>
-              <ul className="list-disc list-inside mt-2">
+              <div className="flex flex-wrap gap-2 mt-2">
                 {serverInfo.flows?.map((flow: string) => (
-                  <li key={flow}>{flow}</li>
+                  <Badge key={flow} variant="secondary">{flow}</Badge>
                 ))}
-              </ul>
+              </div>
               <h3 className="font-semibold mt-4">Available Tools:</h3>
-              <ul className="list-disc list-inside mt-2">
+              <div className="flex flex-wrap gap-2 mt-2">
                 {serverInfo.tools?.map((tool: string) => (
-                  <li key={tool}>{tool}</li>
+                  <Badge key={tool} variant="outline">{tool}</Badge>
                 ))}
-              </ul>
+              </div>
             </div>
           )}
+        </CardContent>
+      </Card>
+
+      {/* Quick Test Queries */}
+      <Card>
+        <CardHeader>
+          <CardTitle>Quick Test Queries</CardTitle>
+        </CardHeader>
+        <CardContent>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
+            {testQueries.map((query, index) => (
+              <Button
+                key={index}
+                variant="outline"
+                size="sm"
+                onClick={() => testQuery(query)}
+                disabled={loading}
+              >
+                {query.substring(0, 30)}...
+              </Button>
+            ))}
+          </div>
         </CardContent>
       </Card>
 
@@ -119,7 +159,7 @@ export default function MCPTestPage() {
               id="flow-input"
               value={input}
               onChange={(e) => setInput(e.target.value)}
-              placeholder='{"text": "Hello world"}'
+              placeholder='{"text": "What is the weather today?"}'
               className="mt-1"
             />
           </div>
@@ -175,9 +215,43 @@ export default function MCPTestPage() {
             <CardTitle>Result</CardTitle>
           </CardHeader>
           <CardContent>
-            <pre className="bg-gray-100 p-4 rounded overflow-auto">
-              {JSON.stringify(result, null, 2)}
-            </pre>
+            {result.error ? (
+              <div className="bg-red-50 border border-red-200 rounded p-4">
+                <h4 className="font-semibold text-red-800">Error:</h4>
+                <p className="text-red-700">{result.error}</p>
+              </div>
+            ) : (
+              <div className="space-y-4">
+                <div>
+                  <h4 className="font-semibold mb-2">Formatted Response:</h4>
+                  <div className="bg-green-50 border border-green-200 rounded p-4">
+                    <div className="prose prose-sm max-w-none">
+                      <ReactMarkdown 
+                        remarkPlugins={[remarkGfm]}
+                        components={{
+                          h2: ({children}) => <h2 className="text-lg font-semibold mt-4 mb-2 text-blue-600">{children}</h2>,
+                          h3: ({children}) => <h3 className="text-base font-semibold mt-3 mb-1 text-green-600">{children}</h3>,
+                          ul: ({children}) => <ul className="list-disc list-inside space-y-1 my-2">{children}</ul>,
+                          li: ({children}) => <li className="text-sm">{children}</li>,
+                          strong: ({children}) => <strong className="font-semibold text-gray-900">{children}</strong>,
+                          em: ({children}) => <em className="italic text-gray-700">{children}</em>,
+                          code: ({children}) => <code className="bg-gray-100 px-1 py-0.5 rounded text-xs">{children}</code>,
+                          pre: ({children}) => <pre className="bg-gray-100 p-2 rounded text-xs overflow-x-auto">{children}</pre>
+                        }}
+                      >
+                        {result.parsed}
+                      </ReactMarkdown>
+                    </div>
+                  </div>
+                </div>
+                <div>
+                  <h4 className="font-semibold mb-2">Raw Response:</h4>
+                  <pre className="bg-gray-100 p-4 rounded overflow-auto text-sm">
+                    {JSON.stringify(result.raw, null, 2)}
+                  </pre>
+                </div>
+              </div>
+            )}
           </CardContent>
         </Card>
       )}

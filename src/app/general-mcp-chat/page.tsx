@@ -8,8 +8,12 @@ import { Textarea } from '@/components/ui/textarea';
 import { Badge } from '@/components/ui/badge';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Separator } from '@/components/ui/separator';
-import { Loader2, Send, Bot, User, Zap, Wrench, MessageSquare } from 'lucide-react';
+import { Label } from '@/components/ui/label';
+import { Loader2, Send, Bot, User, Zap, Wrench, MessageSquare, Mic, MicOff } from 'lucide-react';
 import AppLayout from '@/components/agrimitra/app-layout';
+import { mcpDebugger } from '@/utils/mcp-debug';
+import ReactMarkdown from 'react-markdown';
+import remarkGfm from 'remark-gfm';
 
 interface Message {
   id: string;
@@ -37,7 +41,9 @@ export default function GeneralMCPChatPage() {
   const [loading, setLoading] = useState(false);
   const [serverInfo, setServerInfo] = useState<ServerInfo | null>(null);
   const [isConnected, setIsConnected] = useState(false);
+  const [listening, setListening] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
+  const recognitionRef = useRef<any>(null);
 
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
@@ -70,66 +76,154 @@ export default function GeneralMCPChatPage() {
     }
   };
 
+  // Speech-to-text handler
+  const handleMicClick = () => {
+    if (listening) {
+      recognitionRef.current?.stop();
+      setListening(false);
+      return;
+    }
+    const SpeechRecognition = (window as any).SpeechRecognition || (window as any).webkitSpeechRecognition;
+    if (!SpeechRecognition) {
+      alert("Speech recognition is not supported in this browser.");
+      return;
+    }
+    const recognition = new SpeechRecognition();
+    recognition.lang = "en-US";
+    recognition.interimResults = false;
+    recognition.maxAlternatives = 1;
+    recognition.onresult = (event: any) => {
+      const transcript = event.results[0][0].transcript;
+      setInput(prev => prev ? prev + ' ' + transcript : transcript);
+      setListening(false);
+    };
+    recognition.onerror = () => setListening(false);
+    recognition.onend = () => setListening(false);
+    recognitionRef.current = recognition;
+    setListening(true);
+    recognition.start();
+  };
+
   const analyzeUserIntent = (userInput: string): { type: 'flow' | 'tool', name: string, confidence: number } => {
     const input = userInput.toLowerCase();
     
+    // More specific and accurate patterns
     const flowPatterns = [
-      { pattern: /diagnos|disease|sick|problem|crop/, name: 'diagnoseCropDisease', confidence: 0.9 },
-      { pattern: /weather|climate|temperature|rain/, name: 'getWeatherAndIrrigationTips', confidence: 0.8 },
-      { pattern: /market|price|sell|buy|commodity/, name: 'getMarketAnalysis', confidence: 0.8 },
-      { pattern: /scheme|government|subsidy|help/, name: 'handleFarmerSchemeQuery', confidence: 0.8 },
-      { pattern: /journal|record|log|farm/, name: 'farmJournalExtract', confidence: 0.7 },
-      { pattern: /general|question|help|anything/, name: 'askAnything', confidence: 0.6 },
+      // Weather and irrigation patterns
+      { pattern: /weather.*today|today.*weather|current.*weather|weather.*now/, name: 'getWeatherAndIrrigationTips', confidence: 0.95 },
+      { pattern: /weather.*forecast|forecast.*weather|weather.*prediction/, name: 'getWeatherAndIrrigationTips', confidence: 0.9 },
+      { pattern: /irrigation.*tip|watering.*advice|water.*crop/, name: 'getWeatherAndIrrigationTips', confidence: 0.9 },
+      
+      // Crop disease patterns
+      { pattern: /crop.*disease|plant.*sick|disease.*crop|sick.*plant|yellow.*leaf|brown.*leaf|spot.*leaf/, name: 'diagnoseCropDisease', confidence: 0.9 },
+      { pattern: /diagnos|problem.*crop|issue.*plant|what.*wrong.*plant/, name: 'diagnoseCropDisease', confidence: 0.85 },
+      
+      // Market patterns
+      { pattern: /market.*price|price.*market|sell.*crop|buy.*crop|commodity.*price/, name: 'getMarketAnalysis', confidence: 0.9 },
+      { pattern: /marketplace|market.*data|price.*trend/, name: 'getMarketAnalysis', confidence: 0.85 },
+      
+      // Government schemes patterns
+      { pattern: /government.*scheme|scheme.*government|subsidy|financial.*help|farmer.*help/, name: 'handleFarmerSchemeQuery', confidence: 0.9 },
+      { pattern: /loan.*farm|credit.*farm|assistance.*farm/, name: 'handleFarmerSchemeQuery', confidence: 0.85 },
+      
+      // Journal patterns
+      { pattern: /journal.*farm|farm.*journal|record.*farm|log.*farm/, name: 'farmJournalExtract', confidence: 0.8 },
+      
+      // General patterns (lower confidence)
+      { pattern: /weather|climate|temperature|rain/, name: 'getWeatherAndIrrigationTips', confidence: 0.7 },
+      { pattern: /market|price|sell|buy|commodity/, name: 'getMarketAnalysis', confidence: 0.7 },
+      { pattern: /scheme|government|subsidy|help/, name: 'handleFarmerSchemeQuery', confidence: 0.7 },
+      { pattern: /journal|record|log|farm/, name: 'farmJournalExtract', confidence: 0.6 },
     ];
 
     const toolPatterns = [
-      { pattern: /weather|temperature|climate/, name: 'getCurrentWeather', confidence: 0.9 },
-      { pattern: /market|price|commodity/, name: 'getMarketplaceData', confidence: 0.8 },
-      { pattern: /scheme|government/, name: 'getGovernmentSchemeInfo', confidence: 0.8 },
-      { pattern: /district|location|area/, name: 'getDistrictsData', confidence: 0.7 },
+      // Weather tool patterns
+      { pattern: /current.*weather|weather.*now|temperature.*now/, name: 'getCurrentWeather', confidence: 0.9 },
+      { pattern: /weather.*data|weather.*info/, name: 'getCurrentWeather', confidence: 0.8 },
+      
+      // Market tool patterns
+      { pattern: /marketplace.*data|market.*data/, name: 'getMarketplaceData', confidence: 0.8 },
+      
+      // Government tool patterns
+      { pattern: /government.*info|scheme.*info/, name: 'getGovernmentSchemeInfo', confidence: 0.8 },
+      
+      // District tool patterns
+      { pattern: /district.*data|location.*data/, name: 'getDistrictsData', confidence: 0.7 },
     ];
 
+    // Check for exact matches first
     for (const flow of flowPatterns) {
       if (flow.pattern.test(input)) {
-        return { type: 'flow', name: flow.name, confidence: flow.confidence };
+        const intent = { type: 'flow' as const, name: flow.name, confidence: flow.confidence };
+        mcpDebugger.analyzeIntent(userInput, intent);
+        return intent;
       }
     }
 
     for (const tool of toolPatterns) {
       if (tool.pattern.test(input)) {
-        return { type: 'tool', name: tool.name, confidence: tool.confidence };
+        const intent = { type: 'tool' as const, name: tool.name, confidence: tool.confidence };
+        mcpDebugger.analyzeIntent(userInput, intent);
+        return intent;
       }
     }
 
-    return { type: 'flow', name: 'askAnything', confidence: 0.5 };
+    // If no specific pattern matches, use askAnything as fallback
+    const fallbackIntent = { type: 'flow' as const, name: 'askAnything', confidence: 0.5 };
+    mcpDebugger.analyzeIntent(userInput, fallbackIntent);
+    return fallbackIntent;
   };
 
   const extractParameters = (userInput: string, actionName: string): any => {
     const input = userInput.toLowerCase();
     
-    if (actionName.includes('Weather') || actionName.includes('Marketplace')) {
-      const locationMatch = input.match(/(?:in|at|for|location:?)\s+([a-zA-Z\s]+)/);
-      if (locationMatch) {
-        return { location: locationMatch[1].trim() };
-      }
-      return { location: 'Mumbai' };
+    // Weather-related parameters
+    if (actionName.includes('Weather') || actionName.includes('weather')) {
+      const locationMatch = input.match(/(?:in|at|for|location:?|weather.*in|weather.*at)\s+([a-zA-Z\s]+)/);
+      const cityMatch = input.match(/(?:mumbai|delhi|pune|bangalore|chennai|kolkata|hyderabad|ahmedabad|nashik|nagpur)/i);
+      const cropMatch = input.match(/(?:crop|grow|plant|for)\s+([a-zA-Z\s]+)/);
+      
+      return {
+        location: locationMatch ? locationMatch[1].trim() : 
+                  cityMatch ? cityMatch[0] : 'Mumbai',
+        cropType: cropMatch ? cropMatch[1].trim() : 'general crops' // Default crop type
+      };
     }
 
-    if (actionName.includes('askAnything') || actionName.includes('diagnose')) {
-      return { text: userInput };
+    // Market-related parameters
+    if (actionName.includes('Market') || actionName.includes('market')) {
+      const locationMatch = input.match(/(?:in|at|for|market.*in|market.*at)\s+([a-zA-Z\s]+)/);
+      const cropMatch = input.match(/(?:price.*of|price.*for)\s+([a-zA-Z\s]+)/);
+      
+      return {
+        location: locationMatch ? locationMatch[1].trim() : 'Mumbai',
+        crop: cropMatch ? cropMatch[1].trim() : undefined
+      };
     }
 
-    if (actionName.includes('diagnose')) {
-      const cropMatch = input.match(/(?:crop|plant):?\s+([a-zA-Z\s]+)/);
-      const diseaseMatch = input.match(/(?:disease|symptom):?\s+([a-zA-Z\s]+)/);
+    // Disease diagnosis parameters
+    if (actionName.includes('diagnose') || actionName.includes('Disease')) {
+      const cropMatch = input.match(/(?:crop|plant|my\s+)([a-zA-Z\s]+)(?:\s+has|\s+is|\s+shows)/);
+      const diseaseMatch = input.match(/(?:disease|symptom|problem|issue):?\s+([a-zA-Z\s]+)/);
+      const symptomMatch = input.match(/(?:yellow|brown|black|white|spot|wilt|rot|mold|fungus|pest|insect)/i);
       
       return {
         text: userInput,
         crop: cropMatch ? cropMatch[1].trim() : undefined,
-        symptoms: diseaseMatch ? diseaseMatch[1].trim() : undefined
+        symptoms: diseaseMatch ? diseaseMatch[1].trim() : 
+                  symptomMatch ? symptomMatch[0] : undefined
       };
     }
 
+    // General parameters for askAnything
+    if (actionName.includes('askAnything') || actionName.includes('Anything')) {
+      return { 
+        text: userInput,
+        messages: [] // Add empty messages array as required by the flow
+      };
+    }
+
+    // Default parameters
     return { text: userInput };
   };
 
@@ -170,10 +264,14 @@ export default function GeneralMCPChatPage() {
         result = await mcpClient.callTool(intent.name, params);
       }
 
+      // Use the enhanced response parsing
+      const responseContent = mcpClient.parseResponse(result);
+      mcpDebugger.analyzeResponse(result, responseContent);
+
       const assistantMessage: Message = {
         id: `assistant-${Date.now()}`,
         type: 'assistant',
-        content: result.result?.response || result.result || 'No response received',
+        content: responseContent,
         timestamp: new Date(),
         metadata: {
           [intent.type]: intent.name,
@@ -190,7 +288,7 @@ export default function GeneralMCPChatPage() {
       const errorMessage: Message = {
         id: `error-${Date.now()}`,
         type: 'assistant',
-        content: `Sorry, I encountered an error: ${error instanceof Error ? error.message : 'Unknown error'}`,
+        content: `Sorry, I encountered an error: ${error instanceof Error ? error.message : 'Unknown error'}. Please try rephrasing your question or try again later.`,
         timestamp: new Date()
       };
       
@@ -302,7 +400,29 @@ export default function GeneralMCPChatPage() {
                           </span>
                           {getMessageBadge(message)}
                         </div>
-                        <p className="text-sm whitespace-pre-wrap">{message.content}</p>
+                        <div className="text-sm whitespace-pre-wrap">
+                          {message.type === 'assistant' ? (
+                            <div className="prose prose-sm max-w-none dark:prose-invert">
+                              <ReactMarkdown 
+                                remarkPlugins={[remarkGfm]}
+                                components={{
+                                  h2: ({children}) => <h2 className="text-lg font-semibold mt-4 mb-2 text-blue-600 dark:text-blue-400">{children}</h2>,
+                                  h3: ({children}) => <h3 className="text-base font-semibold mt-3 mb-1 text-green-600 dark:text-green-400">{children}</h3>,
+                                  ul: ({children}) => <ul className="list-disc list-inside space-y-1 my-2">{children}</ul>,
+                                  li: ({children}) => <li className="text-sm">{children}</li>,
+                                  strong: ({children}) => <strong className="font-semibold text-gray-900 dark:text-gray-100">{children}</strong>,
+                                  em: ({children}) => <em className="italic text-gray-700 dark:text-gray-300">{children}</em>,
+                                  code: ({children}) => <code className="bg-gray-100 dark:bg-gray-800 px-1 py-0.5 rounded text-xs">{children}</code>,
+                                  pre: ({children}) => <pre className="bg-gray-100 dark:bg-gray-800 p-2 rounded text-xs overflow-x-auto">{children}</pre>
+                                }}
+                              >
+                                {message.content}
+                              </ReactMarkdown>
+                            </div>
+                          ) : (
+                            <p>{message.content}</p>
+                          )}
+                        </div>
                         {message.metadata?.input && (
                           <details className="mt-2">
                             <summary className="text-xs cursor-pointer text-muted-foreground">
@@ -344,27 +464,67 @@ export default function GeneralMCPChatPage() {
             </ScrollArea>
 
             <Separator className="mb-4" />
-            <div className="flex gap-2">
-              <Textarea
-                value={input}
-                onChange={(e) => setInput(e.target.value)}
-                onKeyPress={handleKeyPress}
-                placeholder="Ask me anything about farming, weather, market prices, government schemes, or crop diseases..."
-                className="flex-1 min-h-[60px]"
-                disabled={loading || !isConnected}
-              />
-              <Button
-                onClick={handleSendMessage}
-                disabled={loading || !input.trim() || !isConnected}
-                className="px-4"
-              >
-                {loading ? (
-                  <Loader2 className="w-4 h-4 animate-spin" />
-                ) : (
-                  <Send className="w-4 h-4" />
-                )}
-              </Button>
-            </div>
+            
+            {/* Modern Voice-Enabled Input Field - Matching Journal Design */}
+            <Card className="shadow-xl rounded-2xl bg-gradient-to-br from-white to-gray-50 dark:from-gray-900 dark:to-gray-800 border border-gray-200 dark:border-gray-700">
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <MessageSquare className="w-6 h-6 text-green-700 dark:text-green-400" /> Chat with AI Assistant
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                <form onSubmit={(e) => { e.preventDefault(); handleSendMessage(); }} className="space-y-4">
+                  <Label>Ask me anything about farming, weather, market prices, government schemes, or crop diseases</Label>
+                  <div className="flex items-center gap-2 bg-white dark:bg-gray-800 rounded-full shadow-lg px-4 py-2 border border-gray-200 dark:border-gray-600 focus-within:ring-2 focus-within:ring-green-200 dark:focus-within:ring-green-600 relative transition-all duration-300">
+                    <input
+                      type="text"
+                      value={input}
+                      onChange={(e) => setInput(e.target.value)}
+                      onKeyPress={handleKeyPress}
+                      placeholder={listening ? "Listening..." : "Ask me anything about farming, weather, market prices, government schemes, or crop diseases..."}
+                      disabled={loading || !isConnected}
+                      className="flex-1 border-none shadow-none bg-transparent focus:ring-0 focus:outline-none text-base min-w-0 text-gray-900 dark:text-gray-100 placeholder-gray-500 dark:placeholder-gray-400"
+                      style={listening ? { color: '#4F46E5', fontWeight: 600 } : {}}
+                    />
+                    {loading ? (
+                      <div className="flex items-center justify-center w-10 h-10">
+                        <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-gray-900 dark:border-gray-100"></div>
+                      </div>
+                    ) : input ? (
+                      <button 
+                        type="submit" 
+                        className="flex items-center justify-center bg-[#4F46E5] hover:bg-[#3730A3] rounded-full w-10 h-10 transition-colors focus:outline-none shadow" 
+                        title="Send"
+                        disabled={loading || !input.trim() || !isConnected}
+                      >
+                        <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="white" strokeWidth={2} className="h-6 w-6">
+                          <path strokeLinecap="round" strokeLinejoin="round" d="M8 12h8m0 0l-4-4m4 4l-4 4" />
+                        </svg>
+                      </button>
+                    ) : (
+                      <button
+                        type="button"
+                        onClick={handleMicClick}
+                        disabled={loading || !isConnected}
+                        className={`flex items-center justify-center rounded-full w-10 h-10 transition-colors focus:outline-none shadow relative ${listening ? 'bg-[#4F46E5] animate-pulse' : 'bg-gray-100 hover:bg-gray-200 dark:bg-gray-700 dark:hover:bg-gray-600'}`}
+                        title="Voice input"
+                      >
+                        <svg
+                          xmlns="http://www.w3.org/2000/svg"
+                          className={`h-6 w-6 transition-all duration-200 ${listening ? 'text-white' : 'text-[#4F46E5] dark:text-indigo-400'}`}
+                          fill="none"
+                          viewBox="0 0 24 24"
+                          stroke="currentColor"
+                          strokeWidth={2}
+                        >
+                          <path strokeLinecap="round" strokeLinejoin="round" d="M12 18v2m0 0a4 4 0 01-4-4h0a4 4 0 018 0h0a4 4 0 01-4 4zm0-6v2m0-2a4 4 0 00-4 4h0a4 4 0 008 0h0a4 4 0 00-4-4zm0 0V6a4 4 0 00-8 0v6a4 4 0 008 0z" />
+                        </svg>
+                      </button>
+                    )}
+                  </div>
+                </form>
+              </CardContent>
+            </Card>
           </CardContent>
         </Card>
 
