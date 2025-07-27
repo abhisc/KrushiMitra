@@ -10,6 +10,7 @@ import {
 	Loader2,
 	Trash2,
 	AlertCircle,
+	MicOff,
 } from "lucide-react";
 import { useState, useEffect, FormEvent, useRef } from "react";
 import Markdown from "react-markdown";
@@ -44,6 +45,8 @@ export function ChatBox({
 	const [userInput, setUserInput] = useState(initialMessage);
 	const messagesEndRef = useRef<HTMLDivElement>(null);
 	const [showClearConfirm, setShowClearConfirm] = useState(false);
+	const [listening, setListening] = useState(false);
+	const recognitionRef = useRef<any>(null);
 
 	const scrollToBottom = () => {
 		messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
@@ -74,6 +77,57 @@ export function ChatBox({
 			setShowClearConfirm(false);
 		}
 	};
+
+	// Speech-to-text handler
+	const handleMicClick = () => {
+		if (listening) {
+			recognitionRef.current?.stop();
+			setListening(false);
+			return;
+		}
+
+		const SpeechRecognition =
+			(window as any).SpeechRecognition ||
+			(window as any).webkitSpeechRecognition;
+		if (!SpeechRecognition) {
+			alert("Speech recognition is not supported in this browser.");
+			return;
+		}
+
+		const recognition = new SpeechRecognition();
+		recognition.lang = "en-US";
+		recognition.interimResults = false;
+		recognition.maxAlternatives = 1;
+		recognition.continuous = false;
+
+		recognition.onresult = (event: any) => {
+			const transcript = event.results[0][0].transcript;
+			setUserInput((prev) => (prev ? prev + " " + transcript : transcript));
+			setListening(false);
+		};
+
+		recognition.onerror = (event: any) => {
+			console.error("Speech recognition error:", event.error);
+			setListening(false);
+		};
+
+		recognition.onend = () => {
+			setListening(false);
+		};
+
+		recognitionRef.current = recognition;
+		setListening(true);
+		recognition.start();
+	};
+
+	// Clean up recognition on unmount
+	useEffect(() => {
+		return () => {
+			if (recognitionRef.current) {
+				recognitionRef.current.stop();
+			}
+		};
+	}, []);
 
 	return (
 		<div
@@ -204,19 +258,37 @@ export function ChatBox({
 						value={userInput}
 						onChange={(e) => setUserInput(e.target.value)}
 						onKeyDown={handleKeyDown}
-						className="w-full bg-background text-foreground border-2 border-border rounded-lg px-4 py-2 text-sm pr-20 focus:outline-none focus:ring-2 focus:ring-ring focus:border-transparent resize-none transition-all duration-200 shadow-sm focus:shadow-md"
-						placeholder="Ask me anything about farming - crop diseases, market prices, weather, subsidies..."
+						className={`w-full bg-background text-foreground border-2 border-border rounded-lg px-4 py-2 text-sm pr-20 focus:outline-none focus:ring-2 focus:ring-ring focus:border-transparent resize-none transition-all duration-200 shadow-sm focus:shadow-md ${
+							listening ? "ring-2 ring-primary/30 border-primary" : ""
+						}`}
+						placeholder={
+							listening
+								? "Listening..."
+								: "Ask me anything about farming - crop diseases, market prices, weather, subsidies..."
+						}
+						style={
+							listening ? { color: "rgb(var(--primary))", fontWeight: 600 } : {}
+						}
 					/>
 
 					{/* Action buttons positioned inside the textarea */}
 					<div className="absolute right-2 bottom-2 flex gap-2">
 						<button
 							type="button"
+							onClick={handleMicClick}
 							disabled={loading}
-							className="disabled:opacity-45 flex items-center justify-center p-2 bg-muted hover:bg-accent text-primary rounded-md transition-all duration-200 hover:shadow-md"
-							title="Voice input"
+							className={`disabled:opacity-45 flex items-center justify-center p-2 bg-muted hover:bg-accent text-primary rounded-md transition-all duration-200 hover:shadow-md ${
+								listening
+									? "bg-primary text-primary-foreground animate-pulse"
+									: "bg-muted hover:bg-accent text-primary"
+							}`}
+							title={listening ? "Stop listening" : "Voice input"}
 						>
-							<Mic className="w-4 h-4" />
+							{listening ? (
+								<MicOff className="w-4 h-4" />
+							) : (
+								<Mic className="w-4 h-4" />
+							)}
 						</button>
 						<button
 							type="submit"

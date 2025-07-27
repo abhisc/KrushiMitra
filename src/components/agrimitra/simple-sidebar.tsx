@@ -4,7 +4,8 @@ import React, { useState } from 'react';
 import { 
   Home, MessageCircle, TrendingUp, Cloud, FileText, Calendar,
   Leaf, Activity, Zap, BookOpen, Calculator, ShoppingCart,
-  Users, BarChart3, Menu, Settings, ChevronDown, Bot
+  Users, BarChart3, Menu, Settings, ChevronDown, Bot,
+  ClipboardList
 } from 'lucide-react';
 import Link from 'next/link';
 import { useTranslations } from '@/utils/translations';
@@ -34,8 +35,10 @@ export default function SimpleSidebar() {
     { icon: Home, label: t('home'), href: '/', active: true },
     { icon: Activity, label: t('diagnose'), href: '/diagnose' },
     { icon: TrendingUp, label: t('market'), href: '/market' },
+    { icon: ShoppingCart, label: 'Marketplace', href: '/marketplace' },
     { icon: FileText, label: t('schemes'), href: '/schemes' },
     { icon: Cloud, label: t('weather'), href: '/weather' },
+    { icon: ClipboardList, label: 'Plan', href: '/plan' },
     { icon: Calendar, label: t('history'), href: '/history' }
   ];
 

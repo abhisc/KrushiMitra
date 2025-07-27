@@ -203,6 +203,7 @@ const marketAnalysisFlow = ai.defineFlow(
 			"filters[State]": input.state,
 			"filters[District]": input.market,
 		};
+		console.log("Getting market data:", query);
 		const marketDataResponse = await fetchDataFromGovtAPI(
 			ResourcesEnum["mandiPrices"],
 			query,
@@ -216,6 +217,7 @@ const marketAnalysisFlow = ai.defineFlow(
 				`No market data found for state "${input.state}" in market "${input.market}".`,
 			);
 		}
+		console.log("Market data found:", marketDataResponse.records.length);
 
 		const marketData = marketDataResponse.records
 			.map(

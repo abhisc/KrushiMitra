@@ -8,6 +8,12 @@ import {
 	PlantationFlowService,
 	PlantationFlowData,
 } from "./services/plantation-flow-service";
+import {
+	chatService,
+	chatSessionService,
+	chatMessageService,
+	storageService,
+} from "./services/chat-service";
 
 // Example interfaces for different collections
 export interface WeatherData extends BaseDocument {
@@ -168,3 +174,23 @@ export const governmentSchemeService = new GovernmentSchemeService();
 export const notificationService = new NotificationService();
 export const schemeService = new SchemeService();
 export const plantationFlowService = new PlantationFlowService();
+
+// Export diagnosis services
+export {
+	diagnosisChatService,
+	diagnosisMessageService,
+	storageService,
+	type DiagnosisChat,
+	type DiagnosisMessage,
+} from "./services/diagnosis-chat-service";
+
+// Export chat services
+export {
+	chatService,
+	chatSessionService,
+	chatMessageService,
+	storageService as chatStorageService,
+	type ChatSession,
+	type ChatMessage,
+	type ChatType,
+} from "./services/chat-service";

@@ -8,6 +8,7 @@ import {
 	getCurrentWeather,
 	getWeatherForecast,
 } from "./weather-and-irrigation-tips";
+import { marketplaceTool } from "../tools/marketplace-tool";
 
 const AskAnythingInputSchema = z.object({
 	text: z.string(),
@@ -73,20 +74,6 @@ For market trend queries, use the fetchMarketData tool to retrieve real-time mar
 If data from any tool is unavailable, note it and suggest practical alternatives (e.g., nearby markets or general trends).
 
 
-Response Guidelines:
-
-Deliver concise, actionable solutions tailored to the farmer’s query (e.g., crop management, pest control, or market strategies).
-For farming issues, express empathy and provide specific, practical solutions to the problem.
-For market trend requests, include:
-Current prices (INR per unit, e.g., quintal/kg) for specified or common crops.
-Price trends (increasing, decreasing, or stable) over the past week or month.
-Key market insights (e.g., supply/demand dynamics, seasonal factors).
-Actionable recommendations (e.g., best crops to sell/hold, alternative markets).
-You can through previous messages to understand the context of the query and provide relevant information.
-
-
-If no crops or location are specified, analyze 3–5 common Indian crops (e.g., rice, wheat, onion, tomato, potato) in a major market (e.g., Nashik, Delhi, Azadpur).
-Ensure responses are farmer-friendly, avoiding technical jargon unless explained simply.
 
 
 Page Navigation:

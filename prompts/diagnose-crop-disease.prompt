@@ -1,0 +1,62 @@
+name: diagnoseCropDiseasePrompt
+input:
+  schema:
+    photoDataUri:
+      type: string
+      description: "A photo of a crop, as a data URI that must include a MIME type and use Base64 encoding. Expected format: 'data:<mimetype>;base64,<encoded_data>'."
+      optional: true
+    description:
+      type: string
+      description: "The description of the crop symptoms."
+      optional: true
+output:
+  schema:
+    disease:
+      type: string
+      description: "The identified disease, if any."
+    confidence:
+      type: number
+      description: "The confidence level of the diagnosis (0-1)."
+    symptoms:
+      type: string
+      description: "Detailed symptoms observed on the plant."
+    cause:
+      type: string
+      description: "The causative agent of the disease and favorable conditions for its spread."
+    diseaseCycle:
+      type: string
+      description: "Brief explanation of how the disease spreads and survives."
+    management:
+      type: object
+      properties:
+        cultural:
+          type: string
+          description: "Cultural and physical control methods."
+        chemical:
+          type: string
+          description: "Recommended fungicides or pesticides with usage notes."
+        biological:
+          type: string
+          description: "Biological control methods or biopesticides, if available."
+    resistantVarieties:
+      type: string
+      description: "Recommended disease-resistant crop varieties, if known."
+prompt: |
+  You are an expert in plant pathology, specializing in diagnosing crop diseases in India.
+
+  Use the image and/or description to identify the crop disease and provide a detailed, structured report.
+
+  Your response must include:
+  - Disease name
+  - Confidence (0 to 1)
+  - Symptoms (bullet points if possible)
+  - Cause (pathogen name and favorable conditions)
+  - Disease cycle (brief but clear)
+  - Management steps divided into:
+    - Cultural
+    - Chemical
+    - Biological
+  - Resistant varieties if any exist
+
+  Description: {{{description}}}
+  {{~#if photoDataUri}}Photo: {{media url=photoDataUri}}{{~/if}}
