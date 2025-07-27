@@ -35,7 +35,6 @@ export default function Home() {
 	const Router = useRouter();
 
 	// For the original implementation
-	const [userInput, setUserInput] = useState("");
 	const [aiResponse, setAiResponse] = useState<{
 		response?: string;
 		moveToOtherPage?: { confirmed?: boolean; page?: string };
@@ -58,6 +57,8 @@ export default function Home() {
 		resetCard,
 	} = useAdditionalInfo();
 
+
+
 	useEffect(() => {
 		// Check if user has additional info and show card if needed
 		if (user && userProfile) {
@@ -79,57 +80,7 @@ export default function Home() {
 		}
 	}, [user, userProfile, resetCard]);
 
-	// For the original implementation
-	const handleUserSend = async () => {
-		if (!userInput.trim()) return;
 
-		// Store the user input in localStorage
-		storeRecentInput(userInput.trim());
-
-		setLoading(true);
-		try {
-			const newMessages = [
-				...messages,
-				{
-					role: "user",
-					content: [{ text: userInput.trim() }] as [{ text: string }],
-				},
-			];
-			setMessages(newMessages);
-			const resp = await AskAnything({
-				text: userInput.trim(),
-				messages: newMessages,
-			});
-			console.log(resp);
-			setUserInput("");
-			if (resp?.moveToOtherPage?.confirmed) {
-				setMessages([]);
-				Router.push(resp.moveToOtherPage.page);
-			}
-			setMessages((prev) => [
-				...prev,
-				{
-					role: "model",
-					content: [{ text: resp.response?.substring(0, 100) }],
-				},
-			]);
-			setAiResponse(resp);
-		} catch (error) {
-			console.error("Error getting AI response:", error);
-			setMessages([]);
-			setAiResponse({
-				response: "Sorry, I encountered an error. Please try again.",
-			});
-			toast({
-				title: "Error",
-				description:
-					"Failed to get response from KrushiMitra. Please try again.",
-				variant: "destructive",
-			});
-		} finally {
-			setLoading(false);
-		}
-	};
 
 	// For the ChatBox component implementation
 	const handleSendMessage = async (userInput: string) => {
@@ -220,7 +171,9 @@ export default function Home() {
 
 	return (
 		<AppLayout
-			handleHistoryChatClick={(text) => setUserInput(text)}
+			handleHistoryChatClick={(text) => {
+			// This will be handled by the ChatBox component internally
+		}}
 			title="KrushiMitra"
 			subtitle="AI-Powered Agricultural Assistant"
 		>
@@ -260,63 +213,7 @@ export default function Home() {
 						/>
 					</div>
 
-					{/* Original Chat Interface (hidden for now, can be toggled if needed) */}
-					<div className="hidden bg-card rounded-2xl shadow-xl p-8 border border-border">
-						<div className="flex items-center justify-center mb-6">
-							<Bot className="w-8 h-8 text-primary mr-3" />
-							<span className="text-2xl font-semibold text-primary">
-								Talk to KrushiMitra
-							</span>
-						</div>
 
-						<p className="text-muted-foreground text-center mb-6">
-							Get instant answers, advice, and support for your farming needs.
-						</p>
-
-						<div className="max-w-2xl mx-auto">
-							<textarea
-								rows={3}
-								value={userInput}
-								onChange={(e) => setUserInput(e.target.value)}
-								className="w-full bg-background text-foreground border-2 border-border rounded-xl px-6 py-4 text-base focus:outline-none focus:ring-2 focus:ring-ring focus:border-transparent resize-none"
-								placeholder="Ask me anything about farming - crop diseases, market prices, weather, subsidies..."
-							/>
-							<div className="flex justify-between items-center mt-4">
-								<button
-									onClick={handleUserSend}
-									disabled={loading || !userInput.trim()}
-									className="disabled:opacity-45 bg-gradient-to-r from-primary to-primary/80 hover:from-primary/90 hover:to-primary/70 text-primary-foreground px-8 py-3 rounded-xl font-semibold text-base transition-all duration-200 shadow-lg hover:shadow-xl flex items-center"
-								>
-									{loading ? (
-										<>
-											<div className="w-4 h-4 mr-2 border-2 border-primary-foreground border-t-transparent rounded-full animate-spin"></div>
-											Thinking...
-										</>
-									) : (
-										<>
-											<Send className="w-4 h-4 mr-2" />
-											Send
-										</>
-									)}
-								</button>
-								<button
-									disabled={loading}
-									className="disabled:opacity-45 flex items-center px-6 py-3 bg-muted hover:bg-accent text-primary rounded-xl font-medium transition-colors"
-								>
-									<Mic className="w-4 h-4 mr-2" />
-									Speak
-								</button>
-							</div>
-						</div>
-
-						{/* AI Response Display */}
-						{aiResponse.response && (
-							<MarkdownComponent
-								css={"m-6 pt-2 px-4"}
-								text={aiResponse.response || ""}
-							/>
-						)}
-					</div>
 				</div>
 			</div>
 

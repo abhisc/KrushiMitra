@@ -44,6 +44,10 @@ export function ChatBox({
 	const [userInput, setUserInput] = useState(initialMessage);
 	const messagesEndRef = useRef<HTMLDivElement>(null);
 	const [showClearConfirm, setShowClearConfirm] = useState(false);
+	
+	// For microphone functionality
+	const [listening, setListening] = useState(false);
+	const recognitionRef = useRef<any>(null);
 
 	const scrollToBottom = () => {
 		messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
@@ -53,6 +57,52 @@ export function ChatBox({
 		scrollToBottom();
 	}, [messages]);
 
+	// Speech-to-text handler
+	const handleMicClick = () => {
+		if (listening) {
+			recognitionRef.current?.stop();
+			setListening(false);
+			return;
+		}
+		
+		const SpeechRecognition = (window as any).SpeechRecognition || (window as any).webkitSpeechRecognition;
+		if (!SpeechRecognition) {
+			alert("Speech recognition is not supported in this browser.");
+			return;
+		}
+		
+		const recognition = new SpeechRecognition();
+		recognition.lang = "en-US";
+		recognition.interimResults = false;
+		recognition.maxAlternatives = 1;
+		recognition.continuous = false;
+		
+		recognition.onresult = (event: any) => {
+			const transcript = event.results[0][0].transcript;
+			setUserInput(prev => prev ? prev + ' ' + transcript : transcript);
+			setListening(false);
+		};
+		
+		recognition.onerror = (event: any) => {
+			console.error("Speech recognition error:", event.error);
+			setListening(false);
+		};
+		
+		recognition.onend = () => {
+			setListening(false);
+		};
+		
+		recognitionRef.current = recognition;
+		setListening(true);
+		
+		try {
+			recognition.start();
+		} catch (error) {
+			console.error("Failed to start speech recognition:", error);
+			setListening(false);
+		}
+	};
+
 	const handleSubmit = async (e?: FormEvent) => {
 		e?.preventDefault();
 		if (!userInput.trim() || loading) return;
@@ -61,7 +111,7 @@ export function ChatBox({
 		await onSendMessage(userInput);
 	};
 
-	const handleKeyDown = (e: React.KeyboardEvent<HTMLTextAreaElement>) => {
+	const handleKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
 		if (e.key === "Enter" && !e.shiftKey) {
 			e.preventDefault();
 			handleSubmit();
@@ -197,40 +247,52 @@ export function ChatBox({
 				</div>
 			)}
 
-			<form onSubmit={handleSubmit} className="mx-[25w] flex-shrink-0">
-				<div className="relative">
-					<textarea
-						rows={2}
+			{/* Modern Input Bar */}
+			<form onSubmit={handleSubmit} className="flex-shrink-0">
+				<div className="flex items-center gap-2 bg-white dark:bg-gray-800 rounded-full shadow-lg px-4 py-2 border border-gray-200 dark:border-gray-600 focus-within:ring-2 focus-within:ring-green-200 dark:focus-within:ring-green-600 relative transition-all duration-300">
+					<input
+						type="text"
 						value={userInput}
-						onChange={(e) => setUserInput(e.target.value)}
+						onChange={e => setUserInput(e.target.value)}
+						placeholder={listening ? "Listening..." : "E.g. Check price of tomato, My wheat crop looks yellow, Show fertilizer subsidies..."}
+						disabled={loading}
+						className="flex-1 border-none shadow-none bg-transparent focus:ring-0 focus:outline-none text-base min-w-0 text-gray-900 dark:text-gray-100 placeholder-gray-500 dark:placeholder-gray-400"
+						style={listening ? { color: '#4F46E5', fontWeight: 600 } : {}}
 						onKeyDown={handleKeyDown}
-						className="w-full bg-background text-foreground border-2 border-border rounded-lg px-4 py-2 text-sm pr-20 focus:outline-none focus:ring-2 focus:ring-ring focus:border-transparent resize-none transition-all duration-200 shadow-sm focus:shadow-md"
-						placeholder="Ask me anything about farming - crop diseases, market prices, weather, subsidies..."
 					/>
-
-					{/* Action buttons positioned inside the textarea */}
-					<div className="absolute right-2 bottom-2 flex gap-2">
+					{loading ? (
+						<div className="flex items-center justify-center w-10 h-10">
+							<div className="animate-spin rounded-full h-6 w-6 border-b-2 border-gray-900 dark:border-gray-100"></div>
+						</div>
+					) : userInput ? (
+						<button 
+							type="submit"
+							className="flex items-center justify-center bg-[#4F46E5] hover:bg-[#3730A3] rounded-full w-10 h-10 transition-colors focus:outline-none shadow" 
+							title="Send"
+						>
+							<svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="white" strokeWidth={2} className="h-6 w-6">
+								<path strokeLinecap="round" strokeLinejoin="round" d="M8 12h8m0 0l-4-4m4 4l-4 4" />
+							</svg>
+						</button>
+					) : (
 						<button
 							type="button"
-							disabled={loading}
-							className="disabled:opacity-45 flex items-center justify-center p-2 bg-muted hover:bg-accent text-primary rounded-md transition-all duration-200 hover:shadow-md"
+							onClick={handleMicClick}
+							className={`flex items-center justify-center rounded-full w-10 h-10 transition-colors focus:outline-none shadow relative ${listening ? 'bg-[#4F46E5] animate-pulse' : 'bg-gray-100 hover:bg-gray-200 dark:bg-gray-700 dark:hover:bg-gray-600'}`}
 							title="Voice input"
 						>
-							<Mic className="w-4 h-4" />
+							<svg
+								xmlns="http://www.w3.org/2000/svg"
+								className={`h-6 w-6 transition-all duration-200 ${listening ? 'text-white' : 'text-[#4F46E5] dark:text-indigo-400'}`}
+								fill="none"
+								viewBox="0 0 24 24"
+								stroke="currentColor"
+								strokeWidth={2}
+							>
+								<path strokeLinecap="round" strokeLinejoin="round" d="M12 18v2m0 0a4 4 0 01-4-4h0a4 4 0 018 0h0a4 4 0 01-4 4zm0-6v2m0-2a4 4 0 00-4 4h0a4 4 0 008 0h0a4 4 0 00-4-4zm0 0V6a4 4 0 00-8 0v6a4 4 0 008 0z" />
+							</svg>
 						</button>
-						<button
-							type="submit"
-							disabled={loading || !userInput.trim()}
-							className="disabled:opacity-45 bg-gradient-to-r from-primary to-primary/80 hover:from-primary/90 hover:to-primary/70 text-primary-foreground p-2 rounded-md transition-all duration-200 shadow-md hover:shadow-lg flex items-center justify-center hover:translate-y-[-1px] active:translate-y-[1px]"
-							title="Send message"
-						>
-							{loading ? (
-								<Loader2 className="w-4 h-4 animate-spin" />
-							) : (
-								<Send className="w-4 h-4" />
-							)}
-						</button>
-					</div>
+					)}
 				</div>
 			</form>
 		</div>
