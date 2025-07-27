@@ -24,7 +24,7 @@ function getAiInstance(): Genkit {
 				apiKey: apiKey,
 			}),
 		],
-		model: "googleai/gemini-2.5-pro",
+		model: "googleai/gemini-2.5-flash",
 	});
 
 	return aiInstance;

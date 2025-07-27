@@ -28,7 +28,6 @@ import { useAdditionalInfo } from "@/hooks/use-additional-info";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 
-
 export default function Home() {
 	const quickPrompts = [
 		"Check price of tomato",
@@ -44,18 +43,28 @@ export default function Home() {
 	const { toast } = useToast();
 	const { user, userProfile, loadUserProfile } = useAuth();
 	const [showAdditionalInfoForm, setShowAdditionalInfoForm] = useState(false);
-	const { showCard: showAdditionalInfoCard, dismissCard: dismissAdditionalInfoCard, resetCard } = useAdditionalInfo();
+	const {
+		showCard: showAdditionalInfoCard,
+		dismissCard: dismissAdditionalInfoCard,
+		resetCard,
+	} = useAdditionalInfo();
 
 	useEffect(() => {
 		// Check if user has additional info and show card if needed
 		// Only show if user hasn't explicitly dismissed it
-		const isDismissed = localStorage.getItem('additional-info-dismissed');
-		
+		const isDismissed = localStorage.getItem("additional-info-dismissed");
+
 		if (user && userProfile && !isDismissed) {
-			const hasAdditionalInfo = userProfile.age || userProfile.gender || userProfile.location?.city || 
-									userProfile.isStudent || userProfile.minority || userProfile.disability || 
-									userProfile.caste || userProfile.residence;
-			
+			const hasAdditionalInfo =
+				userProfile.age ||
+				userProfile.gender ||
+				userProfile.location?.city ||
+				userProfile.isStudent ||
+				userProfile.minority ||
+				userProfile.disability ||
+				userProfile.caste ||
+				userProfile.residence;
+
 			if (!hasAdditionalInfo) {
 				resetCard(); // Reset card state to show it
 			}
@@ -96,7 +105,7 @@ export default function Home() {
 	};
 
 	const handleDismissAdditionalInfo = () => {
-		console.log('handleDismissAdditionalInfo called');
+		console.log("handleDismissAdditionalInfo called");
 		dismissAdditionalInfoCard();
 	};
 
@@ -170,8 +179,15 @@ export default function Home() {
 								onKeyPress={(e) => e.key === "Enter" && handleUserSend()}
 								className="flex-1"
 							/>
-							<Button onClick={handleUserSend} disabled={loading || !userInput.trim()}>
-								{loading ? <Loader2 className="w-4 h-4 animate-spin" /> : "Send"}
+							<Button
+								onClick={handleUserSend}
+								disabled={loading || !userInput.trim()}
+							>
+								{loading ? (
+									<Loader2 className="w-4 h-4 animate-spin" />
+								) : (
+									"Send"
+								)}
 							</Button>
 							<Button variant="outline" onClick={() => {}}>
 								<Mic className="w-4 h-4" />
@@ -208,8 +224,13 @@ export default function Home() {
 							</h3>
 							<div className="space-y-4">
 								<div className="bg-card rounded-lg border border-border p-4">
-									<h4 className="text-lg font-semibold text-foreground mb-2">My Farm Journal</h4>
-									<p className="text-sm text-muted-foreground">Log daily activities, track inputs, and view your farm's history and insights.</p>
+									<h4 className="text-lg font-semibold text-foreground mb-2">
+										My Farm Journal
+									</h4>
+									<p className="text-sm text-muted-foreground">
+										Log daily activities, track inputs, and view your farm's
+										history and insights.
+									</p>
 								</div>
 								<div className="bg-card rounded-lg border border-border p-4">
 									<div className="flex items-start space-x-3">
@@ -217,8 +238,13 @@ export default function Home() {
 											<Activity className="w-6 h-6 text-primary" />
 										</div>
 										<div>
-											<h5 className="font-semibold text-foreground">Crop Growth Process Advisor</h5>
-											<p className="text-sm text-muted-foreground">Track crop lifecycle and get intelligent farming suggestions</p>
+											<h5 className="font-semibold text-foreground">
+												Crop Growth Process Advisor
+											</h5>
+											<p className="text-sm text-muted-foreground">
+												Track crop lifecycle and get intelligent farming
+												suggestions
+											</p>
 										</div>
 									</div>
 								</div>
@@ -228,8 +254,12 @@ export default function Home() {
 											<Stethoscope className="w-6 h-6 text-primary" />
 										</div>
 										<div>
-											<h5 className="font-semibold text-foreground">Instant Crop Disease Diagnosis</h5>
-											<p className="text-sm text-muted-foreground">Detect diseases from crop images using AI</p>
+											<h5 className="font-semibold text-foreground">
+												Instant Crop Disease Diagnosis
+											</h5>
+											<p className="text-sm text-muted-foreground">
+												Detect diseases from crop images using AI
+											</p>
 										</div>
 									</div>
 								</div>
@@ -248,8 +278,12 @@ export default function Home() {
 											<Calculator className="w-6 h-6 text-primary" />
 										</div>
 										<div>
-											<h5 className="font-semibold text-foreground">Profitability Calculator & Finance Manager</h5>
-											<p className="text-sm text-muted-foreground">Analyze costs and profits for your farm operations</p>
+											<h5 className="font-semibold text-foreground">
+												Profitability Calculator & Finance Manager
+											</h5>
+											<p className="text-sm text-muted-foreground">
+												Analyze costs and profits for your farm operations
+											</p>
 										</div>
 									</div>
 								</div>
@@ -259,8 +293,12 @@ export default function Home() {
 											<ShoppingCart className="w-6 h-6 text-primary" />
 										</div>
 										<div>
-											<h5 className="font-semibold text-foreground">Farming Marketplace</h5>
-											<p className="text-sm text-muted-foreground">Buy and sell farming products from verified vendors</p>
+											<h5 className="font-semibold text-foreground">
+												Farming Marketplace
+											</h5>
+											<p className="text-sm text-muted-foreground">
+												Buy and sell farming products from verified vendors
+											</p>
 										</div>
 									</div>
 								</div>
@@ -270,8 +308,12 @@ export default function Home() {
 											<Users className="w-6 h-6 text-primary" />
 										</div>
 										<div>
-											<h5 className="font-semibold text-foreground">Community Commerce (P2P Trading)</h5>
-											<p className="text-sm text-muted-foreground">Trade tools and produce with nearby farmers</p>
+											<h5 className="font-semibold text-foreground">
+												Community Commerce (P2P Trading)
+											</h5>
+											<p className="text-sm text-muted-foreground">
+												Trade tools and produce with nearby farmers
+											</p>
 										</div>
 									</div>
 								</div>
@@ -281,8 +323,12 @@ export default function Home() {
 											<TrendingUp className="w-6 h-6 text-primary" />
 										</div>
 										<div>
-											<h5 className="font-semibold text-foreground">Real-Time Market Insights</h5>
-											<p className="text-sm text-muted-foreground">Get live market prices and future price forecasts</p>
+											<h5 className="font-semibold text-foreground">
+												Real-Time Market Insights
+											</h5>
+											<p className="text-sm text-muted-foreground">
+												Get live market prices and future price forecasts
+											</p>
 										</div>
 									</div>
 								</div>

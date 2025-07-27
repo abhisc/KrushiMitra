@@ -26,6 +26,7 @@ export const fetchDistrictsTool = ai.defineTool(
 				"filters[State]": input.state,
 				...(govtResources["districts"].queryDefault || {}),
 			});
+			console.log("Fetched districts data:");
 
 			const districts = (data?.records || [])?.reduce(
 				(acc: string[], item: any) => {

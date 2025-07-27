@@ -89,12 +89,7 @@ export async function getWeatherForecastAPI(
 	}
 
 	const data = await res.json();
-	console.log(
-		"WeatherAPI forecast response fors",
-		location,
-		":",
-		JSON.stringify(data),
-	);
+	console.log("WeatherAPI forecast response fetched");
 
 	// Transform the API response to match our schema
 	const forecast: ForecastDay[] = data.forecast.forecastday.map((day: any) => ({

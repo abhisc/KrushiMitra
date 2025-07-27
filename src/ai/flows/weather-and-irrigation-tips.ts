@@ -148,6 +148,7 @@ export const getWeatherForecast = ai.defineTool(
 	},
 	async ({ location, days = 3 }) => {
 		try {
+			console.log("weather api hit");
 			const forecastData = await getWeatherForecastAPI(location, days);
 			return forecastData;
 		} catch (error) {
