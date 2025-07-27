@@ -108,13 +108,13 @@ export const fetchMarketDataTool = ai.defineTool(
 				query["filters[Commodity]"] = input.commodity;
 			}
 
+			console.log("market api hit");
 			const marketDataResponse = await fetchDataFromGovtAPI(
 				ResourcesEnum["mandiPrices"],
 				query,
 				"60",
 				5,
 			);
-			console.log(marketDataResponse);
 
 			if (
 				!marketDataResponse.records ||
@@ -186,10 +186,10 @@ Crop Analysis: List current price, trend, and insights for each crop.
 Recommendations: Offer actionable advice (e.g., crops to sell/hold, alternative markets, risk mitigation).
 
 Input Fields:
-State: {{{state}}}
-Market: {{{market}}}
-Market Data: {{{marketData}}}
-More Details: {{{moreDetails}}}`,
+State: {{state}}
+Market: {{market}}
+Market Data: {{marketData}}
+More Details: {{moreDetails}}`,
 });
 
 const marketAnalysisFlow = ai.defineFlow(

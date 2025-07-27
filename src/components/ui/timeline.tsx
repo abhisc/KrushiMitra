@@ -68,8 +68,14 @@ export function Timeline({
 
 	// Calculate time progress for each item if not provided
 	const itemsWithProgress = items.map((item) => {
-		const start = item.startDate.toDate();
-		const end = item.endDate.toDate();
+		console.log(item?.startDate);
+		const start = item?.startDate?.toDate
+			? item?.startDate?.toDate()
+			: new Date(item?.startDate);
+		const end = item?.endDate?.toDate
+			? item?.endDate?.toDate()
+			: new Date(item?.endDate);
+
 		const now = new Date();
 		console.log(12, item.startDate, start, end);
 

@@ -29,6 +29,7 @@ import {
 	Edit,
 	Eye,
 	ArrowLeft,
+	Sprout,
 } from "lucide-react";
 import { format } from "date-fns";
 import { useToast } from "@/hooks/use-toast";
@@ -42,11 +43,13 @@ import {
 } from "@/firebaseStore/services/plantation-flow-service";
 import { Timeline, TimelineItem } from "@/components/ui/timeline";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { useRouter } from "next/navigation";
 
 type ScreenType = "list" | "add" | "edit" | "view";
 
 export default function PlantationFlowPage() {
 	const { user } = useAuth();
+	const router = useRouter();
 	const [currentScreen, setCurrentScreen] = useState<ScreenType>("list");
 	const [plantationFlows, setPlantationFlows] = useState<PlantationFlowData[]>(
 		[],
@@ -129,7 +132,7 @@ export default function PlantationFlowPage() {
 
 	const addCrop = () => {
 		const newCrop: PlantationCycle = {
-			id: Date.now().toString(),
+			id: `crop_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
 			name: "",
 			description: "",
 			startDate: new Date(),
@@ -152,9 +155,12 @@ export default function PlantationFlowPage() {
 		setFormData((prev) => ({
 			...prev,
 			crops:
-				prev.crops?.map((crop) =>
-					crop.id === cropId ? { ...crop, [field]: value } : crop,
-				) || [],
+				prev.crops?.map((crop) => {
+					if (crop.id === cropId) {
+						return { ...crop, [field]: value };
+					}
+					return crop;
+				}) || [],
 		}));
 	};
 
@@ -167,7 +173,7 @@ export default function PlantationFlowPage() {
 
 	const addStepToCrop = (cropId: string) => {
 		const newStep: PlantationStep = {
-			id: Date.now().toString() + Math.random(),
+			id: `step_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
 			name: "",
 			description: "",
 			startDate: new Date(),
@@ -192,20 +198,27 @@ export default function PlantationFlowPage() {
 		field: keyof PlantationStep,
 		value: any,
 	) => {
-		setFormData((prev) => ({
-			...prev,
-			crops:
-				prev.crops?.map((crop) =>
-					crop.id === cropId
-						? {
+		setFormData((prev) => {
+			const newFormData = {
+				...prev,
+				crops:
+					prev.crops?.map((crop) => {
+						if (crop.id === cropId) {
+							return {
 								...crop,
-								cycle: crop.cycle.map((step) =>
-									step.id === stepId ? { ...step, [field]: value } : step,
-								),
-							}
-						: crop,
-				) || [],
-		}));
+								cycle: crop.cycle.map((step) => {
+									if (step.id === stepId) {
+										return { ...step, [field]: value };
+									}
+									return { ...step };
+								}),
+							};
+						}
+						return { ...crop };
+					}) || [],
+			};
+			return newFormData;
+		});
 	};
 
 	const removeStep = (cropId: string, stepId: string) => {
@@ -402,10 +415,20 @@ export default function PlantationFlowPage() {
 						Manage your plantation cycles and crops
 					</p>
 				</div>
-				<Button onClick={handleAddNew} className="flex items-center gap-2">
-					<Plus className="h-4 w-4" />
-					Add New Flow
-				</Button>
+				<div className="flex gap-2">
+					<Button
+						onClick={() => router.push("/plantationFlow/ai-advisor")}
+						variant="outline"
+						className="flex items-center gap-2"
+					>
+						<Sprout className="h-4 w-4" />
+						AI Advisor
+					</Button>
+					<Button onClick={handleAddNew} className="flex items-center gap-2">
+						<Plus className="h-4 w-4" />
+						Add New Flow
+					</Button>
+				</div>
 			</div>
 
 			{isLoading ? (
@@ -589,15 +612,17 @@ export default function PlantationFlowPage() {
 												<div className="mt-2 space-y-1">
 													<div className="text-sm font-medium">Crops:</div>
 													<div className="flex flex-wrap gap-1">
-														{flow.crops.slice(0, 3).map((crop) => (
-															<Badge
-																key={crop.id}
-																variant="secondary"
-																className="text-xs"
-															>
-																{crop.name}
-															</Badge>
-														))}
+														{flow.crops.slice(0, 3).map((crop) => {
+															return (
+																<Badge
+																	key={crop.id || crop.description}
+																	variant="secondary"
+																	className="text-xs"
+																>
+																	{crop.name}
+																</Badge>
+															);
+														})}
 														{flow.crops.length > 3 && (
 															<Badge variant="outline" className="text-xs">
 																+{flow.crops.length - 3} more
@@ -642,7 +667,7 @@ export default function PlantationFlowPage() {
 					</div>
 					<Button
 						onClick={() => handleEdit(selectedFlow)}
-						variant="outline"
+						variant="default"
 						className="flex items-center gap-2"
 					>
 						<Edit className="h-4 w-4" />

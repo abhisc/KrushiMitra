@@ -1,8 +1,8 @@
 "use client";
 
 import { AskAnything } from "@/ai/flows/ask-anything";
-import AppLayout from "@/components/agrimitra/app-layout";
 import { MarkdownComponent } from "@/components/ui/markdown";
+import { ChatBox } from "@/components/ui/chatbox";
 import { useToast } from "@/hooks/use-toast";
 import {
 	Activity,
@@ -20,6 +20,8 @@ import { useAuth } from "@/contexts/auth-context";
 import AdditionalInfoCard from "@/components/additional-info-card";
 import AdditionalInfoForm from "@/components/additional-info-form";
 import { useAdditionalInfo } from "@/hooks/use-additional-info";
+import { useRouter } from "next/navigation";
+import AppLayout from "@/components/agrimitra/app-layout";
 
 export default function Home() {
 	const quickPrompts = [
@@ -30,21 +32,45 @@ export default function Home() {
 		"Pest control for rice",
 	];
 
+	const Router = useRouter();
+
+	// For the original implementation
 	const [userInput, setUserInput] = useState("");
-	const [aiResponse, setAiResponse] = useState<{ response?: string }>({});
+	const [aiResponse, setAiResponse] = useState<{
+		response?: string;
+		moveToOtherPage?: { confirmed?: boolean; page?: string };
+	}>({});
+
+	// For both implementations
 	const [loading, setLoading] = useState(false);
 	const { toast } = useToast();
 	const { user, userProfile, loadUserProfile } = useAuth();
+
+	// For the ChatBox component implementation
+	const [messages, setMessages] = useState<
+		{ role: "user" | "model"; content: [{ text: string }]; timestamp?: Date }[]
+	>([]);
+
 	const [showAdditionalInfoForm, setShowAdditionalInfoForm] = useState(false);
-	const { showCard: showAdditionalInfoCard, dismissCard: dismissAdditionalInfoCard, resetCard } = useAdditionalInfo();
+	const {
+		showCard: showAdditionalInfoCard,
+		dismissCard: dismissAdditionalInfoCard,
+		resetCard,
+	} = useAdditionalInfo();
 
 	useEffect(() => {
 		// Check if user has additional info and show card if needed
 		if (user && userProfile) {
-			const hasAdditionalInfo = userProfile.age || userProfile.gender || userProfile.location?.city || 
-									userProfile.isStudent || userProfile.minority || userProfile.disability || 
-									userProfile.caste || userProfile.residence;
-			
+			const hasAdditionalInfo =
+				userProfile.age ||
+				userProfile.gender ||
+				userProfile.location?.city ||
+				userProfile.isStudent ||
+				userProfile.minority ||
+				userProfile.disability ||
+				userProfile.caste ||
+				userProfile.residence;
+
 			if (!hasAdditionalInfo) {
 				resetCard(); // Reset card state to show it
 			}
@@ -53,6 +79,7 @@ export default function Home() {
 		}
 	}, [user, userProfile, resetCard]);
 
+	// For the original implementation
 	const handleUserSend = async () => {
 		if (!userInput.trim()) return;
 
@@ -61,10 +88,35 @@ export default function Home() {
 
 		setLoading(true);
 		try {
-			const resp = await AskAnything({ text: userInput.trim() });
+			const newMessages = [
+				...messages,
+				{
+					role: "user",
+					content: [{ text: userInput.trim() }] as [{ text: string }],
+				},
+			];
+			setMessages(newMessages);
+			const resp = await AskAnything({
+				text: userInput.trim(),
+				messages: newMessages,
+			});
+			console.log(resp);
+			setUserInput("");
+			if (resp?.moveToOtherPage?.confirmed) {
+				setMessages([]);
+				Router.push(resp.moveToOtherPage.page);
+			}
+			setMessages((prev) => [
+				...prev,
+				{
+					role: "model",
+					content: [{ text: resp.response?.substring(0, 100) }],
+				},
+			]);
 			setAiResponse(resp);
 		} catch (error) {
 			console.error("Error getting AI response:", error);
+			setMessages([]);
 			setAiResponse({
 				response: "Sorry, I encountered an error. Please try again.",
 			});
@@ -77,6 +129,75 @@ export default function Home() {
 		} finally {
 			setLoading(false);
 		}
+	};
+
+	// For the ChatBox component implementation
+	const handleSendMessage = async (userInput: string) => {
+		// Store the user input in localStorage
+		storeRecentInput(userInput);
+
+		setLoading(true);
+		try {
+			const newUserMessage = {
+				role: "user" as const,
+				content: [{ text: userInput }] as [{ text: string }],
+				timestamp: new Date(),
+			};
+
+			const newMessages = [...messages, newUserMessage];
+			setMessages(newMessages);
+
+			const resp = await AskAnything({
+				text: userInput,
+				messages: newMessages,
+			});
+
+			console.log(resp);
+
+			if (resp?.moveToOtherPage?.confirmed) {
+				setMessages([]);
+				Router.push(resp.moveToOtherPage.page);
+				return;
+			}
+
+			const aiMessage = {
+				role: "model" as const,
+				content: [
+					{ text: resp.response || "Sorry, I couldn't process your request." },
+				] as [{ text: string }],
+				timestamp: new Date(),
+			};
+
+			setMessages((prev) => [...prev, aiMessage]);
+		} catch (error) {
+			console.error("Error getting AI response:", error);
+			const errorMessage = {
+				role: "model" as const,
+				content: [
+					{ text: "Sorry, I encountered an error. Please try again." },
+				] as [{ text: string }],
+				timestamp: new Date(),
+			};
+			setMessages((prev) => [...prev, errorMessage]);
+
+			toast({
+				title: "Error",
+				description:
+					"Failed to get response from KrushiMitra. Please try again.",
+				variant: "destructive",
+			});
+		} finally {
+			setLoading(false);
+		}
+	};
+
+	// Clear chat handler
+	const handleClearChat = () => {
+		setMessages([]);
+		toast({
+			title: "Chat cleared",
+			description: "All messages have been removed.",
+		});
 	};
 
 	const handleFillAdditionalInfo = () => {
@@ -103,8 +224,8 @@ export default function Home() {
 			title="KrushiMitra"
 			subtitle="AI-Powered Agricultural Assistant"
 		>
-			<div className="p-6">
-				<div className="max-w-4xl mx-auto space-y-8">
+			<div className="p-4 h-full flex justify-center">
+				<div className="max-w-4xl flex-1 flex flex-col gap-4">
 					{/* Additional Info Form Modal */}
 					{showAdditionalInfoForm && (
 						<AdditionalInfoForm
@@ -113,21 +234,34 @@ export default function Home() {
 						/>
 					)}
 
-					{/* Welcome Section */}
-					<div className="text-center mb-8">
-						<div className="w-16 h-16 bg-primary rounded-2xl mx-auto mb-4 flex items-center justify-center">
-							<Bot className="w-8 h-8 text-primary-foreground" />
+					{/* Welcome Section - More compact */}
+					<div className="flex justify-center flex-shrink-0">
+						<div className="w-10 h-10 bg-primary rounded-lg mr-2 flex items-center justify-center">
+							<Bot className="w-5 h-5 text-primary-foreground" />
 						</div>
-						<h2 className="text-3xl font-bold text-foreground mb-2">
-							AI-Powered Agricultural Assistant
-						</h2>
-						<p className="text-lg text-muted-foreground">
-							Smart farming solutions for modern agriculture
-						</p>
+						<div className="flex flex-col items-center">
+							<h2 className="text-xl font-bold text-foreground">
+								AI-Powered Agricultural Assistant
+							</h2>
+							<p className="text-sm text-muted-foreground">
+								Smart farming solutions for modern agriculture
+							</p>
+						</div>
 					</div>
 
-					{/* Chat Interface */}
-					<div className="bg-card rounded-2xl shadow-xl p-8 border border-border">
+					{/* ChatBox Component - takes remaining height */}
+					<div className="flex-1 min-h-0 pb-4">
+						<ChatBox
+							onSendMessage={handleSendMessage}
+							onClearChat={handleClearChat}
+							loading={loading}
+							messages={messages}
+							className="h-full"
+						/>
+					</div>
+
+					{/* Original Chat Interface (hidden for now, can be toggled if needed) */}
+					<div className="hidden bg-card rounded-2xl shadow-xl p-8 border border-border">
 						<div className="flex items-center justify-center mb-6">
 							<Bot className="w-8 h-8 text-primary mr-3" />
 							<span className="text-2xl font-semibold text-primary">
@@ -182,108 +316,6 @@ export default function Home() {
 								text={aiResponse.response || ""}
 							/>
 						)}
-
-						{/* Quick Prompts */}
-						<div className="mt-8 pt-6 border-t border-border">
-							<p className="text-sm font-medium text-muted-foreground mb-3 text-center">
-								Quick prompts to get started:
-							</p>
-							<div className="flex flex-wrap justify-center gap-3">
-								{quickPrompts.map((prompt, index) => (
-									<button
-										key={index}
-										onClick={() => setUserInput(prompt)}
-										className="text-sm text-primary hover:text-primary/80 hover:bg-primary/10 px-4 py-2 rounded-lg border border-primary/20 transition-colors"
-									>
-										{prompt}
-									</button>
-								))}
-							</div>
-						</div>
-					</div>
-
-					{/* Crop Management Tools */}
-					<div className="mb-8">
-						<h3 className="text-2xl font-bold text-foreground mb-6 text-center text-primary">
-							Crop Management
-						</h3>
-						<div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-							{/* Farm Journal Entry Point */}
-							<a href="/journal" className="bg-card border border-primary/30 rounded-xl p-6 text-left hover:shadow-lg transition-all duration-200 hover:border-primary flex flex-col">
-								<BookOpen className="w-8 h-8 text-primary mb-4" />
-								<h4 className="text-lg font-semibold text-foreground mb-2">My Farm Journal</h4>
-								<p className="text-sm text-muted-foreground">Log daily activities, track inputs, and view your farm's history and insights.</p>
-							</a>
-							{/* Existing tools */}
-							{[
-								{
-									icon: Activity,
-									title: "Crop Growth Process Advisor",
-									subtitle:
-										"Track crop lifecycle and get intelligent farming suggestions",
-								},
-								{
-									icon: Activity,
-									title: "Instant Crop Disease Diagnosis",
-									subtitle: "Detect diseases from crop images using AI",
-								},
-							].map((tool, index) => (
-								<button
-									key={index}
-									className="bg-card border border-border rounded-xl p-6 text-left hover:shadow-lg transition-all duration-200 hover:border-primary/30"
-								>
-									<tool.icon className="w-8 h-8 text-primary mb-4" />
-									<h4 className="text-lg font-semibold text-foreground mb-2">
-										{tool.title}
-									</h4>
-									<p className="text-sm text-muted-foreground">{tool.subtitle}</p>
-								</button>
-							))}
-						</div>
-					</div>
-
-					{/* Marketplace & Finance Tools */}
-					<div>
-						<h3 className="text-2xl font-bold text-foreground mb-6 text-center text-primary">
-							Marketplace & Financial Services
-						</h3>
-						<div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-							{[
-								{
-									icon: TrendingUp,
-									title: "Profitability Calculator & Finance Manager",
-									subtitle:
-										"Analyze costs and profits for your farm operations",
-								},
-								{
-									icon: TrendingUp,
-									title: "Farming Marketplace",
-									subtitle:
-										"Buy and sell farming products from verified vendors",
-								},
-								{
-									icon: TrendingUp,
-									title: "Community Commerce (P2P Trading)",
-									subtitle: "Trade tools and produce with nearby farmers",
-								},
-								{
-									icon: TrendingUp,
-									title: "Real-Time Market Insights",
-									subtitle: "Get live market prices and future price forecasts",
-								},
-							].map((tool, index) => (
-								<button
-									key={index}
-									className="bg-card border border-border rounded-xl p-6 text-left hover:shadow-lg transition-all duration-200 hover:border-primary/30"
-								>
-									<tool.icon className="w-8 h-8 text-primary mb-4" />
-									<h4 className="text-lg font-semibold text-foreground mb-2">
-										{tool.title}
-									</h4>
-									<p className="text-sm text-muted-foreground">{tool.subtitle}</p>
-								</button>
-							))}
-						</div>
 					</div>
 				</div>
 			</div>
