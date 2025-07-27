@@ -55,6 +55,7 @@ export default function Home() {
 		showCard: showAdditionalInfoCard,
 		dismissCard: dismissAdditionalInfoCard,
 		resetCard,
+		clearDismissal,
 	} = useAdditionalInfo();
 
 
@@ -74,11 +75,14 @@ export default function Home() {
 
 			if (!hasAdditionalInfo) {
 				resetCard(); // Reset card state to show it
+			} else {
+				// User has additional info, so dismiss the card permanently
+				dismissAdditionalInfoCard();
 			}
 		} else if (user) {
 			resetCard(); // Reset card state to show it
 		}
-	}, [user, userProfile, resetCard]);
+	}, [user, userProfile, resetCard, dismissAdditionalInfoCard]);
 
 
 
@@ -163,6 +167,8 @@ export default function Home() {
 	const handleAdditionalInfoSuccess = async () => {
 		setShowAdditionalInfoForm(false);
 		await loadUserProfile();
+		// Dismiss the card since user now has additional info
+		dismissAdditionalInfoCard();
 		toast({
 			title: "Success",
 			description: "Additional information saved successfully!",
