@@ -21,6 +21,7 @@ import {
 	ChevronDown,
 	Bot,
 	ArrowLeft,
+	Sprout,
 	User as UserIcon,
 	ClipboardList,
 } from "lucide-react";
@@ -118,8 +119,8 @@ export default function AppLayout({
 			label: "CropCashFlow",
 			href: "/crop-cash-flow",
 			active: pathname === "/crop-cash-flow",
-    },
-    {
+		},
+		{
 			icon: Users, // or MessageCircle
 			label: "Expert Connect",
 			href: "/expert-connect",
@@ -131,8 +132,12 @@ export default function AppLayout({
 			href: "/profile",
 			active: pathname === "/profile",
 		},
-
-
+		{
+			icon: Sprout,
+			label: "Plantation Flows",
+			href: "/plantationFlow",
+			active: pathname === "/plantationFlow",
+		},
 	];
 
 	// List of recent user chat prompts
@@ -151,7 +156,7 @@ export default function AppLayout({
 		} else {
 			// Get the previous path from our navigation history
 			const previousPath = getPreviousPath();
-			
+
 			if (previousPath && previousPath !== pathname) {
 				// Navigate to the previous path
 				router.push(previousPath);
@@ -212,7 +217,7 @@ export default function AppLayout({
 					{/* Recently used chat prompts */}
 					{sidebarOpen && (
 						<div className="p-4 border-t border-border">
-																				<h3 className="text-xs font-semibold text-muted-foreground uppercase tracking-wide mb-3">
+							<h3 className="text-xs font-semibold text-muted-foreground uppercase tracking-wide mb-3">
 								Recent Chats
 							</h3>
 							<div className="space-y-2">
