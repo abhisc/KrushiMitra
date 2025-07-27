@@ -121,10 +121,10 @@ export default function AppLayout({
 			active: pathname === "/expert-connect",
 		},
 		{
-			icon: UserIcon,
-			label: "Profile",
-			href: "/profile",
-			active: pathname === "/profile",
+			icon: Bot,
+			label: "General Chat MCP",
+			href: "/general-mcp-chat",
+			active: pathname === "/general-mcp-chat",
 		},
 		{
 			icon: Sprout,
