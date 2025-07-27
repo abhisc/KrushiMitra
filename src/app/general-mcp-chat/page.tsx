@@ -8,6 +8,7 @@ import { Textarea } from '@/components/ui/textarea';
 import { Badge } from '@/components/ui/badge';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Separator } from '@/components/ui/separator';
+import { Label } from '@/components/ui/label';
 import { Loader2, Send, Bot, User, Zap, Wrench, MessageSquare, Mic, MicOff } from 'lucide-react';
 import AppLayout from '@/components/agrimitra/app-layout';
 
@@ -375,50 +376,66 @@ export default function GeneralMCPChatPage() {
 
             <Separator className="mb-4" />
             
-            {/* Modern Voice-Enabled Input Field */}
-            <div className="flex items-center gap-2 bg-white dark:bg-gray-800 rounded-full shadow-lg px-4 py-2 border border-gray-200 dark:border-gray-600 focus-within:ring-2 focus-within:ring-green-200 dark:focus-within:ring-green-600 relative transition-all duration-300">
-              <Textarea
-                value={input}
-                onChange={(e) => setInput(e.target.value)}
-                onKeyPress={handleKeyPress}
-                placeholder={listening ? "Listening..." : "Ask me anything about farming, weather, market prices, government schemes, or crop diseases..."}
-                className="flex-1 border-none shadow-none bg-transparent focus:ring-0 focus:outline-none text-base min-w-0 text-gray-900 dark:text-gray-100 placeholder-gray-500 dark:placeholder-gray-400 resize-none"
-                style={listening ? { color: '#4F46E5', fontWeight: 600 } : {}}
-                disabled={loading || !isConnected}
-                rows={1}
-              />
-              {loading ? (
-                <div className="flex items-center justify-center w-10 h-10">
-                  <Loader2 className="w-5 h-5 animate-spin" />
-                </div>
-              ) : input ? (
-                <Button
-                  onClick={handleSendMessage}
-                  disabled={loading || !input.trim() || !isConnected}
-                  className="flex items-center justify-center bg-[#4F46E5] hover:bg-[#3730A3] rounded-full w-10 h-10 transition-colors focus:outline-none shadow"
-                  title="Send"
-                >
-                  <Send className="w-5 h-5 text-white" />
-                </Button>
-              ) : (
-                <Button
-                  onClick={handleMicClick}
-                  disabled={loading || !isConnected}
-                  className={`flex items-center justify-center rounded-full w-10 h-10 transition-colors focus:outline-none shadow relative ${
-                    listening 
-                      ? 'bg-[#4F46E5] animate-pulse' 
-                      : 'bg-gray-100 hover:bg-gray-200 dark:bg-gray-700 dark:hover:bg-gray-600'
-                  }`}
-                  title="Voice input"
-                >
-                  {listening ? (
-                    <MicOff className="w-5 h-5 text-white" />
-                  ) : (
-                    <Mic className="w-5 h-5 text-[#4F46E5] dark:text-indigo-400" />
-                  )}
-                </Button>
-              )}
-            </div>
+            {/* Modern Voice-Enabled Input Field - Matching Journal Design */}
+            <Card className="shadow-xl rounded-2xl bg-gradient-to-br from-white to-gray-50 dark:from-gray-900 dark:to-gray-800 border border-gray-200 dark:border-gray-700">
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <MessageSquare className="w-6 h-6 text-green-700 dark:text-green-400" /> Chat with AI Assistant
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                <form onSubmit={(e) => { e.preventDefault(); handleSendMessage(); }} className="space-y-4">
+                  <Label>Ask me anything about farming, weather, market prices, government schemes, or crop diseases</Label>
+                  <div className="flex items-center gap-2 bg-white dark:bg-gray-800 rounded-full shadow-lg px-4 py-2 border border-gray-200 dark:border-gray-600 focus-within:ring-2 focus-within:ring-green-200 dark:focus-within:ring-green-600 relative transition-all duration-300">
+                    <input
+                      type="text"
+                      value={input}
+                      onChange={(e) => setInput(e.target.value)}
+                      onKeyPress={handleKeyPress}
+                      placeholder={listening ? "Listening..." : "Ask me anything about farming, weather, market prices, government schemes, or crop diseases..."}
+                      disabled={loading || !isConnected}
+                      className="flex-1 border-none shadow-none bg-transparent focus:ring-0 focus:outline-none text-base min-w-0 text-gray-900 dark:text-gray-100 placeholder-gray-500 dark:placeholder-gray-400"
+                      style={listening ? { color: '#4F46E5', fontWeight: 600 } : {}}
+                    />
+                    {loading ? (
+                      <div className="flex items-center justify-center w-10 h-10">
+                        <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-gray-900 dark:border-gray-100"></div>
+                      </div>
+                    ) : input ? (
+                      <button 
+                        type="submit" 
+                        className="flex items-center justify-center bg-[#4F46E5] hover:bg-[#3730A3] rounded-full w-10 h-10 transition-colors focus:outline-none shadow" 
+                        title="Send"
+                        disabled={loading || !input.trim() || !isConnected}
+                      >
+                        <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="white" strokeWidth={2} className="h-6 w-6">
+                          <path strokeLinecap="round" strokeLinejoin="round" d="M8 12h8m0 0l-4-4m4 4l-4 4" />
+                        </svg>
+                      </button>
+                    ) : (
+                      <button
+                        type="button"
+                        onClick={handleMicClick}
+                        disabled={loading || !isConnected}
+                        className={`flex items-center justify-center rounded-full w-10 h-10 transition-colors focus:outline-none shadow relative ${listening ? 'bg-[#4F46E5] animate-pulse' : 'bg-gray-100 hover:bg-gray-200 dark:bg-gray-700 dark:hover:bg-gray-600'}`}
+                        title="Voice input"
+                      >
+                        <svg
+                          xmlns="http://www.w3.org/2000/svg"
+                          className={`h-6 w-6 transition-all duration-200 ${listening ? 'text-white' : 'text-[#4F46E5] dark:text-indigo-400'}`}
+                          fill="none"
+                          viewBox="0 0 24 24"
+                          stroke="currentColor"
+                          strokeWidth={2}
+                        >
+                          <path strokeLinecap="round" strokeLinejoin="round" d="M12 18v2m0 0a4 4 0 01-4-4h0a4 4 0 018 0h0a4 4 0 01-4 4zm0-6v2m0-2a4 4 0 00-4 4h0a4 4 0 008 0h0a4 4 0 00-4-4zm0 0V6a4 4 0 00-8 0v6a4 4 0 008 0z" />
+                        </svg>
+                      </button>
+                    )}
+                  </div>
+                </form>
+              </CardContent>
+            </Card>
           </CardContent>
         </Card>
 
