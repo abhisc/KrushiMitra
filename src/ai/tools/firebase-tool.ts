@@ -1,5 +1,5 @@
-import { defineTool } from "@genkit-ai/ai";
 import { z } from "zod";
+import { ai } from "@/ai/genkit";
 import { auth, storage, analytics, googleProvider } from "@/firebaseStore/firebase";
 import { 
   signInWithPopup, 
@@ -22,7 +22,7 @@ import {
 } from "firebase/storage";
 import { logEvent } from "firebase/analytics";
 
-export const firebaseTool = defineTool({
+export const firebaseTool = ai.defineTool({
   name: "firebase_tool",
   description: "Firebase services tool for authentication, storage, and analytics",
   inputSchema: z.object({
@@ -52,7 +52,13 @@ export const firebaseTool = defineTool({
     eventParameters: z.record(z.any()).optional(),
     resetEmail: z.string().email().optional()
   }),
-  handler: async ({ action, email, password, displayName, filePath, fileData, fileName, eventName, eventParameters, resetEmail }) => {
+  outputSchema: z.object({
+    success: z.boolean(),
+    message: z.string().optional(),
+    user: z.any().optional(),
+    data: z.any().optional()
+  })
+}, async ({ action, email, password, displayName, filePath, fileData, fileName, eventName, eventParameters, resetEmail }) => {
     try {
       switch (action) {
         case "sign_in_popup":
@@ -242,4 +248,4 @@ export const firebaseTool = defineTool({
       };
     }
   }
-}); 
+); 

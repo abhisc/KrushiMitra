@@ -1,5 +1,5 @@
-import { defineTool } from "@genkit-ai/ai";
 import { z } from "zod";
+import { ai } from "@/ai/genkit";
 import { db } from "@/firebaseStore/firebase";
 import { 
   collection, 
@@ -35,7 +35,7 @@ import {
   BaseDocument 
 } from "@/firebaseStore/firestore-service";
 
-export const firestoreTool = defineTool({
+export const firestoreTool = ai.defineTool({
   name: "firestore_tool",
   description: "Firestore database operations tool for CRUD operations, queries, and batch operations",
   inputSchema: z.object({
@@ -83,7 +83,13 @@ export const firestoreTool = defineTool({
     arrayOperation: z.enum(["union", "remove"]).optional(),
     arrayValues: z.array(z.any()).optional()
   }),
-  handler: async ({ 
+  outputSchema: z.object({
+    success: z.boolean(),
+    message: z.string().optional(),
+    data: z.any().optional(),
+    documentId: z.string().optional()
+  })
+}, async ({ 
     action, 
     collectionName, 
     documentId, 
@@ -431,5 +437,4 @@ export const firestoreTool = defineTool({
         error: error instanceof Error ? error.message : "Unknown error occurred"
       };
     }
-  }
-}); 
+  }); 

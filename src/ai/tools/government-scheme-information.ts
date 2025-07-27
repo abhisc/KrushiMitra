@@ -54,21 +54,17 @@ export async function getGovernmentSchemeInfo(
 ): Promise<GovernmentSchemeInfoOutput> {
 	try {
 		// First try to get schemes from API/database
-		const apiSchemes = await schemeService.searchSchemes({
-			cropType: input.cropType,
-			location: input.location,
-			farmSize: input.farmSize,
-			query: input.query,
-		});
+		const searchQuery = `${input.cropType} ${input.location} ${input.farmSize} ${input.query || ''}`.trim();
+		const apiSchemes = await schemeService.searchSchemes(searchQuery);
 
 		if (apiSchemes.length > 0) {
 			// Transform API schemes to output format
 			const schemes = apiSchemes.map((scheme) => ({
-				name: scheme.name,
-				description: scheme.description,
-				eligibility: scheme.eligibility,
-				benefits: scheme.benefits,
-				howToApply: scheme.howToApply,
+				name: scheme.schemeName,
+				description: scheme.briefDescription,
+				eligibility: `Category: ${scheme.schemeCategory.join(', ')} | For: ${scheme.schemeFor}`,
+				benefits: `Ministry: ${scheme.nodalMinistryName} | States: ${scheme.beneficiaryState.join(', ')}`,
+				howToApply: `Please visit the official website for ${scheme.schemeName} for application details.`,
 			}));
 
 			return { schemes };
@@ -191,31 +187,37 @@ export const getFarmerSchemes = ai.defineTool(
 				query: input.keyword,
 			};
 
-			// Fetch schemes from API
-			const apiSchemes = await schemeService.searchSchemesFromAPI(searchParams);
+			// Create search query from parameters
+			const searchQuery = [
+				input.occupation,
+				input.residence || "Rural",
+				input.state,
+				input.keyword,
+				"farmer",
+				"agriculture",
+				"scheme"
+			].filter(Boolean).join(" ");
+
+			// Fetch schemes from database
+			const apiSchemes = await schemeService.searchSchemes(searchQuery);
 
 			// Transform the schemes to match output schema
 			const schemes = apiSchemes.map((scheme: any) => ({
-				id: scheme.id || scheme.schemeId || `scheme_${Date.now()}`,
-				name: scheme.name || scheme.title || "Unknown Scheme",
-				description:
-					scheme.description || scheme.summary || "No description available",
-				category: scheme.category || "Agriculture",
-				benefits:
-					scheme.benefits || scheme.amount || "Benefits vary based on scheme",
-				eligibility:
-					scheme.eligibility ||
-					"Please check official website for eligibility criteria",
-				howToApply:
-					scheme.howToApply ||
-					scheme.applicationProcess ||
-					"Please visit official website for application process",
+				id: scheme.schemeId || scheme.id || `scheme_${Date.now()}`,
+				name: scheme.schemeName || "Unknown Scheme",
+				description: scheme.briefDescription || "No description available",
+				category: scheme.schemeCategory?.join(", ") || "Agriculture",
+				benefits: `Ministry: ${scheme.nodalMinistryName} | States: ${scheme.beneficiaryState?.join(", ")}`,
+				eligibility: `Category: ${scheme.schemeCategory?.join(", ")} | For: ${scheme.schemeFor}`,
+				howToApply: `Please visit the official website for ${scheme.schemeName} for application process`,
 				state: input.state,
-				lastUpdated: scheme.lastUpdated || new Date().toISOString(),
+				lastUpdated: scheme.updatedAt?.toISOString() || new Date().toISOString(),
 			}));
 
-			// Get the filters used for search
-			const filters = schemeService.buildQueryParams(searchParams);
+			// Create filters array from search parameters
+			const filters = Object.entries(searchParams.userProfile)
+				.filter(([_, value]) => value !== undefined && value !== null)
+				.map(([key, value]) => `${key}: ${value}`);
 
 			return {
 				schemes,

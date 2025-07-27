@@ -1,5 +1,5 @@
-import { defineTool } from "@genkit-ai/ai";
 import { z } from "zod";
+import { ai } from "@/ai/genkit";
 import { db } from "@/firebaseStore/firebase";
 import { 
   collection, 
@@ -14,7 +14,7 @@ import {
   Timestamp
 } from "firebase/firestore";
 
-export const firebaseAdminTool = defineTool({
+export const firebaseAdminTool = ai.defineTool({
   name: "firebase_admin_tool",
   description: "Firebase administrative operations for data management, user management, and system maintenance",
   inputSchema: z.object({
@@ -52,7 +52,12 @@ export const firebaseAdminTool = defineTool({
       end: z.string().optional()
     }).optional()
   }),
-  handler: async ({ 
+  outputSchema: z.object({
+    success: z.boolean(),
+    message: z.string().optional(),
+    data: z.any().optional()
+  })
+}, async ({ 
     action, 
     collectionName, 
     backupPath, 
@@ -188,13 +193,14 @@ export const firebaseAdminTool = defineTool({
               
               // Apply migration rules
               for (const [field, rule] of Object.entries(migrationRules)) {
-                if (rule.type === "rename" && originalData[rule.oldName]) {
-                  migratedData[rule.newName] = originalData[rule.oldName];
-                  delete migratedData[rule.oldName];
-                } else if (rule.type === "transform" && originalData[field]) {
-                  migratedData[field] = rule.transform(originalData[field]);
-                } else if (rule.type === "add" && !originalData[field]) {
-                  migratedData[field] = rule.defaultValue;
+                const migrationRule = rule as any;
+                if (migrationRule.type === "rename" && originalData[migrationRule.oldName]) {
+                  migratedData[migrationRule.newName] = originalData[migrationRule.oldName];
+                  delete migratedData[migrationRule.oldName];
+                } else if (migrationRule.type === "transform" && originalData[field]) {
+                  migratedData[field] = migrationRule.transform(originalData[field]);
+                } else if (migrationRule.type === "add" && !originalData[field]) {
+                  migratedData[field] = migrationRule.defaultValue;
                 }
               }
               
@@ -235,10 +241,11 @@ export const firebaseAdminTool = defineTool({
               
               // Apply update rules
               for (const [field, rule] of Object.entries(updateRules)) {
-                if (rule.condition && rule.condition(originalData)) {
-                  updatedData[field] = rule.value;
-                } else if (!rule.condition) {
-                  updatedData[field] = rule.value;
+                const updateRule = rule as any;
+                if (updateRule.condition && updateRule.condition(originalData)) {
+                  updatedData[field] = updateRule.value;
+                } else if (!updateRule.condition) {
+                  updatedData[field] = updateRule.value;
                 }
               }
               
@@ -276,20 +283,21 @@ export const firebaseAdminTool = defineTool({
             
             // Apply validation rules
             for (const [field, rule] of Object.entries(validationRules)) {
-              if (rule.required && !data[field]) {
+              const validationRule = rule as any;
+              if (validationRule.required && !data[field]) {
                 errors.push(`${field} is required but missing`);
               }
-              if (rule.type && data[field] && typeof data[field] !== rule.type) {
-                errors.push(`${field} should be of type ${rule.type}`);
+              if (validationRule.type && data[field] && typeof data[field] !== validationRule.type) {
+                errors.push(`${field} should be of type ${validationRule.type}`);
               }
-              if (rule.pattern && data[field] && !rule.pattern.test(data[field])) {
+              if (validationRule.pattern && data[field] && !validationRule.pattern.test(data[field])) {
                 errors.push(`${field} does not match required pattern`);
               }
-              if (rule.minLength && data[field] && data[field].length < rule.minLength) {
-                errors.push(`${field} is too short (minimum ${rule.minLength})`);
+              if (validationRule.minLength && data[field] && data[field].length < validationRule.minLength) {
+                errors.push(`${field} is too short (minimum ${validationRule.minLength})`);
               }
-              if (rule.maxLength && data[field] && data[field].length > rule.maxLength) {
-                errors.push(`${field} is too long (maximum ${rule.maxLength})`);
+              if (validationRule.maxLength && data[field] && data[field].length > validationRule.maxLength) {
+                errors.push(`${field} is too long (maximum ${validationRule.maxLength})`);
               }
             }
             
@@ -370,7 +378,7 @@ export const firebaseAdminTool = defineTool({
                 const csvRows = [headers.join(",")];
                 for (const row of exportData) {
                   const values = headers.map(header => {
-                    const value = row[header];
+                    const value = (row as any)[header];
                     return typeof value === "string" ? `"${value}"` : value;
                   });
                   csvRows.push(values.join(","));
@@ -548,12 +556,12 @@ export const firebaseAdminTool = defineTool({
               const userActivityData = userActivitySnapshot.docs.map(doc => doc.data());
               
               const userStats = userActivityData.reduce((acc: any, task) => {
-                const userId = task.userId;
+                const userId = (task as any).userId;
                 if (!acc[userId]) {
                   acc[userId] = { userId, tasks: 0, completed: 0 };
                 }
                 acc[userId].tasks++;
-                if (task.completed) acc[userId].completed++;
+                if ((task as any).completed) acc[userId].completed++;
                 return acc;
               }, {});
               
@@ -567,7 +575,7 @@ export const firebaseAdminTool = defineTool({
               
             case "data_usage":
               const collections = ["farm_tasks", "farm_plans", "scheduled_tasks"];
-              const usageStats = {};
+              const usageStats: Record<string, any> = {};
               
               for (const col of collections) {
                 const usageQuery = query(collection(db, col));
@@ -624,5 +632,4 @@ export const firebaseAdminTool = defineTool({
         error: error instanceof Error ? error.message : "Unknown error occurred"
       };
     }
-  }
-}); 
+  }); 
