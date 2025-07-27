@@ -43,10 +43,9 @@ export async function fetchDataFromGovtAPI(
 
 			try {
 				const { response } = await fetch(
-					`http://localhost:3000/allGovtSchemes`,
-					// `https://krushimitraproxy-537443643233.europe-west1.run.app/govtApis?apiUrl=${apiUrl}`,
+					`https://krushimitraproxy-537443643233.europe-west1.run.app/govtApis?apiUrl=${apiUrl}`,
 					{
-						body: JSON.stringify({ keyword: "kisan" }),
+						body: JSON.stringify({ apiUrl }),
 						headers: { "Content-Type": "application/json" },
 						method: "POST",
 					},
