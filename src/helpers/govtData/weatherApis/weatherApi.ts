@@ -219,7 +219,6 @@ export async function getWeatherForecastAPI(
 		}
 
 		const data = await res.json();
-		console.log("WeatherAPI forecast response for", location, ":", JSON.stringify(data));
 
 		// Check if the response contains the expected data
 		if (!data || !data.forecast || !data.forecast.forecastday) {

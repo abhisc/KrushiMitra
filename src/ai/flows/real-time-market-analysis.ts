@@ -1,4 +1,5 @@
 "use server";
+
 /**
  * @fileOverview Retrieves real-time market analysis for crops, including pricing information, to help farmers make informed selling decisions.
  *
@@ -7,10 +8,10 @@
  * - MarketAnalysisOutput - The return type for the getMarketAnalysis function.
  */
 
+import { z } from "zod";
 import { ai } from "@/ai/genkit";
 import { fetchDataFromGovtAPI } from "@/helpers/govtData/fetchGovtData";
 import { ResourcesEnum } from "@/helpers/govtData/resources";
-import { z } from "zod";
 
 const MarketAnalysisInputSchema = z.object({
 	state: z.string().describe("The state where the crop is grown.").optional(),
@@ -213,6 +214,7 @@ const marketAnalysisFlow = ai.defineFlow(
 			!marketDataResponse.records ||
 			marketDataResponse.records.length === 0
 		) {
+			console.error(marketDataResponse);
 			throw new Error(
 				`No market data found for state "${input.state}" in market "${input.market}".`,
 			);

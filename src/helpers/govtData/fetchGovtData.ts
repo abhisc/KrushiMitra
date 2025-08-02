@@ -11,8 +11,8 @@ export async function fetchDataFromGovtAPI(
 	if (!resource) {
 		throw new Error(`Resource ${resourceKey} not found`);
 	}
-
-	const baseUrl = `https://api.data.gov.in${resource.url}`;
+	
+	const baseUrl = resource.url;
 	const allRecords: any[] = [];
 
 	// Calculate dates for last n days
@@ -50,9 +50,8 @@ export async function fetchDataFromGovtAPI(
 				// 		method: "POST",
 				// 	},
 				// ).then((res) => res.json());
-
-				const response = await fetch(apiUrl, {
-					headers: { "Content-Type": "application/json" },
+				const response = await fetch(apiUrl,  {
+					// headers: { "Content-Type": "application/json" },
 					method: "GET",
 				}).then((res) => res.json());
 

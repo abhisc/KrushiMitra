@@ -7,7 +7,7 @@ export enum ResourcesEnum {
 
 export const govtResources = {
 	mandiPrices: {
-		url: "/resource/35985678-0d79-46b4-9ed6-6f13308a1d24",
+		url: "https://www.data.gov.in/backend/dataapi/v1/resource/35985678-0d79-46b4-9ed6-6f13308a1d24",
 		description: "Mandi prices for various crops",
 		sampleQuery: {
 			format: "json",
@@ -32,7 +32,7 @@ export const govtResources = {
 		},
 	},
 	kvkFarmerQueries: {
-		url: "/resource/cef25fe2-9231-4128-8aec-2c948fedd43f",
+		url: "https://www.data.gov.in/backend/dataapi/v1/resource/cef25fe2-9231-4128-8aec-2c948fedd43f",
 		description:
 			"Farmer queries and responses from Krishi Vigyan Kendras (KVKs)",
 		sampleQuery: {
@@ -45,7 +45,7 @@ export const govtResources = {
 		},
 	},
 	pincodes: {
-		url: "/resource/5c2f62fe-5afa-4119-a499-fec9d604d5bd",
+		url: "https://www.data.gov.in/backend/dataapi/v1/resource/5c2f62fe-5afa-4119-a499-fec9d604d5bd",
 		description: "Pincode data for various regions",
 		sampleQuery: {
 			format: "json",
@@ -72,7 +72,7 @@ export const govtResources = {
 		},
 	},
 	districts: {
-		url: "/resource/35985678-0d79-46b4-9ed6-6f13308a1d24",
+		url: "https://www.data.gov.in/backend/dataapi/v1/resource/35985678-0d79-46b4-9ed6-6f13308a1d24",
 		description: "District data for various states",
 		sampleQuery: {
 			format: "json",

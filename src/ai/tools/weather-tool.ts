@@ -6,8 +6,8 @@
  * - getCurrentWeather - A tool that fetches current weather data for a given location.
  */
 
-import {ai} from '@/ai/genkit';
 import {z} from 'zod';
+import {ai} from '@/ai/genkit';
 
 const WEATHERAPI_KEY = 'f99d1c63ef1746c4b95110957252407'; // User's actual WeatherAPI key
 
@@ -120,7 +120,6 @@ export const getCurrentWeather = ai.defineTool(
       }
       
       const data = await res.json();
-      console.log('WeatherAPI response for', location, ':', JSON.stringify(data));
       
       if (data && data.current) {
         return {

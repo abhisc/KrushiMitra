@@ -1,8 +1,8 @@
 import { z } from "zod";
-import { ai } from "../genkit";
+import stateNames from "@/constants/stateNames";
 import { fetchDataFromGovtAPI } from "@/helpers/govtData/fetchGovtData";
 import { govtResources, ResourcesEnum } from "@/helpers/govtData/resources";
-import stateNames from "@/constants/stateNames";
+import { ai } from "../genkit";
 
 export const fetchDistrictsTool = ai.defineTool(
 	{
@@ -26,7 +26,6 @@ export const fetchDistrictsTool = ai.defineTool(
 				"filters[State]": input.state,
 				...(govtResources["districts"].queryDefault || {}),
 			});
-			console.log("Fetched districts data:");
 
 			const districts = (data?.records || [])?.reduce(
 				(acc: string[], item: any) => {

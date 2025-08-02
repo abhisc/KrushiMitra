@@ -1,11 +1,11 @@
 "use client";
 
+import { Loader2, Sprout, Trash } from "lucide-react";
 import { useEffect, useState } from "react";
-import { useToast } from "@/hooks/use-toast";
+import type { PlantationFlowData } from "@/ai/flows/plantation-flow";
+import { GetPlantationFlow } from "@/ai/flows/plantation-flow";
+import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import { Textarea } from "@/components/ui/textarea";
 import {
 	Card,
 	CardContent,
@@ -14,11 +14,11 @@ import {
 	CardDescription,
 	CardFooter,
 } from "@/components/ui/card";
-import { Loader2, Sprout, Trash } from "lucide-react";
-import { Badge } from "@/components/ui/badge";
-import { GetPlantationFlow } from "@/ai/flows/plantation-flow";
-import { PlantationFlowData } from "@/ai/flows/plantation-flow";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Textarea } from "@/components/ui/textarea";
 import { useAuth } from "@/contexts/auth-context";
+import { useToast } from "@/hooks/use-toast";
 
 export function AiPlantationAdvisor({
 	onSavePlan,
@@ -252,6 +252,12 @@ export function AiPlantationAdvisor({
 										<div className="text-xs text-muted-foreground">
 											<div>Plant: {formatDate(crop.startDate)}</div>
 											<div>Harvest: {formatDate(crop.endDate)}</div>
+											{crop.area && (
+												<div>Area: {crop.area} acres/hectares</div>
+											)}
+											{crop.expectedIncome && (
+												<div>Expected Income: ₹{parseFloat(crop.expectedIncome).toLocaleString('en-IN')}</div>
+											)}
 										</div>
 									</CardContent>
 								</Card>

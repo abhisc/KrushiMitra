@@ -1,17 +1,17 @@
 "use client";
 
 import {
-	Send,
-	Mic,
-	Bot,
-	User,
-	Clock,
-	ChevronDown,
-	Loader2,
-	Trash2,
 	AlertCircle,
+	Bot,
+	ChevronDown,
+	Clock,
+	Loader2,
+	Mic,
+	Send,
+	Trash2,
+	User,
 } from "lucide-react";
-import { useState, useEffect, FormEvent, useRef } from "react";
+import { type FormEvent, useEffect, useRef, useState } from "react";
 import Markdown from "react-markdown";
 
 interface Message {
@@ -42,6 +42,7 @@ export function ChatBox({
 	className = "",
 }: ChatBoxProps) {
 	const [userInput, setUserInput] = useState(initialMessage);
+	const [focus, setFocus] = useState(true);
 	const messagesEndRef = useRef<HTMLDivElement>(null);
 	const [showClearConfirm, setShowClearConfirm] = useState(false);
 	
@@ -106,7 +107,7 @@ export function ChatBox({
 	const handleSubmit = async (e?: FormEvent) => {
 		e?.preventDefault();
 		if (!userInput.trim() || loading) return;
-
+		setFocus(true);
 		setUserInput("");
 		await onSendMessage(userInput);
 	};
@@ -252,6 +253,7 @@ export function ChatBox({
 				<div className="flex items-center gap-2 bg-white dark:bg-gray-800 rounded-full shadow-lg px-4 py-2 border border-gray-200 dark:border-gray-600 focus-within:ring-2 focus-within:ring-green-200 dark:focus-within:ring-green-600 relative transition-all duration-300">
 					<input
 						type="text"
+						autoFocus={focus}
 						value={userInput}
 						onChange={e => setUserInput(e.target.value)}
 						placeholder={listening ? "Listening..." : "E.g. Check price of tomato, My wheat crop looks yellow, Show fertilizer subsidies..."}

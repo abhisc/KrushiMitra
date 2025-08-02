@@ -1,4 +1,5 @@
 "use server";
+
 /**
  * @fileOverview Retrieves real-time market analysis for crops, including pricing information, to help farmers make informed selling decisions.
  *
@@ -7,11 +8,11 @@
  * - MarketAnalysisOutput - The return type for the getMarketAnalysis function.
  */
 
-import { ai } from "@/ai/genkit";
 import { z } from "zod";
-import { getWeatherForecast } from "./weather-and-irrigation-tips";
-import { fetchMarketDataTool } from "./real-time-market-analysis";
+import { ai } from "@/ai/genkit";
 import { fetchDistrictsTool } from "../tools/GovtApisTools";
+import { fetchMarketDataTool } from "./real-time-market-analysis";
+import { getWeatherForecast } from "./weather-and-irrigation-tips";
 
 const PlantationFlowsInputSchema = z.object({
 	state: z.string().describe("The state to fetch plantation flows for"),
@@ -49,12 +50,12 @@ const PlantationStepSchema = z.object({
 			"A brief description of the step, including its purpose and importance.",
 		),
 	startDate: z
-		.date()
+		.string()
 		.describe(
 			"The start date of the plantation step. This is when the step should begin.",
 		),
 	endDate: z
-		.date()
+		.string()
 		.describe(
 			"The end date of the plantation step. This is when the step should be completed.",
 		),
@@ -68,16 +69,18 @@ const PlantationCycleSchema = z.object({
 			"A unique identifier for the plantation step, used for tracking and management.",
 		),
 	name: z.string().describe("The name of the plant."),
+	area: z.string().describe("Area in acre in which the plantation should happen."),
+	expectedIncome: z.number().describe("Expected income at the end of cycle in rupees."),
 	description: z
 		.string()
 		.describe("A brief description of the plant, and why was it chosen."),
 	startDate: z
-		.date()
+		.string()
 		.describe(
 			"The start date of the plantation cycle. This is when the plantation process should begin.",
 		),
 	endDate: z
-		.date()
+		.string()
 		.describe(
 			"The end date of the plantation cycle. This is when the plantation process should be completed.",
 		),
@@ -97,12 +100,12 @@ const PlantationFlowDataSchema = z.object({
 	aiSuggestedDeviation: z.array(PlantationCycleSchema),
 	status: z.enum(["Pending", "Ongoing", "Aborted", "Completed"]),
 	startDate: z
-		.date()
+		.string()
 		.describe(
 			"The start date of the plantation flow. This is when the plantation process begins.",
 		),
 	endDate: z
-		.date()
+		.string()
 		.describe(
 			"The tentative end date of the plantation flow. This is when the plantation process should be completed.",
 		),

@@ -1,4 +1,4 @@
-import { FirestoreService, DBCollectionKeys } from "../firestore-service";
+import { DBCollectionKeys, FirestoreService } from "../firestore-service";
 
 export interface PlantationStep {
 	id: string;
@@ -12,6 +12,8 @@ export interface PlantationStep {
 export interface PlantationCycle {
 	id: string;
 	name: string;
+	area: string;
+	expectedIncome: string;
 	description: string;
 	startDate: Date;
 	endDate: Date;

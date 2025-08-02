@@ -1,8 +1,29 @@
 "use client";
 
+import { BarChart3, Loader2, PieChart, TrendingUp } from "lucide-react";
 import { useEffect, useState } from "react";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import {
+	Bar,
+	BarChart,
+	CartesianGrid,
+	Cell,
+	Legend,
+	Line,
+	LineChart,
+	Pie,
+	PieChart as RechartsPieChart,
+	ResponsiveContainer,
+	Tooltip,
+	XAxis,
+	YAxis,
+} from "recharts";
+import {
+	getMarketAnalysis,
+	type MarketAnalysisInput,
+} from "@/ai/flows/real-time-market-analysis";
+import AppLayout from "@/components/agrimitra/app-layout";
 import { Button } from "@/components/ui/button";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import {
@@ -12,31 +33,10 @@ import {
 	SelectTrigger,
 	SelectValue,
 } from "@/components/ui/select";
-import { useToast } from "@/hooks/use-toast";
-import {
-	getMarketAnalysis,
-	MarketAnalysisInput,
-} from "@/ai/flows/real-time-market-analysis";
-import { Loader2, TrendingUp, BarChart3, PieChart } from "lucide-react";
-import AppLayout from "@/components/agrimitra/app-layout";
 import stateNames from "@/constants/stateNames";
 import { fetchDataFromGovtAPI } from "@/helpers/govtData/fetchGovtData";
 import { govtResources, ResourcesEnum } from "@/helpers/govtData/resources";
-import {
-	BarChart,
-	Bar,
-	XAxis,
-	YAxis,
-	CartesianGrid,
-	Tooltip,
-	ResponsiveContainer,
-	PieChart as RechartsPieChart,
-	Cell,
-	LineChart,
-	Line,
-	Legend,
-	Pie,
-} from "recharts";
+import { useToast } from "@/hooks/use-toast";
 
 const COLORS = [
 	"#0088FE",
@@ -103,7 +103,8 @@ export default function MarketPage() {
 				offset: "0",
 				"filters[State]": state,
 				...(govtResources["districts"].queryDefault || {}),
-			})
+			},
+			'40',1)
 				.then((data) => {
 					const districts = (data?.records || [])?.reduce(
 						(acc: string[], item: any) => {
@@ -126,7 +127,6 @@ export default function MarketPage() {
 					});
 				});
 	}, [state]);
-	console.log(marketList);
 
 	const handleMarketAnalysis = async () => {
 		setIsLoading(true);

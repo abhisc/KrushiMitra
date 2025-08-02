@@ -1,13 +1,26 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { format } from "date-fns";
+import {
+	ArrowLeft,
+	CalendarIcon,
+	Edit,
+	Eye,
+	Plus,
+	PlusCircle,
+	Save,
+	Sprout,
+	Trash2,
+} from "lucide-react";
+import { useRouter } from "next/navigation";
+import { useEffect, useState } from "react";
+import AppLayout from "@/components/agrimitra/app-layout";
+import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
+import { Calendar } from "@/components/ui/calendar";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Textarea } from "@/components/ui/textarea";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Badge } from "@/components/ui/badge";
-import { Calendar } from "@/components/ui/calendar";
 import {
 	Popover,
 	PopoverContent,
@@ -20,30 +33,17 @@ import {
 	SelectTrigger,
 	SelectValue,
 } from "@/components/ui/select";
-import {
-	CalendarIcon,
-	Plus,
-	Trash2,
-	Save,
-	PlusCircle,
-	Edit,
-	Eye,
-	ArrowLeft,
-	Sprout,
-} from "lucide-react";
-import { format } from "date-fns";
-import { useToast } from "@/hooks/use-toast";
-import AppLayout from "@/components/agrimitra/app-layout";
-import { plantationFlowService } from "@/firebaseStore/services";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Textarea } from "@/components/ui/textarea";
+import { Timeline, type TimelineItem } from "@/components/ui/timeline";
 import { useAuth } from "@/contexts/auth-context";
-import {
+import { plantationFlowService } from "@/firebaseStore/services";
+import type {
 	PlantationCycle,
 	PlantationFlowData,
 	PlantationStep,
 } from "@/firebaseStore/services/plantation-flow-service";
-import { Timeline, TimelineItem } from "@/components/ui/timeline";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { useRouter } from "next/navigation";
+import { useToast } from "@/hooks/use-toast";
 
 type ScreenType = "list" | "add" | "edit" | "view";
 
@@ -68,9 +68,25 @@ export default function PlantationFlowPage() {
 	const { toast } = useToast();
 	const plantationService = plantationFlowService;
 
-	const formatDate = (newDate: any) => {
+	const formatDate = (newDate: any, format?: string) => {
 		const dater = newDate?.toDate ? newDate?.toDate() : newDate;
-		return new Date(dater).toLocaleDateString();
+		const date = new Date(dater);
+		
+		if (format === "PPP") {
+			return date.toLocaleDateString('en-US', { 
+				weekday: 'long', 
+				year: 'numeric', 
+				month: 'long', 
+				day: 'numeric' 
+			});
+		} else if (format === "MMM dd") {
+			return date.toLocaleDateString('en-US', { 
+				month: 'short', 
+				day: 'numeric' 
+			});
+		}
+		
+		return date.toLocaleDateString();
 	};
 
 	// Load plantation flows on component mount
@@ -135,6 +151,8 @@ export default function PlantationFlowPage() {
 			id: `crop_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
 			name: "",
 			description: "",
+			area: "",
+			expectedIncome: "",
 			startDate: new Date(),
 			endDate: new Date(),
 			cycle: [],
@@ -717,6 +735,56 @@ export default function PlantationFlowPage() {
 						</CardContent>
 					</Card>
 
+					{/* Summary Statistics */}
+					{selectedFlow.crops && selectedFlow.crops.length > 0 && (() => {
+						const totalArea = selectedFlow.crops.reduce((sum, crop) => {
+							const area = parseFloat(crop.area || "0");
+							return sum + (isNaN(area) ? 0 : area);
+						}, 0);
+						
+						const totalExpectedIncome = selectedFlow.crops.reduce((sum, crop) => {
+							const income = parseFloat(crop.expectedIncome || "0");
+							return sum + (isNaN(income) ? 0 : income);
+						}, 0);
+
+						return (
+							<Card>
+								<CardHeader>
+									<CardTitle>Plantation Summary</CardTitle>
+								</CardHeader>
+								<CardContent>
+									<div className="grid md:grid-cols-3 gap-4">
+										<div className="text-center">
+											<Label className="font-medium">Total Crops</Label>
+											<p className="text-2xl font-bold text-green-600">
+												{selectedFlow.crops.length}
+											</p>
+										</div>
+										{totalArea > 0 && (
+											<div className="text-center">
+												<Label className="font-medium">Total Area</Label>
+												<p className="text-2xl font-bold text-blue-600">
+													{totalArea.toLocaleString('en-IN', { 
+														minimumFractionDigits: 1, 
+														maximumFractionDigits: 1 
+													})} acres/hectares
+												</p>
+											</div>
+										)}
+										{totalExpectedIncome > 0 && (
+											<div className="text-center">
+												<Label className="font-medium">Total Expected Income</Label>
+												<p className="text-2xl font-bold text-green-600">
+													₹{totalExpectedIncome.toLocaleString('en-IN')}
+												</p>
+											</div>
+										)}
+									</div>
+								</CardContent>
+							</Card>
+						);
+					})()}
+
 					{selectedFlow.crops && selectedFlow.crops.length > 0 && (
 						<Tabs defaultValue="timeline" className="w-full">
 							<TabsList className="grid w-full grid-cols-2">
@@ -808,6 +876,28 @@ export default function PlantationFlowPage() {
 														)}
 													</div>
 
+													{/* Area and Expected Income in Timeline View */}
+													{(crop.area || crop.expectedIncome) && (
+														<div className="grid md:grid-cols-2 gap-4 mb-4">
+															{crop.area && (
+																<div>
+																	<Label className="font-medium">Area</Label>
+																	<p className="text-sm text-muted-foreground">
+																		{crop.area} acres/hectares
+																	</p>
+																</div>
+															)}
+															{crop.expectedIncome && (
+																<div>
+																	<Label className="font-medium">Expected Income</Label>
+																	<p className="text-sm text-muted-foreground">
+																		₹{parseFloat(crop.expectedIncome).toLocaleString('en-IN')}
+																	</p>
+																</div>
+															)}
+														</div>
+													)}
+
 													{stepTimeline.length > 0 ? (
 														<div>
 															<Label className="font-medium mb-4 block">
@@ -872,6 +962,28 @@ export default function PlantationFlowPage() {
 																</p>
 															</div>
 														</div>
+
+														{/* Area and Expected Income Display */}
+														{(crop.area || crop.expectedIncome) && (
+															<div className="grid md:grid-cols-2 gap-4 mb-4">
+																{crop.area && (
+																	<div>
+																		<Label className="font-medium">Area</Label>
+																		<p className="text-sm text-muted-foreground">
+																			{crop.area} acres/hectares
+																		</p>
+																	</div>
+																)}
+																{crop.expectedIncome && (
+																	<div>
+																		<Label className="font-medium">Expected Income</Label>
+																		<p className="text-sm text-muted-foreground">
+																			₹{parseFloat(crop.expectedIncome).toLocaleString('en-IN')}
+																		</p>
+																	</div>
+																)}
+															</div>
+														)}
 
 														{crop.cycle.length > 0 && (
 															<div>
@@ -1122,6 +1234,36 @@ export default function PlantationFlowPage() {
 													placeholder="Enter crop description"
 													rows={2}
 												/>
+											</div>
+
+											{/* Area and Expected Income */}
+											<div className="grid md:grid-cols-2 gap-4">
+												<div>
+													<Label>Area (acres/hectares)</Label>
+													<Input
+														value={crop.area || ""}
+														onChange={(e) =>
+															updateCrop(crop.id, "area", e.target.value)
+														}
+														placeholder="Enter cultivation area"
+														type="number"
+														min="0"
+														step="0.1"
+													/>
+												</div>
+												<div>
+													<Label>Expected Income (₹)</Label>
+													<Input
+														value={crop.expectedIncome || ""}
+														onChange={(e) =>
+															updateCrop(crop.id, "expectedIncome", e.target.value)
+														}
+														placeholder="Enter expected income"
+														type="number"
+														min="0"
+														step="100"
+													/>
+												</div>
 											</div>
 
 											<div className="grid md:grid-cols-2 gap-4">

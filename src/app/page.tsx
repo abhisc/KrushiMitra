@@ -1,27 +1,27 @@
 "use client";
 
-import { AskAnything } from "@/ai/flows/ask-anything";
-import { MarkdownComponent } from "@/components/ui/markdown";
-import { ChatBox } from "@/components/ui/chatbox";
-import { useToast } from "@/hooks/use-toast";
 import {
 	Activity,
-	TrendingUp,
-	FileText,
-	Cloud,
-	Bot,
-	Send,
-	Mic,
 	BookOpen,
+	Bot,
+	Cloud,
+	FileText,
+	Mic,
+	Send,
+	TrendingUp,
 } from "lucide-react";
-import { useState, useEffect } from "react";
-import { storeRecentInput } from "@/utils/localStorage";
-import { useAuth } from "@/contexts/auth-context";
+import { useRouter } from "next/navigation";
+import { useEffect, useState } from "react";
+import { AskAnything } from "@/ai/flows/ask-anything";
 import AdditionalInfoCard from "@/components/additional-info-card";
 import AdditionalInfoForm from "@/components/additional-info-form";
-import { useAdditionalInfo } from "@/hooks/use-additional-info";
-import { useRouter } from "next/navigation";
 import AppLayout from "@/components/agrimitra/app-layout";
+import { ChatBox } from "@/components/ui/chatbox";
+import { MarkdownComponent } from "@/components/ui/markdown";
+import { useAuth } from "@/contexts/auth-context";
+import { useAdditionalInfo } from "@/hooks/use-additional-info";
+import { useToast } from "@/hooks/use-toast";
+import { storeRecentInput } from "@/utils/localStorage";
 
 export default function Home() {
 	const quickPrompts = [
@@ -106,8 +106,6 @@ export default function Home() {
 				text: userInput,
 				messages: newMessages,
 			});
-
-			console.log(resp);
 
 			if (resp?.moveToOtherPage?.confirmed) {
 				setMessages([]);
