@@ -3,6 +3,7 @@ import './globals.css';
 import { Toaster } from "@/components/ui/toaster"
 import { ThemeProvider } from '@/components/theme-provider';
 import { AuthProvider } from '@/contexts/auth-context';
+import { LanguageProvider } from '@/contexts/language-context';
 
 import Script from 'next/script';
 
@@ -98,7 +99,9 @@ export default function RootLayout({
           disableTransitionOnChange
         >
           <AuthProvider>
-            {children}
+            <LanguageProvider>
+              {children}
+            </LanguageProvider>
           </AuthProvider>
           <Toaster />
         </ThemeProvider>

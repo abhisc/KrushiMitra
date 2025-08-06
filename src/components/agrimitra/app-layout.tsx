@@ -32,6 +32,9 @@ import { toast } from "@/hooks/use-toast";
 import { UserMenu } from "@/components/auth/user-menu";
 import { useChat } from "@/hooks/use-chat";
 import { ChatType } from "@/firebaseStore/services/chat-service";
+import { LanguageMenu } from "@/components/ui/language-menu";
+import { useLanguage } from "@/contexts/language-context";
+import { useTranslation } from "@/hooks/use-translation";
 
 import { useNavigationHistory } from "@/hooks/use-navigation-history";
 
@@ -59,6 +62,8 @@ export default function AppLayout({
 	const router = useRouter();
 	const pathname = usePathname();
 	const { getPreviousPath } = useNavigationHistory();
+	const { currentLanguage } = useLanguage();
+	const { t } = useTranslation();
 
 	// Chat hook for recent chats
 	const { recentChats, loading: chatsLoading } = useChat();
@@ -68,13 +73,13 @@ export default function AppLayout({
 		{ icon: Home, label: "Home", href: "/", active: pathname === "/" },
 		{
 			icon: Activity,
-			label: "Diagnose",
+			label: t("diagnose"),
 			href: "/diagnose",
 			active: pathname === "/diagnose",
 		},
 		{
 			icon: TrendingUp,
-			label: "Market",
+			label: t("market"),
 			href: "/market",
 			active: pathname === "/market",
 		},
@@ -86,13 +91,13 @@ export default function AppLayout({
 		},
 		{
 			icon: FileText,
-			label: "Schemes",
+			label: t("schemes"),
 			href: "/schemes",
 			active: pathname === "/schemes",
 		},
 		{
 			icon: Cloud,
-			label: "Weather",
+			label: t("weather"),
 			href: "/weather",
 			active: pathname === "/weather",
 		},
@@ -307,10 +312,18 @@ export default function AppLayout({
 						</div>
 					</div>
 
-					{/* User Menu and Settings */}
+					{/* User Menu, Language Menu, and Settings */}
 					<div className="flex items-center space-x-4">
 						{/* User Menu */}
 						<UserMenu />
+
+						{/* Language Menu */}
+						<LanguageMenu 
+							onLanguageChange={(language) => {
+								console.log("Language changed to:", language);
+								// Language change is handled by the context
+							}}
+						/>
 
 						{/* Settings Button */}
 						<RightSidebar>
